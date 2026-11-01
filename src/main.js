@@ -16,8 +16,14 @@ const movement = new THREE.Vector3()
 const forward = new THREE.Vector3()
 const right = new THREE.Vector3()
 const movementSpeed = 5
+const lookSensitivity = 0.002
+const maxPitch = Math.PI / 2 - 0.01
+const startScreen = document.querySelector('#start-screen')
+let yaw = 0
+let pitch = 0
 
 camera.position.z = 5
+camera.rotation.order = 'YXZ'
 
 renderer.setClearColor(0x000000)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
@@ -47,7 +53,9 @@ renderer.setAnimationLoop(() => {
 })
 
 window.addEventListener('keydown', (event) => {
-  pressedKeys.add(event.code)
+  if (document.pointerLockElement === renderer.domElement) {
+    pressedKeys.add(event.code)
+  }
 })
 
 window.addEventListener('keyup', (event) => {
@@ -56,6 +64,29 @@ window.addEventListener('keyup', (event) => {
 
 window.addEventListener('blur', () => {
   pressedKeys.clear()
+})
+
+startScreen.addEventListener('click', () => {
+  renderer.domElement.requestPointerLock()
+})
+
+document.addEventListener('pointerlockchange', () => {
+  const isLocked = document.pointerLockElement === renderer.domElement
+
+  startScreen.hidden = isLocked
+
+  if (!isLocked) {
+    pressedKeys.clear()
+  }
+})
+
+document.addEventListener('mousemove', (event) => {
+  if (document.pointerLockElement !== renderer.domElement) return
+
+  yaw -= event.movementX * lookSensitivity
+  pitch -= event.movementY * lookSensitivity
+  pitch = THREE.MathUtils.clamp(pitch, -maxPitch, maxPitch)
+  camera.rotation.set(pitch, yaw, 0)
 })
 
 window.addEventListener('resize', () => {
