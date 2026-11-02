@@ -58,6 +58,53 @@ canvas {
   font-size: 0.875rem;
 }
 
+#whisper-message {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 15;
+  width: min(90vw, 48rem);
+  margin: 0;
+  color: #d5ddd8;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.75rem, 5vw, 4rem);
+  font-style: italic;
+  letter-spacing: 0.16em;
+  text-align: center;
+  text-shadow: 0 0 0.7rem #e5fff0, 0 0 2rem #7d9e8c;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+#whisper-message[hidden] {
+  display: none;
+}
+
+#whisper-message.is-visible {
+  animation: whisper-fade 3s ease-in-out forwards;
+}
+
+@keyframes whisper-fade {
+  0% {
+    opacity: 0;
+    filter: blur(0.35rem);
+    transform: translate(-50%, -45%) scale(0.96);
+  }
+
+  15%,
+  70% {
+    opacity: 0.72;
+    filter: blur(0);
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    filter: blur(0.3rem);
+    transform: translate(-50%, -55%) scale(1.03);
+  }
+}
+
 #caught-screen {
   position: fixed;
   inset: 0;

@@ -20,6 +20,7 @@ const movementSpeed = 5
 const lookSensitivity = 0.002
 const maxPitch = Math.PI / 2 - 0.01
 const startScreen = document.querySelector('#start-screen')
+const whisperMessage = document.querySelector('#whisper-message')
 const caughtScreen = document.querySelector('#caught-screen')
 const restartButton = document.querySelector('#restart-button')
 const corridorWidth = 9
@@ -33,6 +34,7 @@ const ceilingY = floorY + corridorHeight
 let yaw = 0
 let pitch = 0
 let playerCaught = false
+let whisperTimeoutId = 0
 
 camera.position.z = 5
 camera.rotation.order = 'YXZ'
@@ -162,6 +164,20 @@ function updateLightFlicker(now) {
   }
 
   nextFlickerPulseAt = now + 45 + Math.random() * 110
+}
+
+function whisper(text) {
+  window.clearTimeout(whisperTimeoutId)
+  whisperMessage.textContent = text
+  whisperMessage.hidden = false
+  whisperMessage.classList.remove('is-visible')
+  void whisperMessage.offsetWidth
+  whisperMessage.classList.add('is-visible')
+
+  whisperTimeoutId = window.setTimeout(() => {
+    whisperMessage.hidden = true
+    whisperMessage.classList.remove('is-visible')
+  }, 3000)
 }
 
 const classroomDoors = new THREE.Group()
@@ -500,6 +516,9 @@ function restartGame() {
   activeDoorSlam = null
   cameraShakeEndsAt = 0
   cameraShakeOffset.set(0, 0, 0)
+  window.clearTimeout(whisperTimeoutId)
+  whisperMessage.hidden = true
+  whisperMessage.classList.remove('is-visible')
   for (const door of classroomDoorPanels) {
     door.hinge.rotation.y = door.openRotation
   }
@@ -549,6 +568,10 @@ renderer.setAnimationLoop((time) => {
 })
 
 window.addEventListener('keydown', (event) => {
+  if (event.code === 'Digit1' && !event.repeat && !playerCaught) {
+    whisper('behind you')
+  }
+
   if (event.code === 'Digit2' && !event.repeat) {
     flickerLights()
   }
