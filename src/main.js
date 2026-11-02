@@ -310,6 +310,50 @@ corridor.add(exitDoor)
 
 scene.add(corridor)
 
+const ghostStartPosition = new THREE.Vector3(0, floorY + 0.08, corridorEndZ + 4)
+const ghost = new THREE.Group()
+const ghostMaterial = new THREE.MeshStandardMaterial({
+  color: 0xe5edef,
+  emissive: 0x839296,
+  emissiveIntensity: 0.35,
+  transparent: true,
+  opacity: 0.46,
+  roughness: 0.7,
+  depthWrite: false,
+  side: THREE.DoubleSide,
+})
+const ghostFaceMaterial = new THREE.MeshBasicMaterial({
+  color: 0x050708,
+  transparent: true,
+  opacity: 0.72,
+  depthWrite: false,
+})
+
+const ghostBody = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.4, 0.78, 2.5, 20, 1, true),
+  ghostMaterial,
+)
+ghostBody.position.y = 1.25
+ghost.add(ghostBody)
+
+const ghostHead = new THREE.Mesh(new THREE.SphereGeometry(0.42, 20, 14), ghostMaterial)
+ghostHead.position.y = 2.72
+ghost.add(ghostHead)
+
+for (const side of [-1, 1]) {
+  const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.12, 1.25, 6, 12), ghostMaterial)
+  arm.position.set(side * 0.5, 1.52, 0)
+  arm.rotation.z = side * -0.18
+  ghost.add(arm)
+
+  const eye = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 8), ghostFaceMaterial)
+  eye.position.set(side * 0.13, 2.79, 0.39)
+  ghost.add(eye)
+}
+
+ghost.position.copy(ghostStartPosition)
+scene.add(ghost)
+
 renderer.setClearColor(0x000000)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 renderer.setSize(window.innerWidth, window.innerHeight)
