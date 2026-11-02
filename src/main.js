@@ -442,6 +442,192 @@ exitDoor.add(exitLight)
 
 corridor.add(exitDoor)
 
+function createDecalTexture(draw) {
+  const canvas = document.createElement('canvas')
+  canvas.width = 256
+  canvas.height = 256
+
+  const context = canvas.getContext('2d')
+  draw(context, canvas)
+
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+
+  return texture
+}
+
+const handprintTexture = createDecalTexture((context) => {
+  context.fillStyle = 'rgb(104 6 11 / 82%)'
+  context.strokeStyle = 'rgb(104 6 11 / 78%)'
+  context.lineCap = 'round'
+  context.lineWidth = 17
+
+  context.beginPath()
+  context.ellipse(127, 137, 38, 48, -0.18, 0, Math.PI * 2)
+  context.fill()
+
+  for (const [startX, startY, endX, endY] of [
+    [102, 110, 79, 49],
+    [118, 99, 111, 30],
+    [134, 98, 141, 27],
+    [149, 105, 168, 42],
+    [158, 124, 194, 82],
+  ]) {
+    context.beginPath()
+    context.moveTo(startX, startY)
+    context.lineTo(endX, endY)
+    context.stroke()
+  }
+
+  context.strokeStyle = 'rgb(104 6 11 / 28%)'
+  context.lineWidth = 11
+  for (const x of [104, 128, 151]) {
+    context.beginPath()
+    context.moveTo(x, 160)
+    context.bezierCurveTo(x - 10, 188, x + 8, 213, x - 5, 248)
+    context.stroke()
+  }
+})
+
+const doorDripTexture = createDecalTexture((context, canvas) => {
+  context.fillStyle = 'rgb(91 4 9 / 82%)'
+  context.fillRect(22, 30, canvas.width - 44, 30)
+  context.strokeStyle = 'rgb(91 4 9 / 78%)'
+  context.lineCap = 'round'
+
+  for (const [x, width, length] of [
+    [48, 12, 124],
+    [83, 7, 78],
+    [121, 15, 172],
+    [164, 9, 106],
+    [203, 13, 148],
+  ]) {
+    context.lineWidth = width
+    context.beginPath()
+    context.moveTo(x, 46)
+    context.bezierCurveTo(x - 8, length * 0.55, x + 9, length * 0.78, x, length)
+    context.stroke()
+  }
+})
+
+const floorSmearTexture = createDecalTexture((context) => {
+  context.fillStyle = 'rgb(94 3 8 / 68%)'
+  context.beginPath()
+  context.moveTo(40, 122)
+  context.bezierCurveTo(53, 64, 108, 50, 149, 78)
+  context.bezierCurveTo(197, 111, 217, 151, 187, 184)
+  context.bezierCurveTo(152, 219, 92, 199, 58, 170)
+  context.closePath()
+  context.fill()
+
+  context.fillStyle = 'rgb(94 3 8 / 32%)'
+  for (const [x, y, radius] of [
+    [29, 184, 13],
+    [73, 218, 9],
+    [205, 66, 11],
+    [229, 135, 7],
+  ]) {
+    context.beginPath()
+    context.arc(x, y, radius, 0, Math.PI * 2)
+    context.fill()
+  }
+})
+
+const handprintMaterial = new THREE.MeshBasicMaterial({
+  map: handprintTexture,
+  transparent: true,
+  depthWrite: false,
+  side: THREE.DoubleSide,
+})
+const doorDripMaterial = new THREE.MeshBasicMaterial({
+  map: doorDripTexture,
+  transparent: true,
+  depthWrite: false,
+  side: THREE.DoubleSide,
+})
+const floorSmearMaterial = new THREE.MeshBasicMaterial({
+  map: floorSmearTexture,
+  transparent: true,
+  depthWrite: false,
+  side: THREE.DoubleSide,
+})
+const bloodDecals = new THREE.Group()
+
+function addWallDecal(side, z, y, width, height, material, rotation = 0) {
+  const decal = new THREE.Mesh(new THREE.PlaneGeometry(width, height), material)
+  decal.position.set(side * (corridorWidth / 2 - 0.012), y, z)
+  decal.rotation.y = side * -Math.PI / 2
+  decal.rotateZ(rotation)
+  decal.renderOrder = 2
+  bloodDecals.add(decal)
+}
+
+function addFloorDecal(x, z, width, length, rotation = 0) {
+  const decal = new THREE.Mesh(new THREE.PlaneGeometry(width, length), floorSmearMaterial)
+  decal.position.set(x, floorY + 0.012, z)
+  decal.rotation.set(-Math.PI / 2, 0, rotation)
+  decal.renderOrder = 2
+  bloodDecals.add(decal)
+}
+
+for (const handprint of [
+  { side: -1, z: -10, y: 0.35, rotation: -0.14 },
+  { side: 1, z: -29, y: 0.15, rotation: 0.09 },
+  { side: -1, z: -50, y: 0.55, rotation: 0.18 },
+]) {
+  addWallDecal(
+    handprint.side,
+    handprint.z,
+    handprint.y,
+    0.82,
+    1.05,
+    handprintMaterial,
+    handprint.rotation,
+  )
+}
+
+for (const drip of [
+  { side: -1, z: -21 },
+  { side: 1, z: -43 },
+  { side: 1, z: -59 },
+]) {
+  addWallDecal(drip.side, drip.z, floorY + 0.26, 1.05, 0.54, doorDripMaterial)
+}
+
+for (const smear of [
+  { x: -0.2, z: -24, width: 0.72, length: 1.1, rotation: -0.12 },
+  { x: 0.15, z: -27, width: 0.84, length: 1.25, rotation: 0.18 },
+  { x: 0.65, z: -30, width: 0.68, length: 1.05, rotation: -0.2 },
+  { x: 1.25, z: -33, width: 0.9, length: 1.35, rotation: 0.14 },
+  { x: 1.95, z: -36, width: 0.7, length: 1.12, rotation: -0.16 },
+  { x: 2.65, z: -38.8, width: 0.86, length: 1.3, rotation: 0.2 },
+  { x: 3.25, z: -41, width: 0.75, length: 1.15, rotation: -0.08 },
+  { x: 3.75, z: -42.5, width: 1.05, length: 1.35, rotation: 0.12 },
+]) {
+  addFloorDecal(smear.x, smear.z, smear.width, smear.length, smear.rotation)
+}
+
+const bathroomSignCanvas = document.createElement('canvas')
+bathroomSignCanvas.width = 512
+bathroomSignCanvas.height = 192
+const bathroomSignContext = bathroomSignCanvas.getContext('2d')
+bathroomSignContext.fillStyle = '#dce4e5'
+bathroomSignContext.fillRect(0, 0, bathroomSignCanvas.width, bathroomSignCanvas.height)
+bathroomSignContext.strokeStyle = '#435158'
+bathroomSignContext.lineWidth = 12
+bathroomSignContext.strokeRect(8, 8, bathroomSignCanvas.width - 16, bathroomSignCanvas.height - 16)
+bathroomSignContext.fillStyle = '#202a2e'
+bathroomSignContext.font = 'bold 70px sans-serif'
+bathroomSignContext.textAlign = 'center'
+bathroomSignContext.textBaseline = 'middle'
+bathroomSignContext.fillText('BATHROOM', bathroomSignCanvas.width / 2, bathroomSignCanvas.height / 2 + 3)
+
+const bathroomSignTexture = new THREE.CanvasTexture(bathroomSignCanvas)
+bathroomSignTexture.colorSpace = THREE.SRGBColorSpace
+const bathroomSignMaterial = new THREE.MeshBasicMaterial({ map: bathroomSignTexture })
+addWallDecal(1, -43, 1.7, 0.92, 0.34, bathroomSignMaterial)
+
+corridor.add(bloodDecals)
 scene.add(corridor)
 
 const ghostStartPosition = new THREE.Vector3(0, floorY + 0.08, corridorEndZ + 4)
