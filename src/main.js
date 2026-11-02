@@ -50,9 +50,10 @@ const ceilingMaterial = new THREE.MeshStandardMaterial({
   roughness: 1,
 })
 const fixtureMaterial = new THREE.MeshStandardMaterial({
-  color: 0x78909a,
-  emissive: 0xa8c7d2,
-  emissiveIntensity: 1.4,
+  color: 0x73543b,
+  emissive: 0xffa85c,
+  emissiveIntensity: 0.65,
+  roughness: 0.55,
 })
 
 function addBox(parent, size, position, material) {
@@ -101,15 +102,24 @@ addBox(
   wallMaterial,
 )
 
-const ambientLight = new THREE.AmbientLight(0x7890a0, 0.28)
+const ambientLight = new THREE.AmbientLight(0x59636b, 0.16)
 scene.add(ambientLight)
 
-for (const z of [2, -14, -30, -46, -62]) {
-  addBox(corridor, [1.8, 0.06, 0.5], [0, ceilingY - 0.04, z], fixtureMaterial)
+const ceilingLightIntensity = 12
+const ceilingLights = []
 
-  const light = new THREE.PointLight(0xbad7e3, 18, 19, 2)
+for (const z of [2, -10, -22, -34, -46, -58, -68]) {
+  const fixture = addBox(
+    corridor,
+    [1.8, 0.06, 0.5],
+    [0, ceilingY - 0.04, z],
+    fixtureMaterial.clone(),
+  )
+
+  const light = new THREE.PointLight(0xffb66f, ceilingLightIntensity, 16, 2)
   light.position.set(0, ceilingY - 0.3, z)
   corridor.add(light)
+  ceilingLights.push({ fixture, light })
 }
 
 const classroomDoors = new THREE.Group()
