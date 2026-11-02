@@ -19,11 +19,100 @@ const movementSpeed = 5
 const lookSensitivity = 0.002
 const maxPitch = Math.PI / 2 - 0.01
 const startScreen = document.querySelector('#start-screen')
+const corridorWidth = 9
+const corridorHeight = 4.4
+const corridorLength = 80
+const corridorStartZ = 8
+const corridorEndZ = corridorStartZ - corridorLength
+const corridorCenterZ = (corridorStartZ + corridorEndZ) / 2
+const floorY = -1.7
+const ceilingY = floorY + corridorHeight
 let yaw = 0
 let pitch = 0
 
 camera.position.z = 5
 camera.rotation.order = 'YXZ'
+
+scene.background = new THREE.Color(0x020506)
+scene.fog = new THREE.FogExp2(0x020506, 0.027)
+
+const corridor = new THREE.Group()
+const floorMaterial = new THREE.MeshStandardMaterial({
+  color: 0x171a1c,
+  roughness: 0.92,
+})
+const wallMaterial = new THREE.MeshStandardMaterial({
+  color: 0x323638,
+  roughness: 1,
+})
+const ceilingMaterial = new THREE.MeshStandardMaterial({
+  color: 0x1b1e20,
+  roughness: 1,
+})
+const fixtureMaterial = new THREE.MeshStandardMaterial({
+  color: 0x78909a,
+  emissive: 0xa8c7d2,
+  emissiveIntensity: 1.4,
+})
+
+function addBox(parent, size, position, material) {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material)
+
+  mesh.position.set(...position)
+  parent.add(mesh)
+
+  return mesh
+}
+
+addBox(
+  corridor,
+  [corridorWidth, 0.2, corridorLength],
+  [0, floorY - 0.1, corridorCenterZ],
+  floorMaterial,
+)
+addBox(
+  corridor,
+  [corridorWidth, 0.2, corridorLength],
+  [0, ceilingY + 0.1, corridorCenterZ],
+  ceilingMaterial,
+)
+addBox(
+  corridor,
+  [0.2, corridorHeight, corridorLength],
+  [-(corridorWidth / 2 + 0.1), (floorY + ceilingY) / 2, corridorCenterZ],
+  wallMaterial,
+)
+addBox(
+  corridor,
+  [0.2, corridorHeight, corridorLength],
+  [corridorWidth / 2 + 0.1, (floorY + ceilingY) / 2, corridorCenterZ],
+  wallMaterial,
+)
+addBox(
+  corridor,
+  [corridorWidth, corridorHeight, 0.2],
+  [0, (floorY + ceilingY) / 2, corridorEndZ - 0.1],
+  wallMaterial,
+)
+addBox(
+  corridor,
+  [corridorWidth, corridorHeight, 0.2],
+  [0, (floorY + ceilingY) / 2, corridorStartZ + 0.1],
+  wallMaterial,
+)
+
+const ambientLight = new THREE.AmbientLight(0x7890a0, 0.28)
+scene.add(ambientLight)
+
+for (const z of [2, -14, -30, -46, -62]) {
+  addBox(corridor, [1.8, 0.06, 0.5], [0, ceilingY - 0.04, z], fixtureMaterial)
+
+  const light = new THREE.PointLight(0xbad7e3, 18, 19, 2)
+  light.position.set(0, ceilingY - 0.3, z)
+  corridor.add(light)
+}
+
+scene.add(corridor)
 
 renderer.setClearColor(0x000000)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
