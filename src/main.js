@@ -112,6 +112,76 @@ for (const z of [2, -14, -30, -46, -62]) {
   corridor.add(light)
 }
 
+const classroomDoors = new THREE.Group()
+const doorMaterial = new THREE.MeshStandardMaterial({
+  color: 0x29312d,
+  roughness: 0.86,
+})
+const doorFrameMaterial = new THREE.MeshStandardMaterial({
+  color: 0x101413,
+  roughness: 0.75,
+})
+const doorWindowMaterial = new THREE.MeshStandardMaterial({
+  color: 0x05090a,
+  roughness: 0.3,
+  metalness: 0.15,
+})
+const handleMaterial = new THREE.MeshStandardMaterial({
+  color: 0x756b48,
+  roughness: 0.35,
+  metalness: 0.75,
+})
+
+function addClassroomDoor(side, z) {
+  const door = new THREE.Group()
+  const doorWidth = 1.45
+  const doorHeight = 3
+  const doorX = side * (corridorWidth / 2 - 0.05)
+  const doorCenterY = floorY + doorHeight / 2
+
+  addBox(door, [0.14, doorHeight, doorWidth], [doorX, doorCenterY, z], doorMaterial)
+  addBox(
+    door,
+    [0.2, doorHeight + 0.18, 0.12],
+    [doorX, doorCenterY + 0.09, z - doorWidth / 2 - 0.06],
+    doorFrameMaterial,
+  )
+  addBox(
+    door,
+    [0.2, doorHeight + 0.18, 0.12],
+    [doorX, doorCenterY + 0.09, z + doorWidth / 2 + 0.06],
+    doorFrameMaterial,
+  )
+  addBox(
+    door,
+    [0.2, 0.12, doorWidth + 0.24],
+    [doorX, floorY + doorHeight + 0.06, z],
+    doorFrameMaterial,
+  )
+  addBox(
+    door,
+    [0.05, 0.62, 0.5],
+    [doorX - side * 0.1, floorY + 2.15, z],
+    doorWindowMaterial,
+  )
+
+  const handle = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 8), handleMaterial)
+  handle.position.set(doorX - side * 0.13, floorY + 1.05, z + 0.46)
+  door.add(handle)
+
+  classroomDoors.add(door)
+}
+
+for (const z of [-5, -21, -37, -53]) {
+  addClassroomDoor(-1, z)
+}
+
+for (const z of [-11, -27, -43, -59]) {
+  addClassroomDoor(1, z)
+}
+
+corridor.add(classroomDoors)
+
 scene.add(corridor)
 
 renderer.setClearColor(0x000000)
