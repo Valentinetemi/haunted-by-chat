@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import tmi from 'tmi.js'
 
 import './style.css'
 
@@ -21,6 +22,7 @@ const lookSensitivity = 0.002
 const maxPitch = Math.PI / 2 - 0.01
 const startScreen = document.querySelector('#start-screen')
 const whisperMessage = document.querySelector('#whisper-message')
+const twitchFeed = document.querySelector('#twitch-feed')
 const caughtScreen = document.querySelector('#caught-screen')
 const restartButton = document.querySelector('#restart-button')
 const corridorWidth = 9
@@ -301,6 +303,11 @@ for (const z of [-11, -27, -43, -59]) {
 }
 
 function slamDoor() {
+  if (classroomDoorPanels.length === 0) {
+    cameraShakeEndsAt = performance.now() + cameraShakeDuration
+    return false
+  }
+
   if (activeDoorSlam) {
     activeDoorSlam.door.hinge.rotation.y = 0
   }
@@ -328,6 +335,8 @@ function slamDoor() {
     startedAt: performance.now(),
     startRotation: door.hinge.rotation.y,
   }
+
+  return true
 }
 
 function updateDoorSlam(now) {
@@ -955,4 +964,55 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix()
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   renderer.setSize(window.innerWidth, window.innerHeight)
+})
+
+const requestedTwitchChannel = new URLSearchParams(window.location.search).get('channel')?.trim()
+const twitchChannel = (requestedTwitchChannel || 'YOURTWITCHNAME').replace(/^#/, '')
+
+function addTwitchFeedItem(username, scareName) {
+  const item = document.createElement('p')
+  item.textContent = `@${username} triggered ${scareName}`
+  twitchFeed.prepend(item)
+
+  while (twitchFeed.childElementCount > 4) {
+    twitchFeed.lastElementChild.remove()
+  }
+
+  window.setTimeout(() => item.classList.add('is-fading'), 4200)
+  window.setTimeout(() => item.remove(), 5000)
+}
+
+const twitchScares = new Map()
+
+function registerTwitchScare(commands, scareName, action) {
+  for (const command of commands) {
+    twitchScares.set(command, { action, scareName })
+  }
+}
+
+registerTwitchScare(['!whisper', 'w'], 'WHISPER', () => whisper('behind you'))
+registerTwitchScare(['!flicker', 'f'], 'FLICKER', flickerLights)
+registerTwitchScare(['!slam', 's'], 'SLAM', slamDoor)
+registerTwitchScare(['!hunt', 'c'], 'HUNT', rushGhost)
+
+const twitchClient = new tmi.Client({
+  connection: {
+    reconnect: true,
+    secure: true,
+  },
+  channels: [twitchChannel],
+})
+
+twitchClient.on('message', (_channel, tags, message, self) => {
+  if (self) return
+
+  const scare = twitchScares.get(message.trim().toLowerCase())
+  if (!scare) return
+
+  scare.action()
+  addTwitchFeedItem(tags['display-name'] || tags.username || 'viewer', scare.scareName)
+})
+
+twitchClient.connect().catch((error) => {
+  console.warn(`Could not connect to Twitch channel ${twitchChannel}`, error)
 })

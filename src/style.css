@@ -84,6 +84,44 @@ canvas {
   animation: whisper-fade 3s ease-in-out forwards;
 }
 
+#twitch-feed {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 15;
+  display: grid;
+  gap: 0.35rem;
+  width: min(22rem, calc(100vw - 2rem));
+  pointer-events: none;
+}
+
+#twitch-feed p {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0;
+  padding: 0.4rem 0.65rem;
+  overflow: hidden;
+  border-left: 2px solid #97e7ff;
+  color: #e8faff;
+  background: rgb(8 18 22 / 72%);
+  font: 600 0.78rem/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  animation: twitch-feed-in 180ms ease-out;
+  transition: opacity 800ms ease;
+}
+
+#twitch-feed p.is-fading {
+  opacity: 0;
+}
+
+@keyframes twitch-feed-in {
+  from {
+    opacity: 0;
+    transform: translateX(-0.75rem);
+  }
+}
+
 @keyframes whisper-fade {
   0% {
     opacity: 0;
