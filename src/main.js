@@ -19,6 +19,8 @@ const movementSpeed = 5
 const lookSensitivity = 0.002
 const maxPitch = Math.PI / 2 - 0.01
 const startScreen = document.querySelector('#start-screen')
+const caughtScreen = document.querySelector('#caught-screen')
+const restartButton = document.querySelector('#restart-button')
 const corridorWidth = 9
 const corridorHeight = 4.4
 const corridorLength = 80
@@ -29,6 +31,7 @@ const floorY = -1.7
 const ceilingY = floorY + corridorHeight
 let yaw = 0
 let pitch = 0
+let playerCaught = false
 
 camera.position.z = 5
 camera.rotation.order = 'YXZ'
@@ -314,6 +317,7 @@ const ghostStartPosition = new THREE.Vector3(0, floorY + 0.08, corridorEndZ + 4)
 const ghost = new THREE.Group()
 const ghostDirection = new THREE.Vector3()
 const ghostDriftSpeed = 0.55
+const ghostCatchDistance = 1.05
 const ghostMaterial = new THREE.MeshStandardMaterial({
   color: 0xe5edef,
   emissive: 0x839296,
@@ -371,6 +375,37 @@ function updateGhost(delta, time) {
   ghost.position.y = ghostStartPosition.y + Math.sin(time * 0.0012) * 0.08
 }
 
+function ghostReachedPlayer() {
+  const xDistance = camera.position.x - ghost.position.x
+  const zDistance = camera.position.z - ghost.position.z
+
+  return xDistance ** 2 + zDistance ** 2 <= ghostCatchDistance ** 2
+}
+
+function catchPlayer() {
+  playerCaught = true
+  pressedKeys.clear()
+  startScreen.hidden = true
+  caughtScreen.hidden = false
+
+  if (document.pointerLockElement === renderer.domElement) {
+    document.exitPointerLock()
+  }
+}
+
+function restartGame() {
+  playerCaught = false
+  yaw = 0
+  pitch = 0
+  camera.position.set(0, 0, 5)
+  camera.rotation.set(0, 0, 0)
+  ghost.position.copy(ghostStartPosition)
+  ghost.rotation.set(0, 0, 0)
+  pressedKeys.clear()
+  caughtScreen.hidden = true
+  startScreen.hidden = false
+}
+
 renderer.setClearColor(0x000000)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 renderer.setSize(window.innerWidth, window.innerHeight)
@@ -397,7 +432,13 @@ renderer.setAnimationLoop((time) => {
     camera.position.addScaledVector(movement.normalize(), movementSpeed * delta)
   }
 
-  updateGhost(delta, time)
+  if (!playerCaught && document.pointerLockElement === renderer.domElement) {
+    updateGhost(delta, time)
+
+    if (ghostReachedPlayer()) {
+      catchPlayer()
+    }
+  }
 
   renderer.render(scene, camera)
 })
@@ -424,10 +465,12 @@ startScreen.addEventListener('click', () => {
   renderer.domElement.requestPointerLock()
 })
 
+restartButton.addEventListener('click', restartGame)
+
 document.addEventListener('pointerlockchange', () => {
   const isLocked = document.pointerLockElement === renderer.domElement
 
-  startScreen.hidden = isLocked
+  startScreen.hidden = isLocked || playerCaught
 
   if (!isLocked) {
     pressedKeys.clear()
