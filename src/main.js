@@ -23,6 +23,8 @@ const maxPitch = Math.PI / 2 - 0.01
 const startScreen = document.querySelector('#start-screen')
 const whisperMessage = document.querySelector('#whisper-message')
 const twitchFeed = document.querySelector('#twitch-feed')
+const stunHud = document.querySelector('#stun-hud')
+const shotsRemainingDisplay = document.querySelector('#shots-remaining')
 const caughtScreen = document.querySelector('#caught-screen')
 const restartButton = document.querySelector('#restart-button')
 const corridorWidth = 9
@@ -676,6 +678,23 @@ const hunterScanlineMaterial = new THREE.MeshBasicMaterial({
 const hunterGlitchParts = []
 let nextHunterGlitchAt = 0
 let hunterGlitchEndsAt = 0
+const maxStunShots = 3
+const stunDuration = 3000
+const stunBoltSpeed = 32
+const stunBoltLifetime = 3
+const stunBolts = []
+const hunterHitBox = new THREE.Box3()
+const hunterHitCenter = new THREE.Vector3()
+const hunterHitSize = new THREE.Vector3(1.1, 3.4, 1)
+const stunRay = new THREE.Ray()
+const stunHitPoint = new THREE.Vector3()
+const stunBoltGeometry = new THREE.SphereGeometry(0.07, 12, 8)
+const stunBoltMaterial = new THREE.MeshBasicMaterial({
+  color: 0x39bfff,
+  toneMapped: false,
+})
+let stunShotsRemaining = maxStunShots
+let hunterFrozenUntil = 0
 
 addBox(hunterVisual, [0.58, 0.28, 0.32], [0, 1.34, 0], hunterMetalMaterial)
 addBox(hunterVisual, [0.52, 1.15, 0.3], [0, 2.08, 0], hunterMetalMaterial)
@@ -727,6 +746,10 @@ hunterVisual.add(hunterEye)
 const hunterEyeLight = new THREE.PointLight(0xff0800, 7, 6, 2)
 hunterEyeLight.position.set(0, 3.03, 0.45)
 hunterVisual.add(hunterEyeLight)
+
+const hunterStunLight = new THREE.PointLight(0x38bfff, 0, 6, 2)
+hunterStunLight.position.set(0, 1.65, 0.35)
+hunterVisual.add(hunterStunLight)
 
 const hunterScanlines = new THREE.Group()
 for (const [y, width] of [
@@ -784,6 +807,103 @@ function updateHunterEffects(time) {
   hunterEyeLight.intensity = 7 + (isGlitching ? Math.random() * 4 : Math.sin(time * 0.01))
 }
 
+function updateStunHud() {
+  shotsRemainingDisplay.textContent = String(stunShotsRemaining)
+  stunHud.classList.toggle('is-empty', stunShotsRemaining === 0)
+}
+
+function fireStunBlaster() {
+  if (
+    stunShotsRemaining === 0 ||
+    playerCaught ||
+    document.pointerLockElement !== renderer.domElement
+  ) {
+    return
+  }
+
+  const direction = new THREE.Vector3()
+  camera.getWorldDirection(direction)
+
+  const bolt = new THREE.Mesh(stunBoltGeometry, stunBoltMaterial)
+  bolt.position.copy(camera.position).addScaledVector(direction, 0.4)
+
+  const boltLight = new THREE.PointLight(0x38bfff, 5, 3, 2)
+  bolt.add(boltLight)
+  scene.add(bolt)
+  stunBolts.push({ direction, lifetime: stunBoltLifetime, mesh: bolt })
+
+  stunShotsRemaining -= 1
+  updateStunHud()
+}
+
+function removeStunBolt(index) {
+  scene.remove(stunBolts[index].mesh)
+  stunBolts.splice(index, 1)
+}
+
+function freezeHunter(time) {
+  hunterFrozenUntil = time + stunDuration
+  hunterVisual.position.set(0, 0, 0)
+  hunterVisual.rotation.set(0, 0, 0)
+
+  for (const { part, baseRotation } of hunterGlitchParts) {
+    part.rotation.z = baseRotation
+  }
+}
+
+function updateStunBolts(delta, time) {
+  hunterHitCenter.set(ghost.position.x, ghost.position.y + 1.6, ghost.position.z)
+  hunterHitBox.setFromCenterAndSize(hunterHitCenter, hunterHitSize)
+
+  for (let index = stunBolts.length - 1; index >= 0; index -= 1) {
+    const bolt = stunBolts[index]
+    const travelDistance = stunBoltSpeed * delta
+
+    stunRay.set(bolt.mesh.position, bolt.direction)
+    const hitPoint = stunRay.intersectBox(hunterHitBox, stunHitPoint)
+    const hitsHunter =
+      hitPoint !== null && hitPoint.distanceToSquared(bolt.mesh.position) <= travelDistance ** 2
+
+    if (hitsHunter) {
+      freezeHunter(time)
+      removeStunBolt(index)
+      continue
+    }
+
+    bolt.mesh.position.addScaledVector(bolt.direction, travelDistance)
+    bolt.lifetime -= delta
+
+    if (bolt.lifetime <= 0) {
+      removeStunBolt(index)
+    }
+  }
+}
+
+function updateHunterStun(time) {
+  const isFrozen = time < hunterFrozenUntil
+
+  hunterStunLight.intensity = isFrozen ? 9 + Math.sin(time * 0.035) * 2 : 0
+  hunterScanlineMaterial.color.setHex(isFrozen ? 0x38bfff : 0xff1a12)
+
+  if (isFrozen) {
+    hunterScanlineMaterial.opacity = 0.18 + Math.sin(time * 0.05) * 0.05
+    hunterEyeMaterial.emissiveIntensity = 0.8
+    hunterEyeLight.intensity = 1
+  }
+}
+
+function resetStunBlaster() {
+  for (let index = stunBolts.length - 1; index >= 0; index -= 1) {
+    removeStunBolt(index)
+  }
+
+  stunShotsRemaining = maxStunShots
+  hunterFrozenUntil = 0
+  hunterStunLight.intensity = 0
+  hunterScanlineMaterial.color.setHex(0xff1a12)
+  updateStunHud()
+}
+
 function rushGhost() {
   ghostRushEndsAt = performance.now() + ghostRushDuration
 }
@@ -839,6 +959,7 @@ function restartGame() {
   nextHunterGlitchAt = 0
   hunterGlitchEndsAt = 0
   ghostRushEndsAt = 0
+  resetStunBlaster()
   activeDoorSlam = null
   cameraShakeEndsAt = 0
   cameraShakeOffset.set(0, 0, 0)
@@ -864,7 +985,12 @@ renderer.setAnimationLoop((time) => {
 
   updateLightFlicker(time)
   updateDoorSlam(time)
-  updateHunterEffects(time)
+  updateStunBolts(delta, time)
+
+  if (time >= hunterFrozenUntil) {
+    updateHunterEffects(time)
+  }
+  updateHunterStun(time)
 
   movement.set(0, 0, 0)
   camera.getWorldDirection(forward)
@@ -882,9 +1008,11 @@ renderer.setAnimationLoop((time) => {
   }
 
   if (!playerCaught && document.pointerLockElement === renderer.domElement) {
-    updateGhost(delta, time)
+    if (time >= hunterFrozenUntil) {
+      updateGhost(delta, time)
+    }
 
-    if (ghostReachedPlayer()) {
+    if (time >= hunterFrozenUntil && ghostReachedPlayer()) {
       catchPlayer()
     }
   }
@@ -957,6 +1085,12 @@ document.addEventListener('mousemove', (event) => {
   pitch -= event.movementY * lookSensitivity
   pitch = THREE.MathUtils.clamp(pitch, -maxPitch, maxPitch)
   camera.rotation.set(pitch, yaw, 0)
+})
+
+document.addEventListener('mousedown', (event) => {
+  if (event.button === 0) {
+    fireStunBlaster()
+  }
 })
 
 window.addEventListener('resize', () => {
