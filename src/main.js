@@ -420,47 +420,142 @@ const ghostCatchDistance = 1.05
 const ghostRushDuration = 4000
 const ghostRushMultiplier = 3
 let ghostRushEndsAt = 0
-const ghostMaterial = new THREE.MeshStandardMaterial({
-  color: 0xe5edef,
-  emissive: 0x839296,
-  emissiveIntensity: 0.35,
-  transparent: true,
-  opacity: 0.46,
-  roughness: 0.7,
-  depthWrite: false,
-  side: THREE.DoubleSide,
+const hunterVisual = new THREE.Group()
+const hunterMetalMaterial = new THREE.MeshStandardMaterial({
+  color: 0x11161a,
+  metalness: 0.88,
+  roughness: 0.32,
 })
-const ghostFaceMaterial = new THREE.MeshBasicMaterial({
-  color: 0x050708,
-  transparent: true,
-  opacity: 0.72,
-  depthWrite: false,
+const hunterJointMaterial = new THREE.MeshStandardMaterial({
+  color: 0x050709,
+  metalness: 0.95,
+  roughness: 0.22,
 })
+const hunterEyeMaterial = new THREE.MeshStandardMaterial({
+  color: 0x330000,
+  emissive: 0xff0000,
+  emissiveIntensity: 4.5,
+  metalness: 0.25,
+  roughness: 0.18,
+})
+const hunterScanlineMaterial = new THREE.MeshBasicMaterial({
+  color: 0xff1a12,
+  transparent: true,
+  opacity: 0.08,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+  toneMapped: false,
+})
+const hunterGlitchParts = []
+let nextHunterGlitchAt = 0
+let hunterGlitchEndsAt = 0
 
-const ghostBody = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.4, 0.78, 2.5, 20, 1, true),
-  ghostMaterial,
+addBox(hunterVisual, [0.58, 0.28, 0.32], [0, 1.34, 0], hunterMetalMaterial)
+addBox(hunterVisual, [0.52, 1.15, 0.3], [0, 2.08, 0], hunterMetalMaterial)
+addBox(hunterVisual, [0.84, 0.16, 0.32], [0, 2.58, 0], hunterMetalMaterial)
+addBox(hunterVisual, [0.46, 0.38, 0.4], [0, 3.02, 0], hunterMetalMaterial)
+
+const hunterSpine = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.09, 0.09, 0.35, 10),
+  hunterJointMaterial,
 )
-ghostBody.position.y = 1.25
-ghost.add(ghostBody)
+hunterSpine.position.y = 1.58
+hunterVisual.add(hunterSpine)
 
-const ghostHead = new THREE.Mesh(new THREE.SphereGeometry(0.42, 20, 14), ghostMaterial)
-ghostHead.position.y = 2.72
-ghost.add(ghostHead)
+const hunterNeck = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.08, 0.08, 0.26, 10),
+  hunterJointMaterial,
+)
+hunterNeck.position.y = 2.79
+hunterVisual.add(hunterNeck)
 
 for (const side of [-1, 1]) {
-  const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.12, 1.25, 6, 12), ghostMaterial)
-  arm.position.set(side * 0.5, 1.52, 0)
-  arm.rotation.z = side * -0.18
-  ghost.add(arm)
+  const leg = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.07, 1.2, 8),
+    hunterJointMaterial,
+  )
+  leg.position.set(side * 0.19, 0.68, 0)
+  hunterVisual.add(leg)
+  hunterGlitchParts.push({ part: leg, baseRotation: 0 })
 
-  const eye = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 8), ghostFaceMaterial)
-  eye.position.set(side * 0.13, 2.79, 0.39)
-  ghost.add(eye)
+  addBox(hunterVisual, [0.22, 0.13, 0.42], [side * 0.19, 0.07, 0.09], hunterMetalMaterial)
+
+  const arm = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.065, 0.055, 1.38, 8),
+    hunterJointMaterial,
+  )
+  const armRotation = side * -0.06
+  arm.position.set(side * 0.49, 1.88, 0)
+  arm.rotation.z = armRotation
+  hunterVisual.add(arm)
+  hunterGlitchParts.push({ part: arm, baseRotation: armRotation })
+
+  addBox(hunterVisual, [0.16, 0.2, 0.18], [side * 0.53, 1.15, 0], hunterMetalMaterial)
 }
 
+const hunterEye = new THREE.Mesh(new THREE.SphereGeometry(0.09, 14, 10), hunterEyeMaterial)
+hunterEye.position.set(0, 3.03, 0.21)
+hunterVisual.add(hunterEye)
+
+const hunterEyeLight = new THREE.PointLight(0xff0800, 7, 6, 2)
+hunterEyeLight.position.set(0, 3.03, 0.45)
+hunterVisual.add(hunterEyeLight)
+
+const hunterScanlines = new THREE.Group()
+for (const [y, width] of [
+  [0.42, 0.58],
+  [0.78, 0.62],
+  [1.14, 0.72],
+  [1.5, 0.7],
+  [1.86, 0.86],
+  [2.22, 0.82],
+  [2.58, 0.94],
+  [2.94, 0.58],
+]) {
+  const scanline = new THREE.Mesh(new THREE.PlaneGeometry(width, 0.018), hunterScanlineMaterial)
+  scanline.position.set(0, y, 0.23)
+  hunterScanlines.add(scanline)
+}
+hunterVisual.add(hunterScanlines)
+
+ghost.add(hunterVisual)
 ghost.position.copy(ghostStartPosition)
 scene.add(ghost)
+
+function updateHunterEffects(time) {
+  if (time >= nextHunterGlitchAt) {
+    hunterGlitchEndsAt = time + 35 + Math.random() * 65
+    nextHunterGlitchAt = time + 180 + Math.random() * 520
+  }
+
+  const isGlitching = time < hunterGlitchEndsAt
+
+  if (isGlitching) {
+    hunterVisual.position.set(
+      (Math.random() - 0.5) * 0.18,
+      (Math.random() - 0.5) * 0.07,
+      (Math.random() - 0.5) * 0.08,
+    )
+    hunterVisual.rotation.z = (Math.random() - 0.5) * 0.06
+
+    for (const { part, baseRotation } of hunterGlitchParts) {
+      part.rotation.z = baseRotation + (Math.random() - 0.5) * 0.22
+    }
+  } else {
+    hunterVisual.position.set(0, 0, 0)
+    hunterVisual.rotation.z = 0
+
+    for (const { part, baseRotation } of hunterGlitchParts) {
+      part.rotation.z = baseRotation
+    }
+  }
+
+  const scanlinePulse = 0.06 + (Math.sin(time * 0.045) + 1) * 0.025
+  hunterScanlineMaterial.opacity = scanlinePulse + (isGlitching ? Math.random() * 0.1 : 0)
+  hunterScanlines.position.y = ((time * 0.00035) % 0.18) - 0.09
+  hunterEyeMaterial.emissiveIntensity = 4.5 + (isGlitching ? Math.random() * 2.5 : 0)
+  hunterEyeLight.intensity = 7 + (isGlitching ? Math.random() * 4 : Math.sin(time * 0.01))
+}
 
 function rushGhost() {
   ghostRushEndsAt = performance.now() + ghostRushDuration
@@ -512,6 +607,10 @@ function restartGame() {
   camera.rotation.set(0, 0, 0)
   ghost.position.copy(ghostStartPosition)
   ghost.rotation.set(0, 0, 0)
+  hunterVisual.position.set(0, 0, 0)
+  hunterVisual.rotation.set(0, 0, 0)
+  nextHunterGlitchAt = 0
+  hunterGlitchEndsAt = 0
   ghostRushEndsAt = 0
   activeDoorSlam = null
   cameraShakeEndsAt = 0
@@ -538,6 +637,7 @@ renderer.setAnimationLoop((time) => {
 
   updateLightFlicker(time)
   updateDoorSlam(time)
+  updateHunterEffects(time)
 
   movement.set(0, 0, 0)
   camera.getWorldDirection(forward)
