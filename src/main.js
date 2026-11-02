@@ -312,6 +312,8 @@ scene.add(corridor)
 
 const ghostStartPosition = new THREE.Vector3(0, floorY + 0.08, corridorEndZ + 4)
 const ghost = new THREE.Group()
+const ghostDirection = new THREE.Vector3()
+const ghostDriftSpeed = 0.55
 const ghostMaterial = new THREE.MeshStandardMaterial({
   color: 0xe5edef,
   emissive: 0x839296,
@@ -354,6 +356,21 @@ for (const side of [-1, 1]) {
 ghost.position.copy(ghostStartPosition)
 scene.add(ghost)
 
+function updateGhost(delta, time) {
+  ghostDirection.set(
+    camera.position.x - ghost.position.x,
+    0,
+    camera.position.z - ghost.position.z,
+  )
+
+  if (ghostDirection.lengthSq() > 0.0001) {
+    ghost.position.addScaledVector(ghostDirection.normalize(), ghostDriftSpeed * delta)
+    ghost.lookAt(camera.position.x, ghost.position.y, camera.position.z)
+  }
+
+  ghost.position.y = ghostStartPosition.y + Math.sin(time * 0.0012) * 0.08
+}
+
 renderer.setClearColor(0x000000)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 renderer.setSize(window.innerWidth, window.innerHeight)
@@ -379,6 +396,8 @@ renderer.setAnimationLoop((time) => {
   if (movement.lengthSq() > 0) {
     camera.position.addScaledVector(movement.normalize(), movementSpeed * delta)
   }
+
+  updateGhost(delta, time)
 
   renderer.render(scene, camera)
 })
