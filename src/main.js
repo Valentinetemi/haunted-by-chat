@@ -182,6 +182,84 @@ for (const z of [-11, -27, -43, -59]) {
 
 corridor.add(classroomDoors)
 
+const exitDoor = new THREE.Group()
+const exitDoorZ = corridorEndZ + 0.09
+const exitDoorHeight = 3.2
+const exitDoorWidth = 2.3
+const exitDoorCenterY = floorY + exitDoorHeight / 2
+const exitDoorMaterial = new THREE.MeshStandardMaterial({
+  color: 0x1b2723,
+  roughness: 0.8,
+})
+const panicBarMaterial = new THREE.MeshStandardMaterial({
+  color: 0x8b8f86,
+  roughness: 0.35,
+  metalness: 0.8,
+})
+
+addBox(
+  exitDoor,
+  [exitDoorWidth, exitDoorHeight, 0.14],
+  [0, exitDoorCenterY, exitDoorZ],
+  exitDoorMaterial,
+)
+addBox(
+  exitDoor,
+  [0.14, exitDoorHeight + 0.18, 0.22],
+  [-(exitDoorWidth / 2 + 0.07), exitDoorCenterY + 0.09, exitDoorZ],
+  doorFrameMaterial,
+)
+addBox(
+  exitDoor,
+  [0.14, exitDoorHeight + 0.18, 0.22],
+  [exitDoorWidth / 2 + 0.07, exitDoorCenterY + 0.09, exitDoorZ],
+  doorFrameMaterial,
+)
+addBox(
+  exitDoor,
+  [exitDoorWidth + 0.28, 0.14, 0.22],
+  [0, floorY + exitDoorHeight + 0.07, exitDoorZ],
+  doorFrameMaterial,
+)
+addBox(
+  exitDoor,
+  [1.35, 0.09, 0.1],
+  [0, floorY + 1.15, exitDoorZ + 0.13],
+  panicBarMaterial,
+)
+
+const exitSignCanvas = document.createElement('canvas')
+exitSignCanvas.width = 512
+exitSignCanvas.height = 192
+
+const exitSignContext = exitSignCanvas.getContext('2d')
+exitSignContext.fillStyle = '#082d20'
+exitSignContext.fillRect(0, 0, exitSignCanvas.width, exitSignCanvas.height)
+exitSignContext.strokeStyle = '#8dffc0'
+exitSignContext.lineWidth = 14
+exitSignContext.strokeRect(8, 8, exitSignCanvas.width - 16, exitSignCanvas.height - 16)
+exitSignContext.fillStyle = '#d8ffe8'
+exitSignContext.font = 'bold 118px sans-serif'
+exitSignContext.textAlign = 'center'
+exitSignContext.textBaseline = 'middle'
+exitSignContext.fillText('EXIT', exitSignCanvas.width / 2, exitSignCanvas.height / 2 + 6)
+
+const exitSignTexture = new THREE.CanvasTexture(exitSignCanvas)
+exitSignTexture.colorSpace = THREE.SRGBColorSpace
+
+const exitSign = new THREE.Mesh(
+  new THREE.PlaneGeometry(1.9, 0.7),
+  new THREE.MeshBasicMaterial({ map: exitSignTexture, toneMapped: false }),
+)
+exitSign.position.set(0, floorY + exitDoorHeight + 0.62, exitDoorZ + 0.13)
+exitDoor.add(exitSign)
+
+const exitLight = new THREE.PointLight(0x67ff9b, 6, 7, 2)
+exitLight.position.set(0, floorY + exitDoorHeight + 0.45, exitDoorZ + 0.7)
+exitDoor.add(exitLight)
+
+corridor.add(exitDoor)
+
 scene.add(corridor)
 
 renderer.setClearColor(0x000000)
