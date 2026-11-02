@@ -49,10 +49,11 @@ const ceilingMaterial = new THREE.MeshStandardMaterial({
   color: 0x1b1e20,
   roughness: 1,
 })
+const fixtureEmissiveIntensity = 0.65
 const fixtureMaterial = new THREE.MeshStandardMaterial({
   color: 0x73543b,
   emissive: 0xffa85c,
-  emissiveIntensity: 0.65,
+  emissiveIntensity: fixtureEmissiveIntensity,
   roughness: 0.55,
 })
 
@@ -120,6 +121,43 @@ for (const z of [2, -10, -22, -34, -46, -58, -68]) {
   light.position.set(0, ceilingY - 0.3, z)
   corridor.add(light)
   ceilingLights.push({ fixture, light })
+}
+
+const flickerDuration = 2000
+let flickerEndsAt = 0
+let nextFlickerPulseAt = 0
+
+function flickerLights() {
+  const now = performance.now()
+
+  flickerEndsAt = now + flickerDuration
+  nextFlickerPulseAt = now
+}
+
+function updateLightFlicker(now) {
+  if (flickerEndsAt === 0) return
+
+  if (now >= flickerEndsAt) {
+    for (const { fixture, light } of ceilingLights) {
+      light.intensity = ceilingLightIntensity
+      fixture.material.emissiveIntensity = fixtureEmissiveIntensity
+    }
+
+    flickerEndsAt = 0
+    return
+  }
+
+  if (now < nextFlickerPulseAt) return
+
+  for (const { fixture, light } of ceilingLights) {
+    const brightness =
+      Math.random() < 0.45 ? Math.random() * 0.12 : 0.35 + Math.random() * 0.65
+
+    light.intensity = ceilingLightIntensity * brightness
+    fixture.material.emissiveIntensity = fixtureEmissiveIntensity * brightness
+  }
+
+  nextFlickerPulseAt = now + 45 + Math.random() * 110
 }
 
 const classroomDoors = new THREE.Group()
@@ -278,8 +316,10 @@ renderer.setSize(window.innerWidth, window.innerHeight)
 
 document.querySelector('#app').appendChild(renderer.domElement)
 
-renderer.setAnimationLoop(() => {
+renderer.setAnimationLoop((time) => {
   const delta = Math.min(clock.getDelta(), 0.1)
+
+  updateLightFlicker(time)
 
   movement.set(0, 0, 0)
   camera.getWorldDirection(forward)
@@ -300,6 +340,10 @@ renderer.setAnimationLoop(() => {
 })
 
 window.addEventListener('keydown', (event) => {
+  if (event.code === 'Digit2' && !event.repeat) {
+    flickerLights()
+  }
+
   if (document.pointerLockElement === renderer.domElement) {
     pressedKeys.add(event.code)
   }
