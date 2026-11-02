@@ -39,28 +39,60 @@ let whisperTimeoutId = 0
 camera.position.z = 5
 camera.rotation.order = 'YXZ'
 
-scene.background = new THREE.Color(0x020506)
-scene.fog = new THREE.FogExp2(0x020506, 0.027)
+scene.background = new THREE.Color(0xcbd3d4)
+scene.fog = new THREE.FogExp2(0xcbd3d4, 0.0045)
 
 const corridor = new THREE.Group()
+
+function createTileTexture(baseColor, groutColor, repeatX, repeatY) {
+  const canvas = document.createElement('canvas')
+  canvas.width = 128
+  canvas.height = 128
+
+  const context = canvas.getContext('2d')
+  context.fillStyle = baseColor
+  context.fillRect(0, 0, canvas.width, canvas.height)
+  context.fillStyle = groutColor
+  context.fillRect(0, 0, canvas.width, 5)
+  context.fillRect(0, 0, 5, canvas.height)
+
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  texture.wrapS = THREE.RepeatWrapping
+  texture.wrapT = THREE.RepeatWrapping
+  texture.repeat.set(repeatX, repeatY)
+
+  return texture
+}
+
+const floorTileTexture = createTileTexture('#e3e5e1', '#aeb5b2', 7, 56)
+const wallTileTexture = createTileTexture('#f0f1ed', '#bbc1bf', 48, 4)
+const endWallTileTexture = createTileTexture('#f0f1ed', '#bbc1bf', 7, 4)
 const floorMaterial = new THREE.MeshStandardMaterial({
-  color: 0x171a1c,
-  roughness: 0.92,
+  color: 0xf4f5f0,
+  map: floorTileTexture,
+  roughness: 0.76,
 })
 const wallMaterial = new THREE.MeshStandardMaterial({
-  color: 0x323638,
-  roughness: 1,
+  color: 0xffffff,
+  map: wallTileTexture,
+  roughness: 0.82,
+})
+const endWallMaterial = new THREE.MeshStandardMaterial({
+  color: 0xffffff,
+  map: endWallTileTexture,
+  roughness: 0.82,
 })
 const ceilingMaterial = new THREE.MeshStandardMaterial({
-  color: 0x1b1e20,
-  roughness: 1,
+  color: 0xe8edec,
+  roughness: 0.88,
 })
-const fixtureEmissiveIntensity = 0.65
+const fixtureEmissiveIntensity = 2.5
 const fixtureMaterial = new THREE.MeshStandardMaterial({
-  color: 0x73543b,
-  emissive: 0xffa85c,
+  color: 0xd9edf2,
+  emissive: 0xebfbff,
   emissiveIntensity: fixtureEmissiveIntensity,
-  roughness: 0.55,
+  roughness: 0.35,
 })
 
 function addBox(parent, size, position, material) {
@@ -100,19 +132,19 @@ addBox(
   corridor,
   [corridorWidth, corridorHeight, 0.2],
   [0, (floorY + ceilingY) / 2, corridorEndZ - 0.1],
-  wallMaterial,
+  endWallMaterial,
 )
 addBox(
   corridor,
   [corridorWidth, corridorHeight, 0.2],
   [0, (floorY + ceilingY) / 2, corridorStartZ + 0.1],
-  wallMaterial,
+  endWallMaterial,
 )
 
-const ambientLight = new THREE.AmbientLight(0x59636b, 0.16)
+const ambientLight = new THREE.AmbientLight(0xddeaf0, 0.55)
 scene.add(ambientLight)
 
-const ceilingLightIntensity = 12
+const ceilingLightIntensity = 34
 const ceilingLights = []
 
 for (const z of [2, -10, -22, -34, -46, -58, -68]) {
@@ -123,7 +155,7 @@ for (const z of [2, -10, -22, -34, -46, -58, -68]) {
     fixtureMaterial.clone(),
   )
 
-  const light = new THREE.PointLight(0xffb66f, ceilingLightIntensity, 16, 2)
+  const light = new THREE.PointLight(0xe5f8ff, ceilingLightIntensity, 20, 2)
   light.position.set(0, ceilingY - 0.3, z)
   corridor.add(light)
   ceilingLights.push({ fixture, light })
