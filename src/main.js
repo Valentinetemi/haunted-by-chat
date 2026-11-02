@@ -318,6 +318,9 @@ const ghost = new THREE.Group()
 const ghostDirection = new THREE.Vector3()
 const ghostDriftSpeed = 0.55
 const ghostCatchDistance = 1.05
+const ghostRushDuration = 4000
+const ghostRushMultiplier = 3
+let ghostRushEndsAt = 0
 const ghostMaterial = new THREE.MeshStandardMaterial({
   color: 0xe5edef,
   emissive: 0x839296,
@@ -360,6 +363,10 @@ for (const side of [-1, 1]) {
 ghost.position.copy(ghostStartPosition)
 scene.add(ghost)
 
+function rushGhost() {
+  ghostRushEndsAt = performance.now() + ghostRushDuration
+}
+
 function updateGhost(delta, time) {
   ghostDirection.set(
     camera.position.x - ghost.position.x,
@@ -368,7 +375,12 @@ function updateGhost(delta, time) {
   )
 
   if (ghostDirection.lengthSq() > 0.0001) {
-    ghost.position.addScaledVector(ghostDirection.normalize(), ghostDriftSpeed * delta)
+    const speedMultiplier = time < ghostRushEndsAt ? ghostRushMultiplier : 1
+
+    ghost.position.addScaledVector(
+      ghostDirection.normalize(),
+      ghostDriftSpeed * speedMultiplier * delta,
+    )
     ghost.lookAt(camera.position.x, ghost.position.y, camera.position.z)
   }
 
@@ -401,6 +413,7 @@ function restartGame() {
   camera.rotation.set(0, 0, 0)
   ghost.position.copy(ghostStartPosition)
   ghost.rotation.set(0, 0, 0)
+  ghostRushEndsAt = 0
   pressedKeys.clear()
   caughtScreen.hidden = true
   startScreen.hidden = false
@@ -446,6 +459,15 @@ renderer.setAnimationLoop((time) => {
 window.addEventListener('keydown', (event) => {
   if (event.code === 'Digit2' && !event.repeat) {
     flickerLights()
+  }
+
+  if (
+    event.code === 'Digit4' &&
+    !event.repeat &&
+    !playerCaught &&
+    document.pointerLockElement === renderer.domElement
+  ) {
+    rushGhost()
   }
 
   if (document.pointerLockElement === renderer.domElement) {
