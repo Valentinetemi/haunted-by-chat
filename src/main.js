@@ -15,6 +15,7 @@ const pressedKeys = new Set()
 const movement = new THREE.Vector3()
 const forward = new THREE.Vector3()
 const right = new THREE.Vector3()
+const cameraShakeOffset = new THREE.Vector3()
 const movementSpeed = 5
 const lookSensitivity = 0.002
 const maxPitch = Math.PI / 2 - 0.01
@@ -164,6 +165,13 @@ function updateLightFlicker(now) {
 }
 
 const classroomDoors = new THREE.Group()
+const classroomDoorPanels = []
+const doorSlamDuration = 240
+const doorSlamRange = 18
+const cameraShakeDuration = 260
+const cameraShakeStrength = 0.06
+let activeDoorSlam = null
+let cameraShakeEndsAt = 0
 const doorMaterial = new THREE.MeshStandardMaterial({
   color: 0x29312d,
   roughness: 0.86,
@@ -190,7 +198,6 @@ function addClassroomDoor(side, z) {
   const doorX = side * (corridorWidth / 2 - 0.05)
   const doorCenterY = floorY + doorHeight / 2
 
-  addBox(door, [0.14, doorHeight, doorWidth], [doorX, doorCenterY, z], doorMaterial)
   addBox(
     door,
     [0.2, doorHeight + 0.18, 0.12],
@@ -209,18 +216,32 @@ function addClassroomDoor(side, z) {
     [doorX, floorY + doorHeight + 0.06, z],
     doorFrameMaterial,
   )
+
+  const hinge = new THREE.Group()
+  const openRotation = side * -0.58
+  hinge.position.set(doorX, 0, z - doorWidth / 2)
+  hinge.rotation.y = openRotation
+
   addBox(
-    door,
+    hinge,
+    [0.14, doorHeight, doorWidth],
+    [0, doorCenterY, doorWidth / 2],
+    doorMaterial,
+  )
+  addBox(
+    hinge,
     [0.05, 0.62, 0.5],
-    [doorX - side * 0.1, floorY + 2.15, z],
+    [-side * 0.1, floorY + 2.15, doorWidth / 2],
     doorWindowMaterial,
   )
 
   const handle = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 8), handleMaterial)
-  handle.position.set(doorX - side * 0.13, floorY + 1.05, z + 0.46)
-  door.add(handle)
+  handle.position.set(-side * 0.13, floorY + 1.05, doorWidth / 2 + 0.46)
+  hinge.add(handle)
 
+  door.add(hinge)
   classroomDoors.add(door)
+  classroomDoorPanels.push({ hinge, openRotation, z })
 }
 
 for (const z of [-5, -21, -37, -53]) {
@@ -229,6 +250,68 @@ for (const z of [-5, -21, -37, -53]) {
 
 for (const z of [-11, -27, -43, -59]) {
   addClassroomDoor(1, z)
+}
+
+function slamDoor() {
+  if (activeDoorSlam) {
+    activeDoorSlam.door.hinge.rotation.y = 0
+  }
+
+  const nearbyDoors = classroomDoorPanels.filter(
+    (door) => Math.abs(door.z - camera.position.z) <= doorSlamRange,
+  )
+  const fallbackDoors = [...classroomDoorPanels]
+    .sort(
+      (doorA, doorB) =>
+        Math.abs(doorA.z - camera.position.z) - Math.abs(doorB.z - camera.position.z),
+    )
+    .slice(0, 2)
+  const candidates = nearbyDoors.length > 0 ? nearbyDoors : fallbackDoors
+  const openCandidates = candidates.filter((door) => Math.abs(door.hinge.rotation.y) > 0.05)
+  const doorPool = openCandidates.length > 0 ? openCandidates : candidates
+  const door = doorPool[Math.floor(Math.random() * doorPool.length)]
+
+  if (Math.abs(door.hinge.rotation.y) <= 0.05) {
+    door.hinge.rotation.y = door.openRotation
+  }
+
+  activeDoorSlam = {
+    door,
+    startedAt: performance.now(),
+    startRotation: door.hinge.rotation.y,
+  }
+}
+
+function updateDoorSlam(now) {
+  if (!activeDoorSlam) return
+
+  const progress = Math.min((now - activeDoorSlam.startedAt) / doorSlamDuration, 1)
+  const easedProgress = 1 - (1 - progress) ** 4
+
+  activeDoorSlam.door.hinge.rotation.y = THREE.MathUtils.lerp(
+    activeDoorSlam.startRotation,
+    0,
+    easedProgress,
+  )
+
+  if (progress === 1) {
+    activeDoorSlam = null
+    cameraShakeEndsAt = now + cameraShakeDuration
+  }
+}
+
+function applyCameraShake(now) {
+  cameraShakeOffset.set(0, 0, 0)
+
+  if (now >= cameraShakeEndsAt) return
+
+  const strength = cameraShakeStrength * ((cameraShakeEndsAt - now) / cameraShakeDuration)
+  cameraShakeOffset.set(
+    (Math.random() - 0.5) * strength,
+    (Math.random() - 0.5) * strength,
+    (Math.random() - 0.5) * strength * 0.5,
+  )
+  camera.position.add(cameraShakeOffset)
 }
 
 corridor.add(classroomDoors)
@@ -414,6 +497,12 @@ function restartGame() {
   ghost.position.copy(ghostStartPosition)
   ghost.rotation.set(0, 0, 0)
   ghostRushEndsAt = 0
+  activeDoorSlam = null
+  cameraShakeEndsAt = 0
+  cameraShakeOffset.set(0, 0, 0)
+  for (const door of classroomDoorPanels) {
+    door.hinge.rotation.y = door.openRotation
+  }
   pressedKeys.clear()
   caughtScreen.hidden = true
   startScreen.hidden = false
@@ -429,6 +518,7 @@ renderer.setAnimationLoop((time) => {
   const delta = Math.min(clock.getDelta(), 0.1)
 
   updateLightFlicker(time)
+  updateDoorSlam(time)
 
   movement.set(0, 0, 0)
   camera.getWorldDirection(forward)
@@ -453,12 +543,23 @@ renderer.setAnimationLoop((time) => {
     }
   }
 
+  applyCameraShake(time)
   renderer.render(scene, camera)
+  camera.position.sub(cameraShakeOffset)
 })
 
 window.addEventListener('keydown', (event) => {
   if (event.code === 'Digit2' && !event.repeat) {
     flickerLights()
+  }
+
+  if (
+    event.code === 'Digit3' &&
+    !event.repeat &&
+    !playerCaught &&
+    document.pointerLockElement === renderer.domElement
+  ) {
+    slamDoor()
   }
 
   if (
