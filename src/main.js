@@ -9,6 +9,7 @@ import {
 } from './house.js'
 import {
   furnishBathroom,
+  furnishAttic,
   furnishBasement,
   furnishEntrance,
   furnishKitchen,
@@ -39,6 +40,7 @@ furnishKitchen(house.group)
 const bathroomProps = furnishBathroom(house.group)
 furnishKidsBedroom(house.group)
 furnishBasement(house.group)
+furnishAttic(house.group)
 const pressedKeys = new Set()
 const movement = new THREE.Vector3()
 const forward = new THREE.Vector3()

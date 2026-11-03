@@ -342,3 +342,52 @@ export function furnishBasement(parent) {
   parent.add(group)
   return group
 }
+
+export function furnishAttic(parent) {
+  const group = new THREE.Group()
+  group.name = 'attic-props'
+  const beamMaterial = new THREE.MeshStandardMaterial({ color: 0x24160f, roughness: 0.98 })
+  const sheetMaterial = new THREE.MeshStandardMaterial({ color: 0x6e6a5e, roughness: 1 })
+
+  for (const z of [-21.5, -18, -14.5]) {
+    addBox(group, [7.4, 0.22, 0.28], [8, FLOOR_Y + 3.55, z], beamMaterial, 'attic-rafter')
+    for (const x of [4.8, 11.2]) {
+      const brace = addBox(group, [0.22, 3.4, 0.22], [x, FLOOR_Y + 1.7, z], beamMaterial)
+      brace.rotation.z = x < 8 ? -0.28 : 0.28
+    }
+  }
+
+  for (const [x, z, scale] of [[5.3, -21, 1], [6.6, -20.3, 0.72], [10.4, -14.4, 0.85], [9.5, -15.6, 0.65]]) {
+    const crate = addBox(
+      group,
+      [1.4 * scale, 1.1 * scale, 1.25 * scale],
+      [x, FLOOR_Y + 0.55 * scale, z],
+      wood,
+      'attic-crate',
+    )
+    crate.rotation.y = (x - z) * 0.09
+  }
+
+  const trunk = addBox(group, [2.4, 0.8, 1.15], [9.5, FLOOR_Y + 0.42, -20.4], darkWood, 'attic-trunk')
+  const trunkLid = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.58, 2.42, 12, 1, false, 0, Math.PI), darkWood)
+  trunkLid.position.set(9.5, FLOOR_Y + 0.82, -20.4)
+  trunkLid.rotation.set(0, 0, Math.PI / 2)
+  group.add(trunkLid)
+  trunk.userData.hidingSpot = true
+
+  const coveredShape = new THREE.Mesh(new THREE.ConeGeometry(1.15, 2.5, 10), sheetMaterial)
+  coveredShape.position.set(5.8, FLOOR_Y + 1.25, -14.3)
+  coveredShape.scale.z = 0.7
+  group.add(coveredShape)
+
+  const hangingBulb = new THREE.Mesh(
+    new THREE.SphereGeometry(0.12, 10, 8),
+    new THREE.MeshBasicMaterial({ color: 0xe0bd72, toneMapped: false }),
+  )
+  hangingBulb.position.set(8, FLOOR_Y + 2.85, -17.5)
+  group.add(hangingBulb)
+  addBox(group, [0.025, 0.75, 0.025], [8, FLOOR_Y + 3.3, -17.5], beamMaterial)
+
+  parent.add(group)
+  return group
+}
