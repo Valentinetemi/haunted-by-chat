@@ -8,6 +8,7 @@ import {
   createHauntedHouse,
 } from './house.js'
 import { createBlackPuddles } from './effects.js'
+import { createHidingSystem } from './hiding.js'
 import { createMother, updateMotherAnimation } from './mother.js'
 import {
   furnishBathroom,
@@ -60,6 +61,8 @@ const stunHud = document.querySelector('#stun-hud')
 const shotsRemainingDisplay = document.querySelector('#shots-remaining')
 const caughtScreen = document.querySelector('#caught-screen')
 const restartButton = document.querySelector('#restart-button')
+const interactionPrompt = document.querySelector('#interaction-prompt')
+const hiding = createHidingSystem(camera, interactionPrompt)
 let yaw = 0
 let pitch = 0
 let playerCaught = false
@@ -214,7 +217,12 @@ function updateStunHud() {
 }
 
 function fireStunBlaster() {
-  if (stunShotsRemaining === 0 || playerCaught || document.pointerLockElement !== renderer.domElement) return
+  if (
+    stunShotsRemaining === 0 ||
+    playerCaught ||
+    hiding.isHidden ||
+    document.pointerLockElement !== renderer.domElement
+  ) return
   const direction = new THREE.Vector3()
   camera.getWorldDirection(direction)
   const bolt = new THREE.Mesh(stunBoltGeometry, stunBoltMaterial)
@@ -289,6 +297,7 @@ function updateGhost(delta, time) {
 }
 
 function ghostReachedPlayer() {
+  if (hiding.isHidden) return false
   const xDistance = camera.position.x - ghost.position.x
   const zDistance = camera.position.z - ghost.position.z
   return xDistance ** 2 + zDistance ** 2 <= ghostCatchDistance ** 2
@@ -323,6 +332,7 @@ function restartGame() {
   whisperMessage.classList.remove('is-visible')
   for (const door of house.doors) door.hinge.rotation.y = door.openRotation
   bathroomProps.reset()
+  hiding.reset()
   pressedKeys.clear()
   caughtScreen.hidden = true
   startScreen.hidden = false
@@ -334,6 +344,7 @@ renderer.setAnimationLoop((time) => {
   blackPuddles.update(time)
   updateDoorSlam(time)
   if (bathroomProps.update(camera.position, time, !playerCaught)) audio.mirror()
+  hiding.update(!playerCaught && document.pointerLockElement === renderer.domElement)
   updateStunBolts(delta, time)
   updateHunterEffects(time)
   updateHunterStun(time)
@@ -347,7 +358,9 @@ renderer.setAnimationLoop((time) => {
   if (pressedKeys.has('KeyS')) movement.sub(forward)
   if (pressedKeys.has('KeyD')) movement.add(right)
   if (pressedKeys.has('KeyA')) movement.sub(right)
-  if (movement.lengthSq() > 0) camera.position.addScaledVector(movement.normalize(), movementSpeed * delta)
+  if (movement.lengthSq() > 0 && !hiding.isHidden) {
+    camera.position.addScaledVector(movement.normalize(), movementSpeed * delta)
+  }
 
   if (!playerCaught && document.pointerLockElement === renderer.domElement) {
     if (time >= hunterFrozenUntil) updateGhost(delta, time)
@@ -359,6 +372,7 @@ renderer.setAnimationLoop((time) => {
 })
 
 window.addEventListener('keydown', (event) => {
+  if (event.code === 'KeyE' && !event.repeat && !playerCaught) hiding.toggle()
   if (event.code === 'Digit1' && !event.repeat && !playerCaught) whisper('behind you')
   if (event.code === 'Digit2' && !event.repeat) flickerLights()
   if (event.code === 'Digit3' && !event.repeat && !playerCaught) slamDoor()

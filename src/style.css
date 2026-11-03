@@ -84,6 +84,27 @@ canvas {
   animation: whisper-fade 3s ease-in-out forwards;
 }
 
+#interaction-prompt {
+  position: fixed;
+  bottom: 5.5rem;
+  left: 50%;
+  z-index: 15;
+  margin: 0;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid rgb(215 202 176 / 30%);
+  color: #e8dec9;
+  background: rgb(9 7 7 / 78%);
+  font: 600 0.78rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+#interaction-prompt[hidden] {
+  display: none;
+}
+
 #twitch-feed {
   position: fixed;
   bottom: 1rem;
