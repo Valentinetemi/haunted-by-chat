@@ -7,7 +7,12 @@ import {
   addBox,
   createHauntedHouse,
 } from './house.js'
-import { furnishEntrance, furnishKitchen, furnishLivingRoom } from './props.js'
+import {
+  furnishBathroom,
+  furnishEntrance,
+  furnishKitchen,
+  furnishLivingRoom,
+} from './props.js'
 import './style.css'
 
 const scene = new THREE.Scene()
@@ -29,6 +34,7 @@ const house = createHauntedHouse(scene)
 furnishEntrance(house.group)
 furnishLivingRoom(house.group)
 furnishKitchen(house.group)
+const bathroomProps = furnishBathroom(house.group)
 const pressedKeys = new Set()
 const movement = new THREE.Vector3()
 const forward = new THREE.Vector3()
@@ -396,6 +402,7 @@ function restartGame() {
   whisperMessage.hidden = true
   whisperMessage.classList.remove('is-visible')
   for (const door of house.doors) door.hinge.rotation.y = door.openRotation
+  bathroomProps.reset()
   pressedKeys.clear()
   caughtScreen.hidden = true
   startScreen.hidden = false
@@ -405,6 +412,7 @@ renderer.setAnimationLoop((time) => {
   const delta = Math.min(clock.getDelta(), 0.1)
   updateLightFlicker(time)
   updateDoorSlam(time)
+  bathroomProps.update(camera.position, time, !playerCaught)
   updateStunBolts(delta, time)
   if (time >= hunterFrozenUntil) updateHunterEffects(time)
   updateHunterStun(time)

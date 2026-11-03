@@ -157,3 +157,84 @@ export function furnishKitchen(parent) {
   parent.add(group)
   return group
 }
+
+export function furnishBathroom(parent) {
+  const group = new THREE.Group()
+  group.name = 'bathroom-props'
+  const porcelain = new THREE.MeshStandardMaterial({ color: 0x9aa5a2, roughness: 0.42 })
+  const tarnishedMetal = new THREE.MeshStandardMaterial({
+    color: 0x566365,
+    metalness: 0.72,
+    roughness: 0.45,
+  })
+
+  addBox(group, [3.2, 0.9, 1.55], [-9.7, FLOOR_Y + 0.46, -10.85], porcelain, 'bathtub')
+  addBox(group, [2.75, 0.6, 1.12], [-9.7, FLOOR_Y + 0.78, -10.55], new THREE.MeshStandardMaterial({ color: 0x172326, roughness: 0.3 }))
+
+  const toiletBowl = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.3, 0.55, 14), porcelain)
+  toiletBowl.position.set(-5.4, FLOOR_Y + 0.32, -9.8)
+  group.add(toiletBowl)
+  addBox(group, [0.9, 1.05, 0.45], [-5.4, FLOOR_Y + 0.72, -10.3], porcelain, 'toilet')
+
+  addBox(group, [1.7, 0.22, 0.78], [-11.45, FLOOR_Y + 1, -5.4], porcelain, 'bathroom-sink')
+  addBox(group, [0.22, 1, 0.22], [-11.45, FLOOR_Y + 0.48, -5.4], tarnishedMetal)
+  const faucet = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.035, 6, 10, Math.PI), tarnishedMetal)
+  faucet.position.set(-11.12, FLOOR_Y + 1.28, -5.4)
+  faucet.rotation.y = Math.PI / 2
+  group.add(faucet)
+
+  const mirrorFrame = addBox(group, [0.12, 2.25, 2.1], [-11.78, FLOOR_Y + 2.25, -5.4], darkWood, 'haunted-mirror')
+  const mirror = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.78, 1.92),
+    new THREE.MeshStandardMaterial({
+      color: 0x35464c,
+      emissive: 0x10191d,
+      emissiveIntensity: 0.3,
+      metalness: 0.82,
+      roughness: 0.2,
+    }),
+  )
+  mirror.position.set(-11.7, FLOOR_Y + 2.25, -5.4)
+  mirror.rotation.y = Math.PI / 2
+  group.add(mirror)
+
+  const reflection = new THREE.Group()
+  const shadowMaterial = new THREE.MeshBasicMaterial({ color: 0x030202, transparent: true, opacity: 0.92 })
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 8), shadowMaterial)
+  head.position.set(0, 0.52, 0)
+  reflection.add(head)
+  addBox(reflection, [0.7, 1.25, 0.035], [0, -0.22, 0], shadowMaterial)
+  reflection.position.set(-11.63, FLOOR_Y + 2.15, -5.4)
+  reflection.rotation.y = Math.PI / 2
+  reflection.visible = false
+  group.add(reflection)
+  mirrorFrame.userData.mirrorScare = true
+
+  let scareStartedAt = 0
+  let hasTriggered = false
+  const update = (playerPosition, time, active) => {
+    const isNearMirror =
+      active &&
+      playerPosition.x < -8.7 &&
+      playerPosition.z > -7.8 &&
+      playerPosition.z < -3.5
+
+    if (isNearMirror && !hasTriggered) {
+      hasTriggered = true
+      scareStartedAt = time
+    }
+    reflection.visible = scareStartedAt > 0 && time - scareStartedAt < 1250
+    if (reflection.visible) {
+      reflection.scale.setScalar(1 + Math.sin(time * 0.035) * 0.025)
+    }
+  }
+
+  const reset = () => {
+    scareStartedAt = 0
+    hasTriggered = false
+    reflection.visible = false
+  }
+
+  parent.add(group)
+  return { group, reset, update }
+}
