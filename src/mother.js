@@ -83,7 +83,7 @@ export function createMother() {
       [side * 0.48, 2.05, 0],
     )
     upperArm.rotation.z = side * -0.13
-    limbs.push({ mesh: upperArm, side, phase: 0 })
+    limbs.push({ baseZ: upperArm.rotation.z, mesh: upperArm, side, phase: 0 })
 
     const forearm = addMesh(
       group,
@@ -92,7 +92,7 @@ export function createMother() {
       [side * 0.6, 0.92, 0.03],
     )
     forearm.rotation.z = side * -0.07
-    limbs.push({ mesh: forearm, side, phase: Math.PI })
+    limbs.push({ baseZ: forearm.rotation.z, mesh: forearm, side, phase: Math.PI })
 
     const palm = addMesh(
       group,
@@ -128,5 +128,33 @@ export function createMother() {
     skinMaterial,
     stunLight,
     torso,
+  }
+}
+
+export function updateMotherAnimation(mother, time, chaseIntensity, isStunned) {
+  if (isStunned) {
+    mother.group.position.y = 0
+    mother.group.rotation.z = Math.sin(time * 0.045) * 0.018
+    mother.head.rotation.z = -0.08
+    for (const limb of mother.limbs) {
+      limb.mesh.rotation.x = 0
+      limb.mesh.rotation.z = limb.baseZ
+    }
+    return
+  }
+
+  const seconds = time * 0.001
+  const pace = 2.4 + chaseIntensity * 1.15
+  const reach = 0.08 + chaseIntensity * 0.055
+  mother.group.position.y = Math.sin(seconds * pace * 1.9) * 0.045
+  mother.group.rotation.z = Math.sin(seconds * pace * 0.42) * 0.025
+  mother.torso.rotation.y = Math.sin(seconds * pace * 0.55) * 0.055
+  mother.head.rotation.z = -0.08 + Math.sin(seconds * 0.7) * 0.06
+  mother.head.rotation.y = Math.sin(seconds * 0.43) * 0.12
+
+  for (const limb of mother.limbs) {
+    const swing = Math.sin(seconds * pace + limb.phase) * reach
+    limb.mesh.rotation.x = swing
+    limb.mesh.rotation.z = limb.baseZ + limb.side * Math.abs(swing) * 0.18
   }
 }

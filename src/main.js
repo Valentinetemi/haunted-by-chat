@@ -6,7 +6,7 @@ import {
   PLAYER_START,
   createHauntedHouse,
 } from './house.js'
-import { createMother } from './mother.js'
+import { createMother, updateMotherAnimation } from './mother.js'
 import {
   furnishBathroom,
   furnishAttic,
@@ -195,6 +195,9 @@ ghost.position.copy(ghostStartPosition)
 scene.add(ghost)
 
 function updateHunterEffects(time) {
+  const isStunned = time < hunterFrozenUntil
+  const chaseIntensity = time < ghostRushEndsAt ? 2.2 : 1
+  updateMotherAnimation(mother, time, chaseIntensity, isStunned)
   mother.skinMaterial.emissiveIntensity = 0.2 + Math.sin(time * 0.002) * 0.05
 }
 
@@ -321,7 +324,7 @@ renderer.setAnimationLoop((time) => {
   updateDoorSlam(time)
   bathroomProps.update(camera.position, time, !playerCaught)
   updateStunBolts(delta, time)
-  if (time >= hunterFrozenUntil) updateHunterEffects(time)
+  updateHunterEffects(time)
   updateHunterStun(time)
 
   movement.set(0, 0, 0)
