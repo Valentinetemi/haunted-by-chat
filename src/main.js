@@ -6,6 +6,7 @@ import {
   PLAYER_START,
   createHauntedHouse,
 } from './house.js'
+import { createBlackPuddles } from './effects.js'
 import { createMother, updateMotherAnimation } from './mother.js'
 import {
   furnishBathroom,
@@ -34,6 +35,7 @@ document.querySelector('#app').appendChild(renderer.domElement)
 
 const clock = new THREE.Clock()
 const house = createHauntedHouse(scene)
+const blackPuddles = createBlackPuddles(house.group)
 furnishEntrance(house.group)
 furnishLivingRoom(house.group)
 furnishKitchen(house.group)
@@ -321,6 +323,7 @@ function restartGame() {
 renderer.setAnimationLoop((time) => {
   const delta = Math.min(clock.getDelta(), 0.1)
   updateLightFlicker(time)
+  blackPuddles.update(time)
   updateDoorSlam(time)
   bathroomProps.update(camera.position, time, !playerCaught)
   updateStunBolts(delta, time)
