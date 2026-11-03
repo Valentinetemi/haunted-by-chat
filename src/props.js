@@ -289,3 +289,56 @@ export function furnishKidsBedroom(parent) {
   parent.add(group)
   return group
 }
+
+export function furnishBasement(parent) {
+  const group = new THREE.Group()
+  group.name = 'basement-props'
+  const concrete = new THREE.MeshStandardMaterial({ color: 0x373532, roughness: 1 })
+  const rust = new THREE.MeshStandardMaterial({ color: 0x4b2a1d, metalness: 0.55, roughness: 0.78 })
+  const pipe = new THREE.MeshStandardMaterial({ color: 0x394142, metalness: 0.7, roughness: 0.58 })
+
+  const boiler = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.15, 2.85, 12), rust)
+  boiler.position.set(-10.1, FLOOR_Y + 1.42, -20.8)
+  group.add(boiler)
+  for (const y of [0.55, 1.45, 2.3]) {
+    const band = new THREE.Mesh(new THREE.TorusGeometry(1.12, 0.06, 6, 12), pipe)
+    band.position.set(-10.1, FLOOR_Y + y, -20.8)
+    band.rotation.x = Math.PI / 2
+    group.add(band)
+  }
+
+  const gauge = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.27, 0.27, 0.1, 14),
+    new THREE.MeshStandardMaterial({ color: 0xb4aa8c, roughness: 0.45 }),
+  )
+  gauge.position.set(-9.15, FLOOR_Y + 1.85, -20.8)
+  gauge.rotation.z = Math.PI / 2
+  group.add(gauge)
+
+  for (const z of [-14.1, -16.3]) {
+    addBox(group, [2.8, 0.16, 0.65], [-10.2, FLOOR_Y + 0.55, z], concrete, 'basement-shelf')
+    addBox(group, [2.8, 0.16, 0.65], [-10.2, FLOOR_Y + 1.45, z], concrete)
+    for (const x of [-11.45, -8.95]) {
+      addBox(group, [0.14, 2.1, 0.14], [x, FLOOR_Y + 1.05, z], rust)
+    }
+  }
+
+  for (const [x, z, scale] of [[-6.4, -21, 1], [-7.5, -19.7, 0.7], [-5.8, -16, 0.85]]) {
+    const crate = addBox(
+      group,
+      [1.2 * scale, 1.05 * scale, 1.15 * scale],
+      [x, FLOOR_Y + 0.53 * scale, z],
+      wood,
+      'basement-crate',
+    )
+    crate.rotation.y = (x + z) * 0.12
+  }
+
+  const overheadPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 7.1, 8), pipe)
+  overheadPipe.position.set(-11.25, FLOOR_Y + 3.45, -17.5)
+  overheadPipe.rotation.x = Math.PI / 2
+  group.add(overheadPipe)
+
+  parent.add(group)
+  return group
+}
