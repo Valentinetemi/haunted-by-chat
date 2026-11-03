@@ -11,6 +11,7 @@ import {
   furnishBathroom,
   furnishEntrance,
   furnishKitchen,
+  furnishKidsBedroom,
   furnishLivingRoom,
 } from './props.js'
 import './style.css'
@@ -35,6 +36,7 @@ furnishEntrance(house.group)
 furnishLivingRoom(house.group)
 furnishKitchen(house.group)
 const bathroomProps = furnishBathroom(house.group)
+furnishKidsBedroom(house.group)
 const pressedKeys = new Set()
 const movement = new THREE.Vector3()
 const forward = new THREE.Vector3()

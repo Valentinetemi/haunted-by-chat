@@ -238,3 +238,54 @@ export function furnishBathroom(parent) {
   parent.add(group)
   return { group, reset, update }
 }
+
+export function furnishKidsBedroom(parent) {
+  const group = new THREE.Group()
+  group.name = 'kids-bedroom-props'
+  const paintedWood = new THREE.MeshStandardMaterial({ color: 0x574254, roughness: 0.92 })
+  const fadedBlanket = new THREE.MeshStandardMaterial({ color: 0x6c5067, roughness: 1 })
+  const mattress = new THREE.MeshStandardMaterial({ color: 0xaaa198, roughness: 1 })
+
+  addBox(group, [3.5, 0.38, 1.8], [9.65, FLOOR_Y + 0.45, -10.55], paintedWood, 'kids-bed')
+  addBox(group, [3.15, 0.3, 1.55], [9.55, FLOOR_Y + 0.72, -10.55], mattress)
+  addBox(group, [2.35, 0.08, 1.48], [9.85, FLOOR_Y + 0.9, -10.55], fadedBlanket)
+  addBox(group, [0.22, 1.75, 1.95], [11.25, FLOOR_Y + 0.88, -10.55], paintedWood)
+
+  addBox(group, [2.2, 1.05, 0.75], [10.55, FLOOR_Y + 0.52, -3], paintedWood, 'toy-chest')
+  addBox(group, [2.3, 0.18, 0.82], [10.55, FLOOR_Y + 1.12, -3], darkWood)
+
+  const toyColors = [0x8d3d3a, 0x345c68, 0x857241, 0x4b7048]
+  for (let index = 0; index < 9; index += 1) {
+    const size = 0.18 + (index % 3) * 0.06
+    const block = addBox(
+      group,
+      [size, size, size],
+      [5.1 + (index % 3) * 0.55, FLOOR_Y + size / 2, -5.1 - Math.floor(index / 3) * 0.5],
+      new THREE.MeshStandardMaterial({ color: toyColors[index % toyColors.length], roughness: 0.8 }),
+      'toy-block',
+    )
+    block.rotation.y = index * 0.47
+  }
+
+  const doll = new THREE.Group()
+  const dollMaterial = new THREE.MeshStandardMaterial({ color: 0xbbb09f, roughness: 0.94 })
+  const dollHead = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), dollMaterial)
+  dollHead.position.y = 0.58
+  doll.add(dollHead)
+  addBox(doll, [0.38, 0.55, 0.2], [0, 0.18, 0], new THREE.MeshStandardMaterial({ color: 0x432434 }))
+  doll.position.set(7.3, FLOOR_Y + 0.1, -3.5)
+  doll.rotation.z = -0.45
+  group.add(doll)
+
+  for (const [x, y, z, radius] of [[5.3, 1.9, -11.7, 0.045], [7.2, 2.2, -11.7, 0.035], [9.1, 1.7, -11.7, 0.05]]) {
+    const star = new THREE.Mesh(
+      new THREE.OctahedronGeometry(radius, 0),
+      new THREE.MeshBasicMaterial({ color: 0xb9c781, toneMapped: false }),
+    )
+    star.position.set(x, FLOOR_Y + y, z)
+    group.add(star)
+  }
+
+  parent.add(group)
+  return group
+}
