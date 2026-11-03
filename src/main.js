@@ -7,7 +7,7 @@ import {
   addBox,
   createHauntedHouse,
 } from './house.js'
-import { furnishEntrance, furnishLivingRoom } from './props.js'
+import { furnishEntrance, furnishKitchen, furnishLivingRoom } from './props.js'
 import './style.css'
 
 const scene = new THREE.Scene()
@@ -28,6 +28,7 @@ const clock = new THREE.Clock()
 const house = createHauntedHouse(scene)
 furnishEntrance(house.group)
 furnishLivingRoom(house.group)
+furnishKitchen(house.group)
 const pressedKeys = new Set()
 const movement = new THREE.Vector3()
 const forward = new THREE.Vector3()

@@ -113,3 +113,47 @@ export function furnishLivingRoom(parent) {
   parent.add(group)
   return group
 }
+
+export function furnishKitchen(parent) {
+  const group = new THREE.Group()
+  group.name = 'kitchen-props'
+  const cabinet = new THREE.MeshStandardMaterial({ color: 0x354039, roughness: 0.86 })
+  const counter = new THREE.MeshStandardMaterial({ color: 0x777872, roughness: 0.55 })
+  const appliance = new THREE.MeshStandardMaterial({
+    color: 0x687174,
+    metalness: 0.45,
+    roughness: 0.52,
+  })
+  const grime = new THREE.MeshStandardMaterial({ color: 0x171a16, roughness: 0.95 })
+
+  for (const x of [5.2, 6.8, 8.4, 10]) {
+    addBox(group, [1.45, 0.95, 0.7], [x, FLOOR_Y + 0.48, 9.25], cabinet)
+    addBox(group, [1.5, 0.12, 0.82], [x, FLOOR_Y + 1.02, 9.22], counter)
+  }
+  addBox(group, [1.45, 2.9, 1.05], [11, FLOOR_Y + 1.45, 7.55], appliance, 'refrigerator')
+  addBox(group, [1.18, 0.045, 0.04], [11, FLOOR_Y + 1.35, 7], grime)
+  addBox(group, [1.55, 0.95, 1.15], [10.7, FLOOR_Y + 0.48, 3.2], appliance, 'oven')
+  addBox(group, [1.2, 0.55, 0.05], [10.7, FLOOR_Y + 0.5, 2.61], grime)
+
+  addBox(group, [3.4, 0.85, 1.35], [7.5, FLOOR_Y + 0.44, 4.8], cabinet, 'kitchen-island')
+  addBox(group, [3.6, 0.13, 1.55], [7.5, FLOOR_Y + 0.92, 4.8], counter)
+  const sink = new THREE.Mesh(
+    new THREE.BoxGeometry(1.05, 0.09, 0.72),
+    new THREE.MeshStandardMaterial({ color: 0x293235, metalness: 0.6, roughness: 0.35 }),
+  )
+  sink.position.set(7.5, FLOOR_Y + 1.01, 4.8)
+  group.add(sink)
+
+  for (const [x, z, scale] of [[5.3, 1, 0.8], [7.2, 0.4, 1], [9.7, 1.4, 0.65]]) {
+    const bottle = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.1 * scale, 0.13 * scale, 0.65 * scale, 8),
+      new THREE.MeshStandardMaterial({ color: 0x2f4433, transparent: true, opacity: 0.75 }),
+    )
+    bottle.position.set(x, FLOOR_Y + 0.34 * scale, z)
+    bottle.rotation.z = (Math.random() - 0.5) * 0.35
+    group.add(bottle)
+  }
+
+  parent.add(group)
+  return group
+}
