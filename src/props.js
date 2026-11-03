@@ -65,3 +65,51 @@ export function furnishEntrance(parent) {
   parent.add(group)
   return group
 }
+
+export function furnishLivingRoom(parent) {
+  const group = new THREE.Group()
+  group.name = 'living-room-props'
+  const upholstery = new THREE.MeshStandardMaterial({ color: 0x30201f, roughness: 1 })
+  const stone = new THREE.MeshStandardMaterial({ color: 0x3b3733, roughness: 0.96 })
+  const ember = new THREE.MeshBasicMaterial({ color: 0xff541f, toneMapped: false })
+
+  addBox(group, [3.7, 0.65, 1.15], [-9.3, FLOOR_Y + 0.42, 7.6], upholstery, 'living-sofa')
+  addBox(group, [3.7, 1.05, 0.35], [-9.3, FLOOR_Y + 1.05, 8.02], upholstery)
+  for (const x of [-11.05, -7.55]) {
+    addBox(group, [0.35, 0.85, 1.2], [x, FLOOR_Y + 0.62, 7.6], upholstery)
+  }
+
+  addBox(group, [2.2, 0.18, 1.1], [-8.8, FLOOR_Y + 0.68, 4.9], wood, 'coffee-table')
+  for (const x of [-9.65, -7.95]) {
+    for (const z of [4.52, 5.28]) {
+      addBox(group, [0.12, 0.65, 0.12], [x, FLOOR_Y + 0.33, z], darkWood)
+    }
+  }
+
+  addBox(group, [3, 2.7, 0.5], [-11.68, FLOOR_Y + 1.35, 2.2], stone, 'fireplace')
+  addBox(group, [1.8, 1.35, 0.18], [-11.39, FLOOR_Y + 0.72, 2.2], darkWood)
+  for (const x of [-11.9, -11.35, -10.8]) {
+    const coal = new THREE.Mesh(new THREE.DodecahedronGeometry(0.17, 0), ember)
+    coal.position.set(x, FLOOR_Y + 0.24, 2.08)
+    group.add(coal)
+  }
+  const fireLight = new THREE.PointLight(0xff4b1f, 7, 7, 2)
+  fireLight.position.set(-10.8, FLOOR_Y + 1, 2.6)
+  group.add(fireLight)
+
+  const lampShade = new THREE.Mesh(
+    new THREE.ConeGeometry(0.45, 0.65, 10, 1, true),
+    new THREE.MeshStandardMaterial({
+      color: 0x7d5b39,
+      emissive: 0x5e321c,
+      emissiveIntensity: 0.6,
+      side: THREE.DoubleSide,
+    }),
+  )
+  lampShade.position.set(-5.3, FLOOR_Y + 2.25, 7.8)
+  group.add(lampShade)
+  addBox(group, [0.08, 1.8, 0.08], [-5.3, FLOOR_Y + 1.2, 7.8], brass)
+
+  parent.add(group)
+  return group
+}
