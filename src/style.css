@@ -84,7 +84,8 @@ canvas {
   animation: whisper-fade 3s ease-in-out forwards;
 }
 
-#interaction-prompt {
+#interaction-prompt,
+#goal-prompt {
   position: fixed;
   bottom: 5.5rem;
   left: 50%;
@@ -101,8 +102,15 @@ canvas {
   transform: translateX(-50%);
 }
 
-#interaction-prompt[hidden] {
+#interaction-prompt[hidden],
+#goal-prompt[hidden] {
   display: none;
+}
+
+#goal-prompt {
+  bottom: 7.8rem;
+  border-color: rgb(214 169 81 / 42%);
+  color: #ffdda0;
 }
 
 #jumpscare {
@@ -225,6 +233,33 @@ canvas {
   opacity: 0.55;
 }
 
+#key-hud {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 15;
+  display: grid;
+  gap: 0.2rem;
+  min-width: 9rem;
+  padding: 0.65rem 0.8rem;
+  border-left: 2px solid #c99c45;
+  color: #ffe6b0;
+  background: rgb(13 10 8 / 76%);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  pointer-events: none;
+}
+
+#key-hud span {
+  color: #b99b68;
+  font-size: 0.65rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+#key-hud strong {
+  font-size: 1.25rem;
+}
+
 @keyframes twitch-feed-in {
   from {
     opacity: 0;
@@ -253,7 +288,8 @@ canvas {
   }
 }
 
-#caught-screen {
+#caught-screen,
+#escape-screen {
   position: fixed;
   inset: 0;
   z-index: 20;
@@ -264,7 +300,8 @@ canvas {
   background: rgb(8 0 0 / 92%);
 }
 
-#caught-screen[hidden] {
+#caught-screen[hidden],
+#escape-screen[hidden] {
   display: none;
 }
 
@@ -278,7 +315,18 @@ canvas {
   text-transform: uppercase;
 }
 
-#restart-button {
+#escape-screen h1 {
+  margin: 0;
+  color: #e6d7b8;
+  font-size: clamp(4rem, 14vw, 10rem);
+  letter-spacing: 0.12em;
+  line-height: 0.9;
+  text-shadow: 0 0 2rem #775b27;
+  text-transform: uppercase;
+}
+
+#restart-button,
+#play-again-button {
   padding: 0.8rem 2rem;
   border: 1px solid #8d7777;
   color: #eee;
@@ -291,6 +339,8 @@ canvas {
 }
 
 #restart-button:hover,
-#restart-button:focus-visible {
+#restart-button:focus-visible,
+#play-again-button:hover,
+#play-again-button:focus-visible {
   background: #321313;
 }

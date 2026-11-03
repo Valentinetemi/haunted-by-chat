@@ -10,6 +10,7 @@ import {
 } from './house.js'
 import { createBlackPuddles } from './effects.js'
 import { createHidingSystem } from './hiding.js'
+import { createKeySystem } from './keys.js'
 import { createMother, updateMotherAnimation } from './mother.js'
 import { createScareDirector } from './scares.js'
 import {
@@ -63,13 +64,17 @@ const stunHud = document.querySelector('#stun-hud')
 const shotsRemainingDisplay = document.querySelector('#shots-remaining')
 const caughtScreen = document.querySelector('#caught-screen')
 const restartButton = document.querySelector('#restart-button')
+const escapeScreen = document.querySelector('#escape-screen')
+const playAgainButton = document.querySelector('#play-again-button')
 const interactionPrompt = document.querySelector('#interaction-prompt')
+const goalPrompt = document.querySelector('#goal-prompt')
 const jumpscare = document.querySelector('#jumpscare')
 const hiding = createHidingSystem(camera, interactionPrompt)
 let jumpscareTimeoutId = 0
 let yaw = 0
 let pitch = 0
 let playerCaught = false
+let playerEscaped = false
 let whisperTimeoutId = 0
 
 const flickerDuration = 2000
@@ -316,6 +321,22 @@ function catchPlayer() {
   if (document.pointerLockElement === renderer.domElement) document.exitPointerLock()
 }
 
+function escapeHouse() {
+  playerEscaped = true
+  pressedKeys.clear()
+  startScreen.hidden = true
+  escapeScreen.hidden = false
+  if (document.pointerLockElement === renderer.domElement) document.exitPointerLock()
+}
+
+const keySystem = createKeySystem({
+  audio,
+  hudCount: document.querySelector('#keys-collected'),
+  onEscape: escapeHouse,
+  parent: house.group,
+  prompt: goalPrompt,
+})
+
 function triggerJumpscare() {
   window.clearTimeout(jumpscareTimeoutId)
   jumpscare.hidden = false
@@ -356,12 +377,14 @@ const scareDirector = createScareDirector({
   getTension: () => 0.18,
   isActive: () =>
     !playerCaught &&
+    !playerEscaped &&
     !hiding.isHidden &&
     document.pointerLockElement === renderer.domElement,
 })
 
 function restartGame() {
   playerCaught = false
+  playerEscaped = false
   yaw = 0
   pitch = 0
   camera.position.copy(PLAYER_START)
@@ -381,10 +404,12 @@ function restartGame() {
   for (const door of house.doors) door.hinge.rotation.y = door.openRotation
   bathroomProps.reset()
   hiding.reset()
+  keySystem.reset()
   scareDirector.reset()
   jumpscare.hidden = true
   pressedKeys.clear()
   caughtScreen.hidden = true
+  escapeScreen.hidden = true
   startScreen.hidden = false
 }
 
@@ -394,7 +419,14 @@ renderer.setAnimationLoop((time) => {
   blackPuddles.update(time)
   updateDoorSlam(time)
   if (bathroomProps.update(camera.position, time, !playerCaught)) audio.mirror()
-  hiding.update(!playerCaught && document.pointerLockElement === renderer.domElement)
+  hiding.update(
+    !playerCaught && !playerEscaped && document.pointerLockElement === renderer.domElement,
+  )
+  keySystem.update(
+    camera.position,
+    time,
+    !playerCaught && !playerEscaped && document.pointerLockElement === renderer.domElement,
+  )
   scareDirector.update(time)
   updateStunBolts(delta, time)
   updateHunterEffects(time)
@@ -413,7 +445,7 @@ renderer.setAnimationLoop((time) => {
     camera.position.addScaledVector(movement.normalize(), movementSpeed * delta)
   }
 
-  if (!playerCaught && document.pointerLockElement === renderer.domElement) {
+  if (!playerCaught && !playerEscaped && document.pointerLockElement === renderer.domElement) {
     if (time >= hunterFrozenUntil) updateGhost(delta, time)
     if (time >= hunterFrozenUntil && ghostReachedPlayer()) catchPlayer()
   }
@@ -423,7 +455,9 @@ renderer.setAnimationLoop((time) => {
 })
 
 window.addEventListener('keydown', (event) => {
-  if (event.code === 'KeyE' && !event.repeat && !playerCaught) hiding.toggle()
+  if (event.code === 'KeyE' && !event.repeat && !playerCaught && !playerEscaped) {
+    if (!keySystem.interact()) hiding.toggle()
+  }
   if (event.code === 'Digit1' && !event.repeat && !playerCaught) whisper('behind you')
   if (event.code === 'Digit2' && !event.repeat) flickerLights()
   if (event.code === 'Digit3' && !event.repeat && !playerCaught) slamDoor()
@@ -437,10 +471,11 @@ startScreen.addEventListener('click', () => {
   renderer.domElement.requestPointerLock()
 })
 restartButton.addEventListener('click', restartGame)
+playAgainButton.addEventListener('click', restartGame)
 
 document.addEventListener('pointerlockchange', () => {
   const isLocked = document.pointerLockElement === renderer.domElement
-  startScreen.hidden = isLocked || playerCaught
+  startScreen.hidden = isLocked || playerCaught || playerEscaped
   if (isLocked) scareDirector.reset()
   if (!isLocked) pressedKeys.clear()
 })

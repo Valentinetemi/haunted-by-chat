@@ -13,6 +13,7 @@
     </button>
     <p id="whisper-message" aria-live="polite" hidden></p>
     <p id="interaction-prompt" hidden></p>
+    <p id="goal-prompt" hidden></p>
     <div id="jumpscare" aria-hidden="true" hidden>
       <span></span>
     </div>
@@ -22,9 +23,17 @@
       <strong id="shots-remaining">3</strong>
       <small>shots</small>
     </aside>
+    <aside id="key-hud" aria-label="Keys collected">
+      <span>House keys</span>
+      <strong id="keys-collected">0 / 5</strong>
+    </aside>
     <section id="caught-screen" role="dialog" aria-modal="true" aria-labelledby="caught-title" hidden>
       <h1 id="caught-title">Terminated</h1>
       <button id="restart-button" type="button">Restart</button>
+    </section>
+    <section id="escape-screen" role="dialog" aria-modal="true" aria-labelledby="escape-title" hidden>
+      <h1 id="escape-title">Escaped</h1>
+      <button id="play-again-button" type="button">Play again</button>
     </section>
     <script type="module" src="/src/main.js"></script>
   </body>
