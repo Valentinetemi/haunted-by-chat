@@ -222,11 +222,13 @@ export function furnishBathroom(parent) {
     if (isNearMirror && !hasTriggered) {
       hasTriggered = true
       scareStartedAt = time
+      return true
     }
     reflection.visible = scareStartedAt > 0 && time - scareStartedAt < 1250
     if (reflection.visible) {
       reflection.scale.setScalar(1 + Math.sin(time * 0.035) * 0.025)
     }
+    return false
   }
 
   const reset = () => {

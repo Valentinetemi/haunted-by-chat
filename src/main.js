@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import tmi from 'tmi.js'
 
+import { createAudioSystem } from './audio.js'
 import {
   HUNTER_SPAWNS,
   PLAYER_START,
@@ -34,6 +35,7 @@ renderer.setSize(window.innerWidth, window.innerHeight)
 document.querySelector('#app').appendChild(renderer.domElement)
 
 const clock = new THREE.Clock()
+const audio = createAudioSystem()
 const house = createHauntedHouse(scene)
 const blackPuddles = createBlackPuddles(house.group)
 furnishEntrance(house.group)
@@ -71,6 +73,7 @@ function flickerLights() {
   const now = performance.now()
   flickerEndsAt = now + flickerDuration
   nextFlickerPulseAt = now
+  audio.flicker()
 }
 
 function updateLightFlicker(now) {
@@ -103,6 +106,7 @@ function whisper(text) {
   whisperMessage.classList.remove('is-visible')
   void whisperMessage.offsetWidth
   whisperMessage.classList.add('is-visible')
+  audio.whisper()
   whisperTimeoutId = window.setTimeout(() => {
     whisperMessage.hidden = true
     whisperMessage.classList.remove('is-visible')
@@ -152,6 +156,7 @@ function updateDoorSlam(now) {
   if (progress === 1) {
     activeDoorSlam = null
     cameraShakeEndsAt = now + cameraShakeDuration
+    audio.slam()
   }
 }
 
@@ -218,6 +223,7 @@ function fireStunBlaster() {
   scene.add(bolt)
   stunBolts.push({ direction, lifetime: stunBoltLifetime, mesh: bolt })
   stunShotsRemaining -= 1
+  audio.blaster()
   updateStunHud()
 }
 
@@ -230,6 +236,7 @@ function freezeHunter(time) {
   hunterFrozenUntil = time + stunDuration
   hunterVisual.position.set(0, 0, 0)
   hunterVisual.rotation.set(0, 0, 0)
+  audio.stun()
 }
 
 function updateStunBolts(delta, time) {
@@ -292,6 +299,7 @@ function catchPlayer() {
   pressedKeys.clear()
   startScreen.hidden = true
   caughtScreen.hidden = false
+  audio.caught()
   if (document.pointerLockElement === renderer.domElement) document.exitPointerLock()
 }
 
@@ -325,7 +333,7 @@ renderer.setAnimationLoop((time) => {
   updateLightFlicker(time)
   blackPuddles.update(time)
   updateDoorSlam(time)
-  bathroomProps.update(camera.position, time, !playerCaught)
+  if (bathroomProps.update(camera.position, time, !playerCaught)) audio.mirror()
   updateStunBolts(delta, time)
   updateHunterEffects(time)
   updateHunterStun(time)
@@ -359,7 +367,10 @@ window.addEventListener('keydown', (event) => {
 })
 window.addEventListener('keyup', (event) => pressedKeys.delete(event.code))
 window.addEventListener('blur', () => pressedKeys.clear())
-startScreen.addEventListener('click', () => renderer.domElement.requestPointerLock())
+startScreen.addEventListener('click', () => {
+  audio.start()
+  renderer.domElement.requestPointerLock()
+})
 restartButton.addEventListener('click', restartGame)
 
 document.addEventListener('pointerlockchange', () => {
