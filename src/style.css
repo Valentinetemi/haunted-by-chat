@@ -105,6 +105,50 @@ canvas {
   display: none;
 }
 
+#jumpscare {
+  position: fixed;
+  inset: 0;
+  z-index: 18;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: rgb(12 0 0 / 82%);
+  pointer-events: none;
+}
+
+#jumpscare[hidden] {
+  display: none;
+}
+
+#jumpscare span {
+  width: min(80vw, 38rem);
+  aspect-ratio: 0.72;
+  border-radius: 48% 48% 42% 42%;
+  background:
+    radial-gradient(circle at 34% 43%, #000 0 3%, transparent 4%),
+    radial-gradient(circle at 66% 43%, #000 0 3%, transparent 4%),
+    radial-gradient(ellipse at 50% 70%, #030000 0 9%, transparent 10%),
+    radial-gradient(ellipse at 50% 50%, #b8a99e 0 45%, #160b0b 46% 62%, transparent 63%);
+  filter: contrast(1.8) blur(0.6px);
+  animation: jumpscare-lunge 620ms cubic-bezier(0.2, 0.85, 0.25, 1) forwards;
+}
+
+@keyframes jumpscare-lunge {
+  from {
+    opacity: 0;
+    transform: scale(0.15) rotate(-4deg);
+  }
+
+  35% {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(2.4) rotate(3deg);
+  }
+}
+
 #twitch-feed {
   position: fixed;
   bottom: 1rem;

@@ -6,10 +6,12 @@ import {
   HUNTER_SPAWNS,
   PLAYER_START,
   createHauntedHouse,
+  getRoomAt,
 } from './house.js'
 import { createBlackPuddles } from './effects.js'
 import { createHidingSystem } from './hiding.js'
 import { createMother, updateMotherAnimation } from './mother.js'
+import { createScareDirector } from './scares.js'
 import {
   furnishBathroom,
   furnishAttic,
@@ -62,7 +64,9 @@ const shotsRemainingDisplay = document.querySelector('#shots-remaining')
 const caughtScreen = document.querySelector('#caught-screen')
 const restartButton = document.querySelector('#restart-button')
 const interactionPrompt = document.querySelector('#interaction-prompt')
+const jumpscare = document.querySelector('#jumpscare')
 const hiding = createHidingSystem(camera, interactionPrompt)
+let jumpscareTimeoutId = 0
 let yaw = 0
 let pitch = 0
 let playerCaught = false
@@ -312,6 +316,50 @@ function catchPlayer() {
   if (document.pointerLockElement === renderer.domElement) document.exitPointerLock()
 }
 
+function triggerJumpscare() {
+  window.clearTimeout(jumpscareTimeoutId)
+  jumpscare.hidden = false
+  const face = jumpscare.firstElementChild
+  face.style.animation = 'none'
+  void face.offsetWidth
+  face.style.animation = ''
+  audio.mirror()
+  jumpscareTimeoutId = window.setTimeout(() => {
+    jumpscare.hidden = true
+  }, 650)
+}
+
+function teleportHunterNearby() {
+  camera.getWorldDirection(forward)
+  forward.y = 0
+  forward.normalize()
+  right.crossVectors(forward, camera.up).normalize()
+  const sideOffset = (Math.random() - 0.5) * 5
+  const distance = 5.5 + Math.random() * 2.5
+  ghost.position.set(
+    THREE.MathUtils.clamp(camera.position.x - forward.x * distance + right.x * sideOffset, -10.7, 10.7),
+    ghostStartPosition.y,
+    THREE.MathUtils.clamp(camera.position.z - forward.z * distance + right.z * sideOffset, -21.8, 8.5),
+  )
+  cameraShakeEndsAt = performance.now() + 180
+}
+
+const scareDirector = createScareDirector({
+  actions: {
+    flicker: flickerLights,
+    jumpscare: triggerJumpscare,
+    slam: slamDoor,
+    teleport: teleportHunterNearby,
+    whisper: () => whisper(['behind you', 'come upstairs', 'I found you'][Math.floor(Math.random() * 3)]),
+  },
+  getRoom: () => getRoomAt(camera.position),
+  getTension: () => 0.18,
+  isActive: () =>
+    !playerCaught &&
+    !hiding.isHidden &&
+    document.pointerLockElement === renderer.domElement,
+})
+
 function restartGame() {
   playerCaught = false
   yaw = 0
@@ -333,6 +381,8 @@ function restartGame() {
   for (const door of house.doors) door.hinge.rotation.y = door.openRotation
   bathroomProps.reset()
   hiding.reset()
+  scareDirector.reset()
+  jumpscare.hidden = true
   pressedKeys.clear()
   caughtScreen.hidden = true
   startScreen.hidden = false
@@ -345,6 +395,7 @@ renderer.setAnimationLoop((time) => {
   updateDoorSlam(time)
   if (bathroomProps.update(camera.position, time, !playerCaught)) audio.mirror()
   hiding.update(!playerCaught && document.pointerLockElement === renderer.domElement)
+  scareDirector.update(time)
   updateStunBolts(delta, time)
   updateHunterEffects(time)
   updateHunterStun(time)
@@ -390,6 +441,7 @@ restartButton.addEventListener('click', restartGame)
 document.addEventListener('pointerlockchange', () => {
   const isLocked = document.pointerLockElement === renderer.domElement
   startScreen.hidden = isLocked || playerCaught
+  if (isLocked) scareDirector.reset()
   if (!isLocked) pressedKeys.clear()
 })
 
