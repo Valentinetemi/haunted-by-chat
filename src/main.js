@@ -64,6 +64,10 @@ const staminaHud = document.querySelector('#stamina-hud')
 const lookSensitivity = 0.002
 const maxPitch = Math.PI / 2 - 0.01
 const startScreen = document.querySelector('#start-screen')
+const playButton = document.querySelector('#play-button')
+const streamerButton = document.querySelector('#streamer-button')
+const howToButton = document.querySelector('#how-to-button')
+const howToPanel = document.querySelector('#how-to-panel')
 const whisperMessage = document.querySelector('#whisper-message')
 const twitchFeed = document.querySelector('#twitch-feed')
 const stunHud = document.querySelector('#stun-hud')
@@ -558,9 +562,17 @@ window.addEventListener('keydown', (event) => {
 })
 window.addEventListener('keyup', (event) => pressedKeys.delete(event.code))
 window.addEventListener('blur', () => pressedKeys.clear())
-startScreen.addEventListener('click', () => {
+function startGame() {
   audio.start()
   renderer.domElement.requestPointerLock()
+}
+
+playButton.addEventListener('click', startGame)
+streamerButton.addEventListener('click', startGame)
+howToButton.addEventListener('click', () => {
+  const isOpening = howToPanel.hidden
+  howToPanel.hidden = !isOpening
+  howToButton.setAttribute('aria-expanded', String(isOpening))
 })
 restartButton.addEventListener('click', restartGame)
 playAgainButton.addEventListener('click', restartGame)

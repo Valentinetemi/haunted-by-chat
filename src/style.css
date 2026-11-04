@@ -29,33 +29,99 @@ canvas {
   inset: 0;
   z-index: 10;
   display: grid;
-  place-content: center;
-  gap: 0.75rem;
-  width: 100%;
-  height: 100%;
+  place-items: center;
   padding: 2rem;
-  border: 0;
   color: #fff;
-  background: rgb(0 0 0 / 65%);
-  font: inherit;
-  text-align: center;
-  cursor: pointer;
+  background:
+    radial-gradient(circle at 50% 35%, rgb(73 43 34 / 42%), transparent 35%),
+    rgb(3 2 3 / 88%);
 }
 
 #start-screen[hidden] {
   display: none;
 }
 
-#start-screen span {
-  font-size: clamp(1.5rem, 4vw, 3rem);
-  font-weight: 700;
-  letter-spacing: 0.08em;
+.menu-card {
+  width: min(35rem, 100%);
+  padding: clamp(1.5rem, 5vw, 3rem);
+  border: 1px solid rgb(202 166 110 / 24%);
+  background: linear-gradient(145deg, rgb(28 19 17 / 92%), rgb(6 5 6 / 96%));
+  box-shadow: 0 2rem 7rem #000, inset 0 0 4rem rgb(98 47 31 / 10%);
+  text-align: center;
+}
+
+.eyebrow {
+  margin: 0 0 0.6rem;
+  color: #a38d71;
+  font: 700 0.65rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
 }
 
-#start-screen small {
-  color: #aaa;
-  font-size: 0.875rem;
+.menu-card h1 {
+  margin: 0;
+  color: #e8ddd0;
+  font: 700 clamp(2.8rem, 9vw, 5.8rem)/0.82 Georgia, 'Times New Roman', serif;
+  letter-spacing: -0.06em;
+  text-shadow: 0 0 2.5rem rgb(138 42 27 / 65%);
+}
+
+.menu-copy {
+  max-width: 27rem;
+  margin: 1.35rem auto 1.8rem;
+  color: #aaa09a;
+  line-height: 1.55;
+}
+
+.menu-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.65rem;
+}
+
+.menu-actions button {
+  min-height: 2.9rem;
+  border: 1px solid rgb(203 184 153 / 28%);
+  color: #d5ccc1;
+  background: rgb(21 16 15 / 75%);
+  font: 700 0.72rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.menu-actions .primary-action {
+  grid-column: 1 / -1;
+  border-color: #9c6945;
+  color: #1b100b;
+  background: #c7a06e;
+}
+
+.menu-actions button:hover,
+.menu-actions button:focus-visible {
+  border-color: #d1aa76;
+  color: #fff;
+  background: #45291d;
+}
+
+#how-to-panel {
+  margin-top: 1rem;
+  padding: 0.8rem 1rem;
+  border-left: 2px solid #795438;
+  color: #a9a09a;
+  background: rgb(0 0 0 / 28%);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  text-align: left;
+}
+
+#how-to-panel p {
+  margin: 0.35rem 0;
+}
+
+kbd {
+  color: #ead4b7;
+  font: inherit;
 }
 
 #whisper-message {
@@ -419,10 +485,11 @@ canvas {
 #caught-screen h1 {
   margin: 0;
   color: #d7c7c7;
-  font-size: clamp(4rem, 14vw, 10rem);
+  font-size: clamp(2.6rem, 9vw, 6.5rem);
   letter-spacing: 0.12em;
   line-height: 0.9;
   text-shadow: 0 0 2rem #8d0000;
+  text-align: center;
   text-transform: uppercase;
 }
 

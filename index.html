@@ -7,10 +7,23 @@
   </head>
   <body>
     <div id="app"></div>
-    <button id="start-screen" type="button">
-      <span>Click to start</span>
-      <small>WASD to move · Mouse to look · Left click to stun · Esc to pause</small>
-    </button>
+    <section id="start-screen" aria-labelledby="game-title">
+      <div class="menu-card">
+        <p class="eyebrow">A house that remembers</p>
+        <h1 id="game-title">Haunted by Chat</h1>
+        <p class="menu-copy">Find five keys. Reach the front door. Do not let Mother hear you.</p>
+        <div class="menu-actions">
+          <button id="play-button" class="primary-action" type="button">Play</button>
+          <button id="streamer-button" type="button">Streamer mode</button>
+          <button id="how-to-button" type="button" aria-expanded="false">How to play</button>
+        </div>
+        <div id="how-to-panel" hidden>
+          <p><kbd>WASD</kbd> move · <kbd>Shift</kbd> sprint · <kbd>Mouse</kbd> look</p>
+          <p><kbd>Click</kbd> stun Mother · <kbd>E</kbd> hide, leave, or unlock</p>
+          <p>Collect all five glowing keys, manage three blaster charges, and escape through the front door.</p>
+        </div>
+      </div>
+    </section>
     <p id="whisper-message" aria-live="polite" hidden></p>
     <p id="interaction-prompt" hidden></p>
     <p id="goal-prompt" hidden></p>
@@ -38,7 +51,7 @@
       <strong id="run-time">00:00.000</strong>
     </aside>
     <section id="caught-screen" role="dialog" aria-modal="true" aria-labelledby="caught-title" hidden>
-      <h1 id="caught-title">Terminated</h1>
+      <h1 id="caught-title">Mother found you</h1>
       <button id="restart-button" type="button">Restart</button>
     </section>
     <section id="escape-screen" role="dialog" aria-modal="true" aria-labelledby="escape-title" hidden>
