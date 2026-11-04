@@ -17,6 +17,7 @@
           <button id="streamer-button" type="button">Streamer mode</button>
           <button id="how-to-button" type="button" aria-expanded="false">How to play</button>
         </div>
+        <p id="streamer-note">Streamer mode uses anonymous, read-only Twitch chat. No OAuth.</p>
         <div id="how-to-panel" hidden>
           <p><kbd>WASD</kbd> move · <kbd>Shift</kbd> sprint · <kbd>Mouse</kbd> look</p>
           <p><kbd>Click</kbd> stun Mother · <kbd>E</kbd> hide, leave, or unlock</p>
@@ -32,7 +33,7 @@
     </div>
     <div id="danger-vignette" aria-hidden="true"></div>
     <p id="reward-toast" aria-live="polite" hidden></p>
-    <aside id="twitch-feed" aria-live="polite" aria-label="Twitch scare feed"></aside>
+    <aside id="twitch-feed" aria-live="polite" aria-label="Twitch scare feed" hidden></aside>
     <aside id="stun-hud" aria-label="Stun blaster ammunition">
       <span>Stun</span>
       <strong id="shots-remaining">3</strong>

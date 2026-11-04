@@ -119,6 +119,12 @@ canvas {
   margin: 0.35rem 0;
 }
 
+#streamer-note {
+  margin: 0.8rem 0 0;
+  color: #746d68;
+  font: 0.65rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
 kbd {
   color: #ead4b7;
   font: inherit;
@@ -283,6 +289,10 @@ kbd {
   gap: 0.35rem;
   width: min(22rem, calc(100vw - 2rem));
   pointer-events: none;
+}
+
+#twitch-feed[hidden] {
+  display: none;
 }
 
 #twitch-feed p {

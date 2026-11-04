@@ -562,13 +562,18 @@ window.addEventListener('keydown', (event) => {
 })
 window.addEventListener('keyup', (event) => pressedKeys.delete(event.code))
 window.addEventListener('blur', () => pressedKeys.clear())
-function startGame() {
+function startGame(streamerMode = false) {
+  if (streamerMode) {
+    connectStreamerMode()
+  } else {
+    disconnectStreamerMode()
+  }
   audio.start()
   renderer.domElement.requestPointerLock()
 }
 
-playButton.addEventListener('click', startGame)
-streamerButton.addEventListener('click', startGame)
+playButton.addEventListener('click', () => startGame(false))
+streamerButton.addEventListener('click', () => startGame(true))
 howToButton.addEventListener('click', () => {
   const isOpening = howToPanel.hidden
   howToPanel.hidden = !isOpening
@@ -609,6 +614,8 @@ window.addEventListener('resize', () => {
 
 const requestedTwitchChannel = new URLSearchParams(window.location.search).get('channel')?.trim()
 const twitchChannel = (requestedTwitchChannel || 'YOURTWITCHNAME').replace(/^#/, '')
+document.querySelector('#streamer-note').textContent =
+  `Streamer mode connects anonymously to #${twitchChannel}. No OAuth.`
 
 function addTwitchFeedItem(username, scareName) {
   const item = document.createElement('p')
@@ -629,19 +636,35 @@ const twitchScares = new Map([
   ['!hunt', { name: 'HUNT', action: rushGhost }],
   ['c', { name: 'HUNT', action: rushGhost }],
 ])
-const twitchClient = new tmi.Client({
-  connection: { reconnect: true, secure: true },
-  channels: [twitchChannel],
-})
-twitchClient.on('message', (_channel, tags, message, self) => {
-  if (self) return
-  const scare = twitchScares.get(message.trim().toLowerCase())
-  if (!scare) return
-  scare.action()
-  addTwitchFeedItem(tags['display-name'] || tags.username || 'viewer', scare.name)
-})
-twitchClient.connect().catch((error) => {
-  console.warn(`Could not connect to Twitch channel ${twitchChannel}`, error)
-})
+let twitchClient = null
+
+function connectStreamerMode() {
+  twitchFeed.hidden = false
+  if (twitchClient) return
+
+  twitchClient = new tmi.Client({
+    connection: { reconnect: true, secure: true },
+    channels: [twitchChannel],
+  })
+  twitchClient.on('message', (_channel, tags, message, self) => {
+    if (self) return
+    const scare = twitchScares.get(message.trim().toLowerCase())
+    if (!scare) return
+    scare.action()
+    addTwitchFeedItem(tags['display-name'] || tags.username || 'viewer', scare.name)
+  })
+  twitchClient.connect().catch((error) => {
+    console.warn(`Could not connect to Twitch channel ${twitchChannel}`, error)
+  })
+}
+
+function disconnectStreamerMode() {
+  twitchFeed.hidden = true
+  twitchFeed.replaceChildren()
+  if (!twitchClient) return
+
+  twitchClient.disconnect().catch(() => {})
+  twitchClient = null
+}
 
 updateStunHud()
