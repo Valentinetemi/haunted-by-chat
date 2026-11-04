@@ -1,11 +1,51 @@
 import * as THREE from 'three'
 
-import { FLOOR_Y } from './house.js'
+import { FLOOR_Y, movePlayerWithinHouse } from './house.js'
 
 export const HAUNTED_PLACE_BOUNDS = {
   courtyard: { minX: 28, maxX: 48, minZ: -9, maxZ: 9 },
   crypt: { minX: -10, maxX: 10, minZ: -65, maxZ: -45 },
   mirror: { minX: -48, maxX: -28, minZ: -9, maxZ: 9 },
+}
+
+const HAUNTED_PLACE_NAMES = {
+  courtyard: 'Moonlit Courtyard',
+  crypt: 'Underground Crypt',
+  mirror: 'Fractured Mirror Realm',
+}
+
+export function getHauntedPlaceAt(position) {
+  for (const [id, bounds] of Object.entries(HAUNTED_PLACE_BOUNDS)) {
+    if (
+      position.x >= bounds.minX &&
+      position.x <= bounds.maxX &&
+      position.z >= bounds.minZ &&
+      position.z <= bounds.maxZ
+    ) {
+      return { bounds, id, name: HAUNTED_PLACE_NAMES[id] }
+    }
+  }
+  return null
+}
+
+export function movePlayerWithinWorld(position, displacement) {
+  const place = getHauntedPlaceAt(position)
+  if (!place) {
+    movePlayerWithinHouse(position, displacement)
+    return
+  }
+
+  const clearance = 0.45
+  position.x = THREE.MathUtils.clamp(
+    position.x + displacement.x,
+    place.bounds.minX + clearance,
+    place.bounds.maxX - clearance,
+  )
+  position.z = THREE.MathUtils.clamp(
+    position.z + displacement.z,
+    place.bounds.minZ + clearance,
+    place.bounds.maxZ - clearance,
+  )
 }
 
 function addBox(parent, size, position, material) {

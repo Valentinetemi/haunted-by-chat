@@ -6,13 +6,17 @@ import {
   PLAYER_START,
   createHauntedHouse,
   getRoomAt,
-  movePlayerWithinHouse,
 } from './house.js'
 import { createBlackPuddles, createMotherDrips } from './effects.js'
 import { createHidingSystem } from './hiding.js'
-import { createHauntedPlaces } from './haunted-places.js'
+import {
+  createHauntedPlaces,
+  getHauntedPlaceAt,
+  movePlayerWithinWorld,
+} from './haunted-places.js'
 import { createKeySystem } from './keys.js'
 import { createMobileControls } from './mobile-controls.js'
+import { createPortalSystem } from './portals.js'
 import {
   createMother,
   updateMotherAnimation,
@@ -72,7 +76,7 @@ document.body.classList.toggle('uses-touch-controls', usesTouchControls)
 const clock = new THREE.Clock()
 const audio = createAudioSystem()
 const house = createHauntedHouse(scene)
-createHauntedPlaces(scene)
+const hauntedPlaces = createHauntedPlaces(scene)
 const blackPuddles = createBlackPuddles(house.group)
 furnishEntrance(house.group)
 furnishLivingRoom(house.group)
@@ -413,6 +417,23 @@ function randomizeHunterSpawn() {
   ghost.position.copy(ghostStartPosition)
 }
 
+function relocateHunterForDestination(destination) {
+  if (destination === 'house') {
+    randomizeHunterSpawn()
+    return
+  }
+
+  const destinationSpawns = {
+    courtyard: [[31.5, -6], [45, -5.5], [31, 6]],
+    crypt: [[-7, -62], [7, -60], [6, -49]],
+    mirror: [[-46, -6], [-30, -5.5], [-45, 5]],
+  }
+  const candidates = destinationSpawns[destination]
+  const [x, z] = candidates[Math.floor(Math.random() * candidates.length)]
+  ghost.position.set(x, ghostStartPosition.y, z)
+  ghostStartPosition.copy(ghost.position)
+}
+
 function ghostReachedPlayer() {
   if (hiding.isHidden) return false
   const xDistance = camera.position.x - ghost.position.x
@@ -513,6 +534,18 @@ const keySystem = createKeySystem({
   prompt: goalPrompt,
 })
 
+const portalSystem = createPortalSystem({
+  camera,
+  getKeyCount: () => keySystem.count,
+  onTravel: ({ destination, name }) => {
+    relocateHunterForDestination(destination)
+    cameraShakeEndsAt = performance.now() + 180
+    showReward(`Entered · ${name}`)
+  },
+  parent: hauntedPlaces.group,
+  prompt: goalPrompt,
+})
+
 function applyLookDelta(deltaX, deltaY, sensitivity = lookSensitivity) {
   yaw -= deltaX * sensitivity
   pitch = THREE.MathUtils.clamp(pitch - deltaY * sensitivity, -maxPitch, maxPitch)
@@ -521,7 +554,9 @@ function applyLookDelta(deltaX, deltaY, sensitivity = lookSensitivity) {
 
 function performInteraction() {
   if (!isGameplayActive()) return
-  if (!keySystem.interact()) hiding.toggle()
+  if (keySystem.interact()) return
+  if (portalSystem.interact()) return
+  hiding.toggle()
 }
 
 const mobileControls = createMobileControls({
@@ -559,10 +594,20 @@ function teleportHunterNearby() {
   right.crossVectors(forward, camera.up).normalize()
   const sideOffset = (Math.random() - 0.5) * 5
   const distance = 5.5 + Math.random() * 2.5
+  const place = getHauntedPlaceAt(camera.position)
+  const bounds = place?.bounds ?? { minX: -10.7, maxX: 10.7, minZ: -21.8, maxZ: 8.5 }
   ghost.position.set(
-    THREE.MathUtils.clamp(camera.position.x - forward.x * distance + right.x * sideOffset, -10.7, 10.7),
+    THREE.MathUtils.clamp(
+      camera.position.x - forward.x * distance + right.x * sideOffset,
+      bounds.minX + 0.8,
+      bounds.maxX - 0.8,
+    ),
     ghostStartPosition.y,
-    THREE.MathUtils.clamp(camera.position.z - forward.z * distance + right.z * sideOffset, -21.8, 8.5),
+    THREE.MathUtils.clamp(
+      camera.position.z - forward.z * distance + right.z * sideOffset,
+      bounds.minZ + 0.8,
+      bounds.maxZ - 0.8,
+    ),
   )
   cameraShakeEndsAt = performance.now() + 180
 }
@@ -575,7 +620,7 @@ const scareDirector = createScareDirector({
     teleport: teleportHunterNearby,
     whisper: () => whisper(['behind you', 'come upstairs', 'I found you'][Math.floor(Math.random() * 3)]),
   },
-  getRoom: () => getRoomAt(camera.position),
+  getRoom: () => getHauntedPlaceAt(camera.position) ?? getRoomAt(camera.position),
   getTension: () => keySystem.count / keySystem.total,
   isActive: () => isGameplayActive() && !hiding.isHidden,
 })
@@ -611,6 +656,7 @@ function restartGame() {
   bathroomProps.reset()
   hiding.reset()
   keySystem.reset()
+  portalSystem.reset()
   runTimer.reset()
   scareDirector.reset()
   jumpscare.hidden = true
@@ -639,6 +685,7 @@ renderer.setAnimationLoop((time) => {
     time,
     isGameplayActive(),
   )
+  portalSystem.update(camera.position, time, isGameplayActive())
   scareDirector.update(time)
   runTimer.update(time)
   updateNearMiss(time)
@@ -669,7 +716,7 @@ renderer.setAnimationLoop((time) => {
   updateStamina(delta, isSprinting)
   if (movement.lengthSq() > 0 && !hiding.isHidden) {
     movement.normalize().multiplyScalar((isSprinting ? sprintSpeed : movementSpeed) * delta)
-    movePlayerWithinHouse(camera.position, movement)
+    movePlayerWithinWorld(camera.position, movement)
   }
 
   if (isGameplayActive()) {
