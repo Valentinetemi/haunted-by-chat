@@ -187,7 +187,7 @@ function applyCameraShake(now) {
 
 const ghost = new THREE.Group()
 const ghostDirection = new THREE.Vector3()
-const ghostStartPosition = HUNTER_SPAWNS[0].clone()
+const ghostStartPosition = HUNTER_SPAWNS[Math.floor(Math.random() * HUNTER_SPAWNS.length)].clone()
 const ghostDriftSpeed = 0.58
 const ghostCatchDistance = 1.05
 const ghostRushDuration = 4000
@@ -298,11 +298,22 @@ function rushGhost() {
 function updateGhost(delta, time) {
   ghostDirection.set(camera.position.x - ghost.position.x, 0, camera.position.z - ghost.position.z)
   if (ghostDirection.lengthSq() > 0.0001) {
-    const speedMultiplier = time < ghostRushEndsAt ? ghostRushMultiplier : 1
+    const difficultyMultiplier = 1 + keySystem.count * 0.16
+    const speedMultiplier =
+      difficultyMultiplier * (time < ghostRushEndsAt ? ghostRushMultiplier : 1)
     ghost.position.addScaledVector(ghostDirection.normalize(), ghostDriftSpeed * speedMultiplier * delta)
     ghost.lookAt(camera.position.x, ghost.position.y, camera.position.z)
   }
   ghost.position.y = ghostStartPosition.y + Math.sin(time * 0.0012) * 0.08
+}
+
+function randomizeHunterSpawn() {
+  const distantSpawns = HUNTER_SPAWNS.filter(
+    (spawn) => spawn.distanceToSquared(camera.position) > 12 ** 2,
+  )
+  const candidates = distantSpawns.length > 0 ? distantSpawns : HUNTER_SPAWNS
+  ghostStartPosition.copy(candidates[Math.floor(Math.random() * candidates.length)])
+  ghost.position.copy(ghostStartPosition)
 }
 
 function ghostReachedPlayer() {
@@ -374,7 +385,7 @@ const scareDirector = createScareDirector({
     whisper: () => whisper(['behind you', 'come upstairs', 'I found you'][Math.floor(Math.random() * 3)]),
   },
   getRoom: () => getRoomAt(camera.position),
-  getTension: () => 0.18,
+  getTension: () => keySystem.count / keySystem.total,
   isActive: () =>
     !playerCaught &&
     !playerEscaped &&
@@ -389,7 +400,7 @@ function restartGame() {
   pitch = 0
   camera.position.copy(PLAYER_START)
   camera.rotation.set(0, 0, 0)
-  ghost.position.copy(ghostStartPosition)
+  randomizeHunterSpawn()
   ghost.rotation.set(0, 0, 0)
   hunterVisual.position.set(0, 0, 0)
   hunterVisual.rotation.set(0, 0, 0)
