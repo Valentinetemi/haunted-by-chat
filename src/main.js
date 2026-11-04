@@ -92,6 +92,7 @@ const runTimer = createRunTimer({
   hudDisplay: document.querySelector('#run-time'),
 })
 let jumpscareTimeoutId = 0
+let catchTimeoutId = 0
 let rewardTimeoutId = 0
 let dangerWasClose = false
 let nearMissCooldownUntil = 0
@@ -358,10 +359,23 @@ function catchPlayer() {
   playerCaught = true
   pressedKeys.clear()
   startScreen.hidden = true
-  caughtScreen.hidden = false
   audio.caught()
   runTimer.pause()
+  window.clearTimeout(jumpscareTimeoutId)
+  window.clearTimeout(catchTimeoutId)
+  jumpscare.classList.add('is-catch')
+  jumpscare.hidden = false
+  const face = jumpscare.firstElementChild
+  face.style.animation = 'none'
+  void face.offsetWidth
+  face.style.animation = ''
+  cameraShakeEndsAt = performance.now() + 620
   if (document.pointerLockElement === renderer.domElement) document.exitPointerLock()
+  catchTimeoutId = window.setTimeout(() => {
+    jumpscare.hidden = true
+    jumpscare.classList.remove('is-catch')
+    caughtScreen.hidden = false
+  }, 640)
 }
 
 function updateStamina(delta, isSprinting) {
@@ -428,6 +442,7 @@ const keySystem = createKeySystem({
 
 function triggerJumpscare() {
   window.clearTimeout(jumpscareTimeoutId)
+  jumpscare.classList.remove('is-catch')
   jumpscare.hidden = false
   const face = jumpscare.firstElementChild
   face.style.animation = 'none'
@@ -491,6 +506,7 @@ function restartGame() {
   cameraShakeEndsAt = 0
   cameraShakeOffset.set(0, 0, 0)
   window.clearTimeout(whisperTimeoutId)
+  window.clearTimeout(catchTimeoutId)
   whisperMessage.hidden = true
   whisperMessage.classList.remove('is-visible')
   for (const door of house.doors) door.hinge.rotation.y = door.openRotation
@@ -500,6 +516,7 @@ function restartGame() {
   runTimer.reset()
   scareDirector.reset()
   jumpscare.hidden = true
+  jumpscare.classList.remove('is-catch')
   dangerVignette.style.opacity = '0'
   dangerWasClose = false
   nearMissCooldownUntil = 0

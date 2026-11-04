@@ -213,6 +213,21 @@ kbd {
   animation: jumpscare-lunge 620ms cubic-bezier(0.2, 0.85, 0.25, 1) forwards;
 }
 
+#jumpscare.is-catch {
+  background: #050000;
+}
+
+#jumpscare.is-catch span {
+  width: min(105vw, 52rem);
+  background:
+    linear-gradient(82deg, #020202 0 43%, transparent 47% 55%, #020202 59% 100%),
+    radial-gradient(ellipse at 54% 42%, #e6eff0 0 2.5%, #435158 3.5%, transparent 5%),
+    radial-gradient(ellipse at 50% 69%, #050000 0 18%, transparent 19%),
+    radial-gradient(ellipse at 50% 50%, #8a9aa3 0 47%, #070607 48% 65%, transparent 66%);
+  filter: contrast(2.1) blur(0.35px);
+  animation: catch-lunge 620ms cubic-bezier(0.1, 0.9, 0.15, 1) forwards;
+}
+
 @keyframes jumpscare-lunge {
   from {
     opacity: 0;
@@ -226,6 +241,27 @@ kbd {
   to {
     opacity: 0;
     transform: scale(2.4) rotate(3deg);
+  }
+}
+
+@keyframes catch-lunge {
+  from {
+    opacity: 0;
+    transform: scale(0.08) rotate(7deg);
+  }
+
+  18% {
+    opacity: 1;
+  }
+
+  55% {
+    opacity: 1;
+    transform: scale(1.65) rotate(-3deg);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(3.3) rotate(2deg);
   }
 }
 

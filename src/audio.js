@@ -121,8 +121,9 @@ export function createAudioSystem() {
       tone(720, 95, 0.22, 0.18, 'sawtooth')
     },
     caught() {
-      noise(0.65, 0.34, 1600)
-      tone(130, 28, 1.15, 0.28, 'sawtooth')
+      noise(0.72, 0.52, 2600)
+      tone(1380, 74, 0.54, 0.42, 'sawtooth')
+      tone(170, 24, 1.15, 0.32, 'square', 0.04)
     },
     flicker() {
       noise(0.12, 0.08, 2800)
