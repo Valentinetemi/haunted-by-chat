@@ -774,6 +774,40 @@ body.is-playing.is-mobile-portrait #mobile-controls {
   font-size: 1.25rem;
 }
 
+#objective-hud {
+  position: fixed;
+  top: 5.4rem;
+  left: 1rem;
+  z-index: 15;
+  display: grid;
+  gap: 0.18rem;
+  max-width: min(20rem, 55vw);
+  padding: 0.5rem 0.7rem;
+  border-left: 2px solid #879fbc;
+  color: #dcecff;
+  background: rgb(8 12 17 / 72%);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  pointer-events: none;
+}
+
+#objective-hud[hidden] {
+  display: none;
+}
+
+#objective-hud span {
+  color: #879fbc;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+#objective-hud strong {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 #timer-hud {
   position: fixed;
   top: 1rem;

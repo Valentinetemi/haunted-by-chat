@@ -115,6 +115,8 @@ const escapeScreen = document.querySelector('#escape-screen')
 const playAgainButton = document.querySelector('#play-again-button')
 const interactionPrompt = document.querySelector('#interaction-prompt')
 const goalPrompt = document.querySelector('#goal-prompt')
+const objectiveHud = document.querySelector('#objective-hud')
+const currentObjective = document.querySelector('#current-objective')
 const jumpscare = document.querySelector('#jumpscare')
 const dangerVignette = document.querySelector('#danger-vignette')
 const rewardToast = document.querySelector('#reward-toast')
@@ -447,6 +449,7 @@ function catchPlayer() {
   mobileOrientationPaused = false
   document.body.classList.remove('is-playing')
   mobileControls.setActive(false)
+  objectiveHud.hidden = true
   pressedKeys.clear()
   startScreen.hidden = true
   audio.caught()
@@ -485,6 +488,7 @@ function escapeHouse() {
   mobileOrientationPaused = false
   document.body.classList.remove('is-playing')
   mobileControls.setActive(false)
+  objectiveHud.hidden = true
   pressedKeys.clear()
   startScreen.hidden = true
   escapeScreen.hidden = false
@@ -503,6 +507,17 @@ function showReward(text) {
     rewardToast.hidden = true
     rewardToast.classList.remove('is-visible')
   }, 1800)
+}
+
+function updateObjective(keyCount) {
+  currentObjective.textContent = [
+    'Search the house',
+    'Enter the moonlit courtyard',
+    'Descend into the crypt',
+    'Search old ground again',
+    'Enter the fractured mirror realm',
+    'Return to the front door',
+  ][keyCount]
 }
 
 function updateNearMiss(time) {
@@ -530,6 +545,7 @@ const keySystem = createKeySystem({
   hudCount: document.querySelector('#keys-collected'),
   onEscape: escapeHouse,
   onPickup: (count, total) => {
+    updateObjective(count)
     const unlockMessage = {
       1: 'Courtyard unsealed',
       2: 'Crypt unsealed',
@@ -663,6 +679,8 @@ function restartGame() {
   bathroomProps.reset()
   hiding.reset()
   keySystem.reset()
+  updateObjective(0)
+  objectiveHud.hidden = true
   portalSystem.reset()
   runTimer.reset()
   scareDirector.reset()
@@ -767,6 +785,7 @@ function startGame(streamerMode = false) {
   document.body.classList.add('is-playing')
   gameRunning = true
   startScreen.hidden = true
+  objectiveHud.hidden = false
   mobileControls.setActive(usesTouchControls)
   scareDirector.reset()
   runTimer.start()
