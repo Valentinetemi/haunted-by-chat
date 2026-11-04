@@ -59,3 +59,100 @@ export function createBlackPuddles(parent) {
   parent.add(group)
   return { group, update }
 }
+
+export function createMotherDrips(scene) {
+  const group = new THREE.Group()
+  group.name = 'mother-drips'
+  const liquidMaterial = new THREE.MeshStandardMaterial({
+    color: 0x010203,
+    metalness: 0.3,
+    roughness: 0.16,
+  })
+  const puddleMaterial = new THREE.MeshStandardMaterial({
+    color: 0x020304,
+    metalness: 0.25,
+    roughness: 0.2,
+    transparent: true,
+    opacity: 0.9,
+    side: THREE.DoubleSide,
+  })
+  const particles = Array.from({ length: 22 }, () => {
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 5), liquidMaterial)
+    mesh.visible = false
+    group.add(mesh)
+    return { active: false, mesh, velocity: new THREE.Vector3() }
+  })
+  const puddles = Array.from({ length: 18 }, (_, index) => {
+    const mesh = new THREE.Mesh(new THREE.CircleGeometry(1, 12), puddleMaterial.clone())
+    mesh.rotation.x = -Math.PI / 2
+    mesh.position.y = FLOOR_Y + 0.022 + index * 0.0001
+    mesh.visible = false
+    group.add(mesh)
+    return mesh
+  })
+  const mouthPosition = new THREE.Vector3()
+  let nextDropAt = 0
+  let puddleCursor = 0
+
+  const spawnPuddle = (position) => {
+    const puddle = puddles[puddleCursor]
+    puddleCursor = (puddleCursor + 1) % puddles.length
+    puddle.position.x = position.x
+    puddle.position.z = position.z
+    puddle.rotation.z = Math.random() * Math.PI
+    puddle.scale.set(0.07, 0.035 + Math.random() * 0.035, 1)
+    puddle.material.opacity = 0.88
+    puddle.visible = true
+  }
+
+  const spawnDrop = (mother) => {
+    const particle = particles.find((candidate) => !candidate.active)
+    if (!particle) return
+    mother.mouth.getWorldPosition(mouthPosition)
+    particle.active = true
+    particle.mesh.visible = true
+    particle.mesh.position.copy(mouthPosition)
+    particle.mesh.position.x += (Math.random() - 0.5) * 0.08
+    particle.mesh.position.z += (Math.random() - 0.5) * 0.05
+    particle.mesh.scale.set(0.7 + Math.random() * 0.5, 1.5 + Math.random(), 0.7)
+    particle.velocity.set((Math.random() - 0.5) * 0.05, -0.12 - Math.random() * 0.12, 0.02)
+  }
+
+  const update = (time, delta, mother, active) => {
+    if (active && time >= nextDropAt) {
+      spawnDrop(mother)
+      if (Math.random() < 0.34) spawnDrop(mother)
+      nextDropAt = time + 160 + Math.random() * 260
+    }
+
+    for (const particle of particles) {
+      if (!particle.active) continue
+      particle.velocity.y -= 4.2 * delta
+      particle.mesh.position.addScaledVector(particle.velocity, delta)
+      if (particle.mesh.position.y <= FLOOR_Y + 0.035) {
+        spawnPuddle(particle.mesh.position)
+        particle.active = false
+        particle.mesh.visible = false
+      }
+    }
+
+    for (const puddle of puddles) {
+      if (!puddle.visible) continue
+      puddle.scale.x = Math.min(puddle.scale.x + delta * 0.025, 0.17)
+      puddle.scale.y = Math.min(puddle.scale.y + delta * 0.012, 0.09)
+    }
+  }
+
+  const reset = () => {
+    nextDropAt = 0
+    puddleCursor = 0
+    for (const particle of particles) {
+      particle.active = false
+      particle.mesh.visible = false
+    }
+    for (const puddle of puddles) puddle.visible = false
+  }
+
+  scene.add(group)
+  return { reset, update }
+}

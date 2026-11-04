@@ -8,7 +8,7 @@ import {
   getRoomAt,
   movePlayerWithinHouse,
 } from './house.js'
-import { createBlackPuddles } from './effects.js'
+import { createBlackPuddles, createMotherDrips } from './effects.js'
 import { createHidingSystem } from './hiding.js'
 import { createKeySystem } from './keys.js'
 import {
@@ -219,6 +219,7 @@ const ghostRushDuration = 4000
 const ghostRushMultiplier = 3
 let ghostRushEndsAt = 0
 const mother = createMother()
+const motherDrips = createMotherDrips(scene)
 const hunterVisual = mother.group
 const maxStunShots = 3
 const stunDuration = 3000
@@ -484,6 +485,7 @@ function restartGame() {
   hunterVisual.position.set(0, 0, 0)
   hunterVisual.rotation.set(0, 0, 0)
   ghostRushEndsAt = 0
+  motherDrips.reset()
   resetStunBlaster()
   activeDoorSlam = null
   cameraShakeEndsAt = 0
@@ -552,6 +554,7 @@ renderer.setAnimationLoop((time) => {
     if (time >= hunterFrozenUntil) updateGhost(delta, time)
     if (time >= hunterFrozenUntil && ghostReachedPlayer()) catchPlayer()
   }
+  motherDrips.update(time, delta, mother, !playerCaught && !playerEscaped)
   applyCameraShake(time)
   renderer.render(scene, camera)
   camera.position.sub(cameraShakeOffset)
