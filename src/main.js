@@ -11,7 +11,11 @@ import {
 import { createBlackPuddles } from './effects.js'
 import { createHidingSystem } from './hiding.js'
 import { createKeySystem } from './keys.js'
-import { createMother, updateMotherAnimation } from './mother.js'
+import {
+  createMother,
+  updateMotherAnimation,
+  updateMotherFaceReveal,
+} from './mother.js'
 import { createScareDirector } from './scares.js'
 import { createRunTimer } from './timer.js'
 import {
@@ -238,6 +242,11 @@ function updateHunterEffects(time) {
   const isStunned = time < hunterFrozenUntil
   const chaseIntensity = time < ghostRushEndsAt ? 2.2 : 1
   updateMotherAnimation(mother, time, chaseIntensity, isStunned)
+  updateMotherFaceReveal(
+    mother,
+    Math.hypot(camera.position.x - ghost.position.x, camera.position.z - ghost.position.z),
+    time,
+  )
   mother.skinMaterial.emissiveIntensity = 0.2 + Math.sin(time * 0.002) * 0.05
 }
 

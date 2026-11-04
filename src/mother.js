@@ -214,3 +214,21 @@ export function updateMotherAnimation(mother, time, chaseIntensity, isStunned) {
     limb.mesh.rotation.z = limb.baseZ + limb.side * Math.abs(swing) * 0.18
   }
 }
+
+export function updateMotherFaceReveal(mother, distance, time) {
+  const reveal = 1 - THREE.MathUtils.smoothstep(distance, 1.45, 5.4)
+
+  for (const strand of mother.hairStrands) {
+    const unevenPart = 0.055 + (Math.sin(strand.phase * 2.3) + 1) * 0.018
+    strand.mesh.position.x = strand.baseX + strand.side * unevenPart * reveal
+    strand.mesh.rotation.z =
+      strand.baseRotationZ + strand.side * reveal * (0.07 + Math.sin(time * 0.008 + strand.phase) * 0.018)
+  }
+
+  mother.eye.material.emissiveIntensity = 0.8 + reveal * 3.4
+  mother.eye.scale.x = 1.2 + reveal * 0.65
+  mother.eye.scale.y = 0.6 + reveal * 0.3
+  mother.mouth.scale.x = 0.75 + reveal * 1.15
+  mother.mouth.scale.y = 0.8 + reveal * 2.2
+  mother.mouth.position.z = 0.18 + reveal * 0.025
+}
