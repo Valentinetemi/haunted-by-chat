@@ -47,6 +47,7 @@
         <div id="how-to-panel" hidden>
           <p><kbd>WASD</kbd> move · <kbd>Shift</kbd> sprint · <kbd>Mouse</kbd> look</p>
           <p><kbd>Click</kbd> stun Mother · <kbd>E</kbd> hide, leave, or unlock</p>
+          <p class="mobile-help">Use the left stick to move, drag the right side to look, and tap RUN, STUN, or USE.</p>
           <p>Collect all five glowing keys, manage three blaster charges, and escape through the front door.</p>
         </div>
       </div>
@@ -77,6 +78,18 @@
       <span>Escape time</span>
       <strong id="run-time">00:00.000</strong>
     </aside>
+    <div id="mobile-controls" aria-label="Mobile game controls" hidden>
+      <div id="touch-look-zone" aria-label="Drag to look around"></div>
+      <div id="move-stick" aria-label="Movement joystick">
+        <span id="move-stick-knob"></span>
+        <small>Move</small>
+      </div>
+      <div id="mobile-actions">
+        <button id="mobile-run" type="button">Run</button>
+        <button id="mobile-use" type="button">Use</button>
+        <button id="mobile-stun" type="button">Stun</button>
+      </div>
+    </div>
     <section id="caught-screen" role="dialog" aria-modal="true" aria-labelledby="caught-title" hidden>
       <h1 id="caught-title">Mother found you</h1>
       <button id="restart-button" type="button">Restart</button>

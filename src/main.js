@@ -11,6 +11,7 @@ import {
 import { createBlackPuddles, createMotherDrips } from './effects.js'
 import { createHidingSystem } from './hiding.js'
 import { createKeySystem } from './keys.js'
+import { createMobileControls } from './mobile-controls.js'
 import {
   createMother,
   updateMotherAnimation,
@@ -61,8 +62,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 renderer.setSize(window.innerWidth, window.innerHeight)
 document.querySelector('#app').appendChild(renderer.domElement)
 
-const usesTouchControls =
-  window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window
+const usesTouchControls = window.matchMedia('(pointer: coarse), (hover: none)').matches
 
 const clock = new THREE.Clock()
 const audio = createAudioSystem()
@@ -416,6 +416,7 @@ function ghostReachedPlayer() {
 function catchPlayer() {
   playerCaught = true
   gameRunning = false
+  mobileControls.setActive(false)
   pressedKeys.clear()
   startScreen.hidden = true
   audio.caught()
@@ -451,6 +452,7 @@ function updateStamina(delta, isSprinting) {
 function escapeHouse() {
   playerEscaped = true
   gameRunning = false
+  mobileControls.setActive(false)
   pressedKeys.clear()
   startScreen.hidden = true
   escapeScreen.hidden = false
@@ -500,6 +502,30 @@ const keySystem = createKeySystem({
   prompt: goalPrompt,
 })
 
+function applyLookDelta(deltaX, deltaY, sensitivity = lookSensitivity) {
+  yaw -= deltaX * sensitivity
+  pitch = THREE.MathUtils.clamp(pitch - deltaY * sensitivity, -maxPitch, maxPitch)
+  camera.rotation.set(pitch, yaw, 0)
+}
+
+function performInteraction() {
+  if (!isGameplayActive()) return
+  if (!keySystem.interact()) hiding.toggle()
+}
+
+const mobileControls = createMobileControls({
+  interactButton: document.querySelector('#mobile-use'),
+  joystick: document.querySelector('#move-stick'),
+  joystickKnob: document.querySelector('#move-stick-knob'),
+  lookZone: document.querySelector('#touch-look-zone'),
+  onInteract: performInteraction,
+  onLook: (deltaX, deltaY) => applyLookDelta(deltaX, deltaY, 0.0042),
+  onStun: fireStunBlaster,
+  root: document.querySelector('#mobile-controls'),
+  runButton: document.querySelector('#mobile-run'),
+  stunButton: document.querySelector('#mobile-stun'),
+})
+
 function triggerJumpscare() {
   window.clearTimeout(jumpscareTimeoutId)
   jumpscare.classList.remove('is-catch')
@@ -546,6 +572,7 @@ function restartGame() {
   playerCaught = false
   playerEscaped = false
   gameRunning = false
+  mobileControls.setActive(false)
   stamina = maxStamina
   updateStamina(0, false)
   yaw = 0
@@ -613,8 +640,14 @@ renderer.setAnimationLoop((time) => {
   if (pressedKeys.has('KeyS')) movement.sub(forward)
   if (pressedKeys.has('KeyD')) movement.add(right)
   if (pressedKeys.has('KeyA')) movement.sub(right)
+  if (Math.abs(mobileControls.movementY) > 0.04) {
+    movement.addScaledVector(forward, mobileControls.movementY)
+  }
+  if (Math.abs(mobileControls.movementX) > 0.04) {
+    movement.addScaledVector(right, mobileControls.movementX)
+  }
   const isSprinting =
-    pressedKeys.has('ShiftLeft') &&
+    (pressedKeys.has('ShiftLeft') || mobileControls.sprinting) &&
     movement.lengthSq() > 0 &&
     stamina > 0.02 &&
     !hiding.isHidden
@@ -642,7 +675,7 @@ renderer.setAnimationLoop((time) => {
 
 window.addEventListener('keydown', (event) => {
   if (event.code === 'KeyE' && !event.repeat && !playerCaught && !playerEscaped) {
-    if (!keySystem.interact()) hiding.toggle()
+    performInteraction()
   }
   if (event.code === 'Digit1' && !event.repeat && !playerCaught) whisper('behind you')
   if (event.code === 'Digit2' && !event.repeat) flickerLights()
@@ -651,7 +684,10 @@ window.addEventListener('keydown', (event) => {
   if (isGameplayActive()) pressedKeys.add(event.code)
 })
 window.addEventListener('keyup', (event) => pressedKeys.delete(event.code))
-window.addEventListener('blur', () => pressedKeys.clear())
+window.addEventListener('blur', () => {
+  pressedKeys.clear()
+  mobileControls.reset()
+})
 function startGame(streamerMode = false) {
   if (streamerMode) {
     connectStreamerMode()
@@ -661,6 +697,7 @@ function startGame(streamerMode = false) {
   audio.start()
   gameRunning = true
   startScreen.hidden = true
+  mobileControls.setActive(usesTouchControls)
   scareDirector.reset()
   runTimer.start()
   if (!usesTouchControls) renderer.domElement.requestPointerLock()
@@ -701,13 +738,11 @@ document.addEventListener('pointerlockerror', () => {
 
 document.addEventListener('mousemove', (event) => {
   if (document.pointerLockElement !== renderer.domElement) return
-  yaw -= event.movementX * lookSensitivity
-  pitch = THREE.MathUtils.clamp(pitch - event.movementY * lookSensitivity, -maxPitch, maxPitch)
-  camera.rotation.set(pitch, yaw, 0)
+  applyLookDelta(event.movementX, event.movementY)
 })
 
 document.addEventListener('mousedown', (event) => {
-  if (event.button === 0) fireStunBlaster()
+  if (event.button === 0 && !usesTouchControls) fireStunBlaster()
 })
 
 window.addEventListener('resize', () => {
