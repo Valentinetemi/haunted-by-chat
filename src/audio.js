@@ -82,6 +82,10 @@ export function createAudioSystem() {
       tone(980, 82, 0.72, 0.18, 'sawtooth')
       noise(0.42, 0.16, 2100, 0.05)
     },
+    nearMiss() {
+      tone(165, 320, 0.32, 0.12, 'triangle')
+      tone(245, 490, 0.28, 0.08, 'sine', 0.09)
+    },
     pickup() {
       tone(420, 840, 0.2, 0.16, 'sine')
       tone(630, 1260, 0.24, 0.1, 'sine', 0.08)

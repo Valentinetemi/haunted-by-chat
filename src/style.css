@@ -157,6 +157,57 @@ canvas {
   }
 }
 
+#danger-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  box-shadow: inset 0 0 11rem 3rem rgb(105 0 0 / 92%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms linear;
+}
+
+#reward-toast {
+  position: fixed;
+  top: 18%;
+  left: 50%;
+  z-index: 17;
+  margin: 0;
+  color: #ffe29b;
+  font: 800 clamp(1rem, 2.5vw, 1.5rem)/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.15em;
+  text-shadow: 0 0 1rem #d69238;
+  text-transform: uppercase;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+#reward-toast[hidden] {
+  display: none;
+}
+
+#reward-toast.is-visible {
+  animation: reward-pop 1.8s ease-out forwards;
+}
+
+@keyframes reward-pop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 0.7rem) scale(0.85);
+  }
+
+  15%,
+  70% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(-50%, -0.6rem) scale(1.04);
+  }
+}
+
 #twitch-feed {
   position: fixed;
   bottom: 1rem;

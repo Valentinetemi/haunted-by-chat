@@ -75,6 +75,8 @@ const playAgainButton = document.querySelector('#play-again-button')
 const interactionPrompt = document.querySelector('#interaction-prompt')
 const goalPrompt = document.querySelector('#goal-prompt')
 const jumpscare = document.querySelector('#jumpscare')
+const dangerVignette = document.querySelector('#danger-vignette')
+const rewardToast = document.querySelector('#reward-toast')
 const hiding = createHidingSystem(camera, interactionPrompt)
 const runTimer = createRunTimer({
   bestDisplay: document.querySelector('#best-time'),
@@ -82,6 +84,9 @@ const runTimer = createRunTimer({
   hudDisplay: document.querySelector('#run-time'),
 })
 let jumpscareTimeoutId = 0
+let rewardTimeoutId = 0
+let dangerWasClose = false
+let nearMissCooldownUntil = 0
 let yaw = 0
 let pitch = 0
 let playerCaught = false
@@ -365,10 +370,44 @@ function escapeHouse() {
   if (document.pointerLockElement === renderer.domElement) document.exitPointerLock()
 }
 
+function showReward(text) {
+  window.clearTimeout(rewardTimeoutId)
+  rewardToast.textContent = text
+  rewardToast.hidden = false
+  rewardToast.classList.remove('is-visible')
+  void rewardToast.offsetWidth
+  rewardToast.classList.add('is-visible')
+  rewardTimeoutId = window.setTimeout(() => {
+    rewardToast.hidden = true
+    rewardToast.classList.remove('is-visible')
+  }, 1800)
+}
+
+function updateNearMiss(time) {
+  if (playerCaught || playerEscaped || hiding.isHidden) {
+    dangerVignette.style.opacity = '0'
+    dangerWasClose = false
+    return
+  }
+
+  const distance = Math.hypot(camera.position.x - ghost.position.x, camera.position.z - ghost.position.z)
+  const dangerStrength = THREE.MathUtils.clamp((5.5 - distance) / 4, 0, 0.72)
+  dangerVignette.style.opacity = String(dangerStrength)
+  if (distance < 2.25) dangerWasClose = true
+
+  if (dangerWasClose && distance > 4.2 && time >= nearMissCooldownUntil) {
+    dangerWasClose = false
+    nearMissCooldownUntil = time + 9000
+    showReward('Near miss · +250 nerve')
+    audio.nearMiss()
+  }
+}
+
 const keySystem = createKeySystem({
   audio,
   hudCount: document.querySelector('#keys-collected'),
   onEscape: escapeHouse,
+  onPickup: (count, total) => showReward(`Key found · ${count} / ${total}`),
   parent: house.group,
   prompt: goalPrompt,
 })
@@ -446,6 +485,9 @@ function restartGame() {
   runTimer.reset()
   scareDirector.reset()
   jumpscare.hidden = true
+  dangerVignette.style.opacity = '0'
+  dangerWasClose = false
+  nearMissCooldownUntil = 0
   pressedKeys.clear()
   caughtScreen.hidden = true
   escapeScreen.hidden = true
@@ -468,6 +510,7 @@ renderer.setAnimationLoop((time) => {
   )
   scareDirector.update(time)
   runTimer.update(time)
+  updateNearMiss(time)
   updateStunBolts(delta, time)
   updateHunterEffects(time)
   updateHunterStun(time)
