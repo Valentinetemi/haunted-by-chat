@@ -11,12 +11,25 @@ const KEY_SPOTS_BY_ROOM = {
   attic: [[5.4, -14.8], [8.1, -18.5], [10.5, -21]],
 }
 
-function shuffle(values) {
-  for (let index = values.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1))
-    ;[values[index], values[swapIndex]] = [values[swapIndex], values[index]]
-  }
-  return values
+const COURTYARD_KEY_SPOTS = [[31.8, -6.2], [44.5, -5.4], [45.2, 5.2], [34.2, 4.6]]
+const CRYPT_KEY_SPOTS = [[-4.3, -61], [4.1, -59.6], [-5.2, -51.1], [4.5, -49.2]]
+const MIRROR_KEY_SPOTS = [[-45.1, -5.2], [-31.2, -4.4], [-44.2, 4.1], [-33.7, 5.3]]
+const HOUSE_KEY_SPOTS = Object.values(KEY_SPOTS_BY_ROOM).flat()
+const BACKTRACK_KEY_SPOTS = [
+  ...HOUSE_KEY_SPOTS,
+  ...COURTYARD_KEY_SPOTS,
+  ...CRYPT_KEY_SPOTS,
+]
+const KEY_STAGES = [
+  HOUSE_KEY_SPOTS,
+  COURTYARD_KEY_SPOTS,
+  CRYPT_KEY_SPOTS,
+  BACKTRACK_KEY_SPOTS,
+  MIRROR_KEY_SPOTS,
+]
+
+function pick(values) {
+  return values[Math.floor(Math.random() * values.length)]
 }
 
 function createKeyMesh(material) {
@@ -61,16 +74,14 @@ export function createKeySystem({ audio, hudCount, onEscape, onPickup, parent, p
   }
 
   const reset = () => {
-    const rooms = shuffle(Object.entries(KEY_SPOTS_BY_ROOM))
     collectedCount = 0
     canEscape = false
     prompt.hidden = true
 
     keys.forEach((key, index) => {
-      const [, spots] = rooms[index]
-      const [x, z] = spots[Math.floor(Math.random() * spots.length)]
+      const [x, z] = pick(KEY_STAGES[index])
       key.mesh.position.set(x, key.baseY, z)
-      key.mesh.visible = true
+      key.mesh.visible = index === 0
       key.collected = false
       key.phase = Math.random() * Math.PI * 2
     })
@@ -82,7 +93,7 @@ export function createKeySystem({ audio, hudCount, onEscape, onPickup, parent, p
     if (!active) return
 
     for (const key of keys) {
-      if (key.collected) continue
+      if (key.collected || !key.mesh.visible) continue
       key.mesh.rotation.y = time * 0.0014 + key.phase
       key.mesh.position.y = key.baseY + Math.sin(time * 0.0025 + key.phase) * 0.12
 
@@ -94,6 +105,7 @@ export function createKeySystem({ audio, hudCount, onEscape, onPickup, parent, p
         key.collected = true
         key.mesh.visible = false
         collectedCount += 1
+        if (collectedCount < keys.length) keys[collectedCount].mesh.visible = true
         audio.pickup()
         updateHud()
         onPickup(collectedCount, keys.length)

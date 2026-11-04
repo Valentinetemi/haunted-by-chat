@@ -529,7 +529,14 @@ const keySystem = createKeySystem({
   audio,
   hudCount: document.querySelector('#keys-collected'),
   onEscape: escapeHouse,
-  onPickup: (count, total) => showReward(`Key found · ${count} / ${total}`),
+  onPickup: (count, total) => {
+    const unlockMessage = {
+      1: 'Courtyard unsealed',
+      2: 'Crypt unsealed',
+      4: 'Mirror realm unsealed',
+    }[count]
+    showReward(unlockMessage ?? `Key found · ${count} / ${total}`)
+  },
   parent: house.group,
   prompt: goalPrompt,
 })
