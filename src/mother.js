@@ -3,6 +3,8 @@ import * as THREE from 'three'
 function addMesh(parent, geometry, material, position) {
   const mesh = new THREE.Mesh(geometry, material)
   mesh.position.set(...position)
+  mesh.castShadow = true
+  mesh.receiveShadow = true
   parent.add(mesh)
   return mesh
 }

@@ -39,6 +39,10 @@ camera.rotation.order = 'YXZ'
 
 const renderer = new THREE.WebGLRenderer({ antialias: true })
 renderer.outputColorSpace = THREE.SRGBColorSpace
+renderer.toneMapping = THREE.ACESFilmicToneMapping
+renderer.toneMappingExposure = 1.15
+renderer.shadowMap.enabled = true
+renderer.shadowMap.type = THREE.PCFSoftShadowMap
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 renderer.setSize(window.innerWidth, window.innerHeight)
 document.querySelector('#app').appendChild(renderer.domElement)

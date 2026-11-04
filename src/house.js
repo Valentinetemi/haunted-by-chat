@@ -13,7 +13,7 @@ export const ROOM_DEFINITIONS = [
     size: [8, 8],
     floor: 0x3d3028,
     light: 0xffb875,
-    intensity: 18,
+    intensity: 30,
   },
   {
     id: 'living',
@@ -23,7 +23,7 @@ export const ROOM_DEFINITIONS = [
     size: [8, 12],
     floor: 0x332a27,
     light: 0xb87955,
-    intensity: 13,
+    intensity: 24,
   },
   {
     id: 'kitchen',
@@ -33,7 +33,7 @@ export const ROOM_DEFINITIONS = [
     size: [8, 12],
     floor: 0x343a36,
     light: 0xa8c7bd,
-    intensity: 19,
+    intensity: 31,
   },
   {
     id: 'bathroom',
@@ -43,7 +43,7 @@ export const ROOM_DEFINITIONS = [
     size: [8, 10],
     floor: 0x304044,
     light: 0x8eb7c5,
-    intensity: 15,
+    intensity: 27,
   },
   {
     id: 'bedroom',
@@ -53,7 +53,7 @@ export const ROOM_DEFINITIONS = [
     size: [8, 10],
     floor: 0x3b303d,
     light: 0xa987b7,
-    intensity: 11,
+    intensity: 21,
   },
   {
     id: 'basement',
@@ -63,7 +63,7 @@ export const ROOM_DEFINITIONS = [
     size: [8, 11],
     floor: 0x242525,
     light: 0x8f3e2d,
-    intensity: 10,
+    intensity: 18,
   },
   {
     id: 'attic',
@@ -73,7 +73,7 @@ export const ROOM_DEFINITIONS = [
     size: [8, 11],
     floor: 0x332d25,
     light: 0x8c7654,
-    intensity: 9,
+    intensity: 17,
   },
 ]
 
@@ -88,6 +88,8 @@ export function addBox(parent, size, position, material, name = '') {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material)
   mesh.position.set(...position)
   mesh.name = name
+  mesh.castShadow = true
+  mesh.receiveShadow = true
   parent.add(mesh)
   return mesh
 }
@@ -221,14 +223,14 @@ export function createHauntedHouse(scene) {
     const fixtureMaterial = new THREE.MeshStandardMaterial({
       color: room.light,
       emissive: room.light,
-      emissiveIntensity: 1.25,
+      emissiveIntensity: 1.6,
       roughness: 0.45,
     })
     const fixture = addBox(group, [0.75, 0.08, 0.75], [x, CEILING_Y - 0.05, z], fixtureMaterial)
-    const light = new THREE.PointLight(room.light, room.intensity, 12, 2)
+    const light = new THREE.PointLight(room.light, room.intensity, 14, 2)
     light.position.set(x, CEILING_Y - 0.35, z)
     group.add(light)
-    ceilingLights.push({ fixture, light, baseIntensity: room.intensity, baseEmissive: 1.25, roomId: room.id })
+    ceilingLights.push({ fixture, light, baseIntensity: room.intensity, baseEmissive: 1.6, roomId: room.id })
   }
 
   addBox(group, [8, 0.2, 25], [0, FLOOR_Y - 0.1, -10.5], hallFloorMaterial, 'main-hall-floor')
@@ -241,10 +243,29 @@ export function createHauntedHouse(scene) {
       emissiveIntensity: 0.8,
     })
     const fixture = addBox(group, [0.55, 0.08, 0.55], [0, CEILING_Y - 0.05, z], fixtureMaterial)
-    const light = new THREE.PointLight(0xa68a68, 8, 8, 2)
+    const light = new THREE.PointLight(0xd5a36f, 15, 9, 2)
     light.position.set(0, CEILING_Y - 0.35, z)
     group.add(light)
-    ceilingLights.push({ fixture, light, baseIntensity: 8, baseEmissive: 0.8, roomId: 'hall' })
+    ceilingLights.push({ fixture, light, baseIntensity: 15, baseEmissive: 0.8, roomId: 'hall' })
+  }
+
+  const moonWindowMaterial = new THREE.MeshStandardMaterial({
+    color: 0x8ea9c6,
+    emissive: 0x6f91ba,
+    emissiveIntensity: 1.1,
+    roughness: 0.3,
+  })
+  for (const [side, z] of [[-1, 5.8], [1, 5.2], [-1, -7.4], [1, -7.1]]) {
+    addBox(
+      group,
+      [0.06, 1.55, 1.45],
+      [side * 11.86, FLOOR_Y + 2.25, z],
+      moonWindowMaterial,
+      'moonlit-window',
+    )
+    const windowLight = new THREE.PointLight(0x8eb8e8, 7, 8, 2)
+    windowLight.position.set(side * 10.9, FLOOR_Y + 2.1, z)
+    group.add(windowLight)
   }
 
   addSegmentedWallZ(group, 10, -12, 12, [[-1.3, 1.3]], wallMaterial)
@@ -266,8 +287,22 @@ export function createHauntedHouse(scene) {
   doors.push(createRoomDoor(group, 'attic', 4, -17.5, 1))
 
   const frontDoor = createFrontDoor(group, wallMaterial)
-  const ambientLight = new THREE.HemisphereLight(0x4b5362, 0x140b09, 0.7)
+  const ambientLight = new THREE.HemisphereLight(0x78889c, 0x251511, 1.35)
   group.add(ambientLight)
+
+  const moonLight = new THREE.DirectionalLight(0x91b7e2, 1.8)
+  moonLight.position.set(-9, 8, 7)
+  moonLight.target.position.set(0, FLOOR_Y, -8)
+  moonLight.castShadow = true
+  moonLight.shadow.mapSize.set(1024, 1024)
+  moonLight.shadow.camera.left = -18
+  moonLight.shadow.camera.right = 18
+  moonLight.shadow.camera.top = 18
+  moonLight.shadow.camera.bottom = -18
+  moonLight.shadow.camera.near = 1
+  moonLight.shadow.camera.far = 45
+  moonLight.shadow.bias = -0.0004
+  group.add(moonLight, moonLight.target)
   scene.add(group)
 
   return { group, doors, ceilingLights, frontDoor }
