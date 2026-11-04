@@ -11,120 +11,176 @@ export function createMother() {
   const group = new THREE.Group()
   group.name = 'mother'
   const dressMaterial = new THREE.MeshStandardMaterial({
-    color: 0x0a0809,
-    roughness: 0.96,
+    color: 0x858582,
+    roughness: 0.92,
     side: THREE.DoubleSide,
   })
-  const skinMaterial = new THREE.MeshStandardMaterial({
-    color: 0xa99c92,
-    emissive: 0x140c0d,
-    emissiveIntensity: 0.22,
-    roughness: 0.87,
+  const stainMaterial = new THREE.MeshStandardMaterial({
+    color: 0x302d2b,
+    roughness: 1,
+    transparent: true,
+    opacity: 0.78,
   })
-  const hairMaterial = new THREE.MeshStandardMaterial({ color: 0x080505, roughness: 1 })
-  const voidMaterial = new THREE.MeshBasicMaterial({ color: 0x010000 })
+  const skinMaterial = new THREE.MeshStandardMaterial({
+    color: 0x8596a0,
+    emissive: 0x101923,
+    emissiveIntensity: 0.18,
+    roughness: 0.84,
+  })
+  const hairMaterial = new THREE.MeshStandardMaterial({
+    color: 0x060708,
+    metalness: 0.18,
+    roughness: 0.24,
+  })
+  const voidMaterial = new THREE.MeshBasicMaterial({ color: 0x010101 })
+  const eyeMaterial = new THREE.MeshStandardMaterial({
+    color: 0xc8d2d3,
+    emissive: 0x9eafb5,
+    emissiveIntensity: 1.4,
+    roughness: 0.38,
+  })
   const limbs = []
+  const hairStrands = []
 
   const skirt = addMesh(
     group,
-    new THREE.ConeGeometry(0.78, 2.35, 10, 1, true),
+    new THREE.ConeGeometry(0.53, 1.5, 9, 2, true),
     dressMaterial,
-    [0, 1.12, 0],
+    [0, 0.75, 0],
   )
-  skirt.scale.z = 0.66
+  skirt.scale.z = 0.56
+
+  for (let index = 0; index < 8; index += 1) {
+    const angle = (index / 8) * Math.PI * 2
+    const tornHem = addMesh(
+      group,
+      new THREE.ConeGeometry(0.09 + (index % 3) * 0.018, 0.3 + (index % 2) * 0.12, 3),
+      dressMaterial,
+      [Math.cos(angle) * 0.4, 0.08 + (index % 2) * 0.03, Math.sin(angle) * 0.23],
+    )
+    tornHem.rotation.y = -angle
+    tornHem.rotation.z = (index % 2 ? 1 : -1) * 0.08
+  }
 
   const torso = addMesh(
     group,
-    new THREE.CylinderGeometry(0.31, 0.56, 1.35, 9),
+    new THREE.CylinderGeometry(0.2, 0.34, 0.84, 8),
     dressMaterial,
-    [0, 2.12, 0],
+    [0, 1.45, 0],
   )
-  torso.scale.z = 0.72
+  torso.scale.z = 0.68
+
+  for (const [x, y, width, height, rotation] of [
+    [-0.18, 1.28, 0.17, 0.3, -0.15],
+    [0.1, 0.8, 0.22, 0.42, 0.1],
+    [-0.08, 0.42, 0.12, 0.24, -0.24],
+  ]) {
+    const stain = new THREE.Mesh(new THREE.PlaneGeometry(width, height), stainMaterial)
+    stain.position.set(x, y, 0.35)
+    stain.rotation.z = rotation
+    group.add(stain)
+  }
 
   const neck = addMesh(
     group,
-    new THREE.CylinderGeometry(0.1, 0.12, 0.38, 8),
+    new THREE.CylinderGeometry(0.07, 0.09, 0.3, 7),
     skinMaterial,
-    [0, 2.86, 0],
+    [0, 1.9, 0],
   )
-  neck.rotation.z = -0.06
+  neck.rotation.z = -0.08
 
   const head = addMesh(
     group,
-    new THREE.SphereGeometry(0.32, 12, 10),
+    new THREE.SphereGeometry(0.25, 12, 10),
     skinMaterial,
-    [0, 3.2, 0],
+    [0, 2.12, 0],
   )
-  head.scale.set(0.82, 1.22, 0.74)
+  head.scale.set(0.78, 1.08, 0.68)
   head.rotation.z = -0.08
 
-  const hair = addMesh(
+  const eye = addMesh(group, new THREE.SphereGeometry(0.045, 10, 8), eyeMaterial, [0.06, 2.15, 0.18])
+  eye.scale.set(1.35, 0.72, 0.5)
+  const mouth = addMesh(group, new THREE.BoxGeometry(0.34, 0.045, 0.022), voidMaterial, [0, 2.02, 0.18])
+  mouth.rotation.z = -0.04
+
+  const hairCap = addMesh(
     group,
-    new THREE.SphereGeometry(0.35, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.65),
+    new THREE.SphereGeometry(0.28, 12, 9, 0, Math.PI * 2, 0, Math.PI * 0.72),
     hairMaterial,
-    [0, 3.34, -0.02],
+    [0, 2.23, -0.015],
   )
-  hair.scale.set(0.92, 1.1, 0.9)
-  addMesh(group, new THREE.BoxGeometry(0.58, 1.28, 0.18), hairMaterial, [0, 2.84, -0.19])
+  hairCap.scale.set(0.9, 1, 0.82)
+  addMesh(group, new THREE.BoxGeometry(0.46, 0.92, 0.13), hairMaterial, [0, 1.88, -0.14])
+
+  for (let index = 0; index < 9; index += 1) {
+    const offset = (index - 4) * 0.052
+    const length = 0.72 + (index % 3) * 0.1
+    const strand = addMesh(
+      group,
+      new THREE.CylinderGeometry(0.022, 0.035, length, 5),
+      hairMaterial,
+      [offset, 2.02 - (index % 2) * 0.04, 0.19 + Math.abs(offset) * 0.12],
+    )
+    strand.rotation.z = offset * 0.45
+    hairStrands.push({
+      baseX: strand.position.x,
+      baseRotationZ: strand.rotation.z,
+      mesh: strand,
+      phase: index * 0.72,
+      side: Math.sign(offset) || 1,
+    })
+  }
 
   for (const side of [-1, 1]) {
-    const eye = addMesh(
-      group,
-      new THREE.SphereGeometry(0.038, 8, 6),
-      voidMaterial,
-      [side * 0.095, 3.23, 0.235],
-    )
-    eye.scale.x = 0.65
-
     const upperArm = addMesh(
       group,
-      new THREE.CylinderGeometry(0.075, 0.06, 1.32, 7),
+      new THREE.CylinderGeometry(0.052, 0.045, 0.83, 6),
       dressMaterial,
-      [side * 0.48, 2.05, 0],
+      [side * 0.35, 1.42, 0],
     )
-    upperArm.rotation.z = side * -0.13
+    upperArm.rotation.z = side * -0.08
     limbs.push({ baseZ: upperArm.rotation.z, mesh: upperArm, side, phase: 0 })
 
     const forearm = addMesh(
       group,
-      new THREE.CylinderGeometry(0.055, 0.035, 1.15, 7),
+      new THREE.CylinderGeometry(0.042, 0.026, 0.93, 6),
       skinMaterial,
-      [side * 0.6, 0.92, 0.03],
+      [side * 0.4, 0.56, 0.025],
     )
-    forearm.rotation.z = side * -0.07
+    forearm.rotation.z = side * -0.035
     limbs.push({ baseZ: forearm.rotation.z, mesh: forearm, side, phase: Math.PI })
 
     const palm = addMesh(
       group,
-      new THREE.SphereGeometry(0.09, 8, 6),
+      new THREE.SphereGeometry(0.065, 8, 6),
       skinMaterial,
-      [side * 0.65, 0.31, 0.05],
+      [side * 0.42, 0.08, 0.04],
     )
-    palm.scale.set(0.65, 1.35, 0.55)
+    palm.scale.set(0.62, 1.4, 0.5)
 
     for (let finger = 0; finger < 4; finger += 1) {
       const claw = addMesh(
         group,
-        new THREE.CylinderGeometry(0.012, 0.006, 0.34 + finger * 0.025, 5),
+        new THREE.CylinderGeometry(0.009, 0.004, 0.27 + finger * 0.025, 5),
         skinMaterial,
-        [side * (0.61 + finger * 0.025), 0.08 - finger * 0.02, 0.07],
+        [side * (0.39 + finger * 0.018), -0.13 - finger * 0.018, 0.05],
       )
-      claw.rotation.z = side * 0.06
+      claw.rotation.z = side * (0.045 + finger * 0.012)
     }
   }
 
-  const mouth = addMesh(group, new THREE.BoxGeometry(0.16, 0.025, 0.018), voidMaterial, [0, 3.08, 0.245])
-  mouth.rotation.z = -0.06
-
   const stunLight = new THREE.PointLight(0x38bfff, 0, 6, 2)
-  stunLight.position.set(0, 1.7, 0.4)
+  stunLight.position.set(0, 1.2, 0.35)
   group.add(stunLight)
 
   return {
     dressMaterial,
+    eye,
     group,
+    hairStrands,
     head,
     limbs,
+    mouth,
     skinMaterial,
     stunLight,
     torso,

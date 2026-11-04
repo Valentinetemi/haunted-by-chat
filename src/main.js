@@ -223,7 +223,7 @@ const stunBoltLifetime = 3
 const stunBolts = []
 const hunterHitBox = new THREE.Box3()
 const hunterHitCenter = new THREE.Vector3()
-const hunterHitSize = new THREE.Vector3(1.1, 3.4, 1)
+const hunterHitSize = new THREE.Vector3(0.9, 2.35, 0.85)
 const stunRay = new THREE.Ray()
 const stunHitPoint = new THREE.Vector3()
 const stunBoltGeometry = new THREE.SphereGeometry(0.07, 12, 8)
@@ -278,7 +278,7 @@ function freezeHunter(time) {
 }
 
 function updateStunBolts(delta, time) {
-  hunterHitCenter.set(ghost.position.x, ghost.position.y + 1.6, ghost.position.z)
+  hunterHitCenter.set(ghost.position.x, ghost.position.y + 1.15, ghost.position.z)
   hunterHitBox.setFromCenterAndSize(hunterHitCenter, hunterHitSize)
   for (let index = stunBolts.length - 1; index >= 0; index -= 1) {
     const bolt = stunBolts[index]
