@@ -2,7 +2,7 @@
 
 ![Haunted by Chat cover artwork](public/assets/haunted-by-chat-cover.png)
 
-A replayable first-person browser horror game set inside a haunted house. Search the entrance hall, living room, kitchen, bathroom, kid's bedroom, basement, and attic for five randomized keys while Mother hunts you.
+A replayable first-person browser horror game spanning a haunted house, moonlit graveyard courtyard, underground crypt, and fractured mirror realm. Follow a randomized trail of five keys through the cursed locations while Mother hunts you.
 
 The game is single-player by default. Twitch chat controls are available only when you explicitly choose **Streamer mode**.
 
@@ -25,12 +25,15 @@ The Twitch connection is anonymous and read-only. It does not use OAuth or requi
 
 ## Goal and controls
 
-- Find five glowing keys hidden in different rooms, then return to the front door and press `E` to escape.
+- Find five glowing keys, then return to the front door and press `E` to escape.
+- Keys progressively unseal the courtyard, crypt, and mirror realm. The NEXT display points toward the current search area.
 - Use `WASD` to move and the mouse to look.
 - Hold `Shift` to sprint while stamina lasts.
 - Left-click to fire the stun blaster. Each run starts with three charges.
 - Press `E` near a hiding spot to hide or leave.
 - Press `Esc` to release the pointer and pause the timer.
+
+On a phone, rotate to landscape. Drag anywhere in the lower-left movement zone to place the dynamic joystick, swipe the right side to look, and use the on-screen RUN, USE, and STUN controls.
 
 Each run randomizes key locations, Mother's spawn, and scare timing. Collecting keys raises the tension: Mother becomes faster and dangerous scares become more frequent. The best escape time is saved in `localStorage`.
 
