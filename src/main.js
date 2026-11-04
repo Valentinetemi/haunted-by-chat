@@ -1,5 +1,4 @@
 import * as THREE from 'three'
-import tmi from 'tmi.js'
 
 import { createAudioSystem } from './audio.js'
 import {
@@ -637,10 +636,22 @@ const twitchScares = new Map([
   ['c', { name: 'HUNT', action: rushGhost }],
 ])
 let twitchClient = null
+let streamerConnectionRequested = false
 
-function connectStreamerMode() {
+async function connectStreamerMode() {
+  streamerConnectionRequested = true
   twitchFeed.hidden = false
   if (twitchClient) return
+
+  let tmi
+  try {
+    const tmiModule = await import('tmi.js')
+    tmi = tmiModule.default
+  } catch (error) {
+    console.warn('Could not load Twitch chat support', error)
+    return
+  }
+  if (!streamerConnectionRequested) return
 
   twitchClient = new tmi.Client({
     connection: { reconnect: true, secure: true },
@@ -659,6 +670,7 @@ function connectStreamerMode() {
 }
 
 function disconnectStreamerMode() {
+  streamerConnectionRequested = false
   twitchFeed.hidden = true
   twitchFeed.replaceChildren()
   if (!twitchClient) return
