@@ -31,6 +31,7 @@ canvas {
   display: grid;
   place-items: center;
   padding: 2rem;
+  overflow-y: auto;
   color: #fff;
   background:
     radial-gradient(circle at 50% 35%, rgb(73 43 34 / 42%), transparent 35%),
@@ -126,6 +127,7 @@ canvas {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .menu-actions .primary-action {
@@ -190,6 +192,26 @@ canvas {
 kbd {
   color: #ead4b7;
   font: inherit;
+}
+
+@media (max-width: 600px), (max-height: 720px) {
+  #start-screen {
+    place-items: start center;
+    padding: max(0.75rem, env(safe-area-inset-top)) 0.75rem max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  .menu-card {
+    padding: 1.15rem;
+  }
+
+  .menu-card h1 {
+    font-size: clamp(2.35rem, 14vw, 4.2rem);
+  }
+
+  .menu-copy {
+    margin: 1rem auto 1.2rem;
+    font-size: 0.88rem;
+  }
 }
 
 #whisper-message {

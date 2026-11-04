@@ -61,6 +61,9 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 renderer.setSize(window.innerWidth, window.innerHeight)
 document.querySelector('#app').appendChild(renderer.domElement)
 
+const usesTouchControls =
+  window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window
+
 const clock = new THREE.Clock()
 const audio = createAudioSystem()
 const house = createHauntedHouse(scene)
@@ -120,8 +123,13 @@ let yaw = 0
 let pitch = 0
 let playerCaught = false
 let playerEscaped = false
+let gameRunning = false
 let stamina = maxStamina
 let whisperTimeoutId = 0
+
+function isGameplayActive() {
+  return gameRunning && !playerCaught && !playerEscaped
+}
 
 const brightnessStorageKey = 'haunted-by-chat-brightness'
 
@@ -312,7 +320,7 @@ function fireStunBlaster() {
     stunShotsRemaining === 0 ||
     playerCaught ||
     hiding.isHidden ||
-    document.pointerLockElement !== renderer.domElement
+    !isGameplayActive()
   ) return
   const direction = new THREE.Vector3()
   camera.getWorldDirection(direction)
@@ -407,6 +415,7 @@ function ghostReachedPlayer() {
 
 function catchPlayer() {
   playerCaught = true
+  gameRunning = false
   pressedKeys.clear()
   startScreen.hidden = true
   audio.caught()
@@ -441,6 +450,7 @@ function updateStamina(delta, isSprinting) {
 
 function escapeHouse() {
   playerEscaped = true
+  gameRunning = false
   pressedKeys.clear()
   startScreen.hidden = true
   escapeScreen.hidden = false
@@ -462,7 +472,7 @@ function showReward(text) {
 }
 
 function updateNearMiss(time) {
-  if (playerCaught || playerEscaped || hiding.isHidden) {
+  if (!isGameplayActive() || hiding.isHidden) {
     dangerVignette.style.opacity = '0'
     dangerWasClose = false
     return
@@ -529,16 +539,13 @@ const scareDirector = createScareDirector({
   },
   getRoom: () => getRoomAt(camera.position),
   getTension: () => keySystem.count / keySystem.total,
-  isActive: () =>
-    !playerCaught &&
-    !playerEscaped &&
-    !hiding.isHidden &&
-    document.pointerLockElement === renderer.domElement,
+  isActive: () => isGameplayActive() && !hiding.isHidden,
 })
 
 function restartGame() {
   playerCaught = false
   playerEscaped = false
+  gameRunning = false
   stamina = maxStamina
   updateStamina(0, false)
   yaw = 0
@@ -581,14 +588,14 @@ renderer.setAnimationLoop((time) => {
   updateLightFlicker(time)
   blackPuddles.update(time)
   updateDoorSlam(time)
-  if (bathroomProps.update(camera.position, time, !playerCaught)) audio.mirror()
+  if (bathroomProps.update(camera.position, time, isGameplayActive())) audio.mirror()
   hiding.update(
-    !playerCaught && !playerEscaped && document.pointerLockElement === renderer.domElement,
+    isGameplayActive(),
   )
   keySystem.update(
     camera.position,
     time,
-    !playerCaught && !playerEscaped && document.pointerLockElement === renderer.domElement,
+    isGameplayActive(),
   )
   scareDirector.update(time)
   runTimer.update(time)
@@ -617,18 +624,16 @@ renderer.setAnimationLoop((time) => {
     movePlayerWithinHouse(camera.position, movement)
   }
 
-  if (!playerCaught && !playerEscaped && document.pointerLockElement === renderer.domElement) {
+  if (isGameplayActive()) {
     if (time >= hunterFrozenUntil) updateGhost(delta, time)
     if (time >= hunterFrozenUntil && ghostReachedPlayer()) catchPlayer()
   }
-  motherDrips.update(time, delta, mother, !playerCaught && !playerEscaped)
+  motherDrips.update(time, delta, mother, isGameplayActive())
   audio.updateMother(
     time,
     Math.hypot(camera.position.x - ghost.position.x, camera.position.z - ghost.position.z),
     time >= hunterFrozenUntil,
-    !playerCaught &&
-      !playerEscaped &&
-      document.pointerLockElement === renderer.domElement,
+    isGameplayActive(),
   )
   applyCameraShake(time)
   renderer.render(scene, camera)
@@ -643,7 +648,7 @@ window.addEventListener('keydown', (event) => {
   if (event.code === 'Digit2' && !event.repeat) flickerLights()
   if (event.code === 'Digit3' && !event.repeat && !playerCaught) slamDoor()
   if (event.code === 'Digit4' && !event.repeat && !playerCaught) rushGhost()
-  if (document.pointerLockElement === renderer.domElement) pressedKeys.add(event.code)
+  if (isGameplayActive()) pressedKeys.add(event.code)
 })
 window.addEventListener('keyup', (event) => pressedKeys.delete(event.code))
 window.addEventListener('blur', () => pressedKeys.clear())
@@ -654,7 +659,11 @@ function startGame(streamerMode = false) {
     disconnectStreamerMode()
   }
   audio.start()
-  renderer.domElement.requestPointerLock()
+  gameRunning = true
+  startScreen.hidden = true
+  scareDirector.reset()
+  runTimer.start()
+  if (!usesTouchControls) renderer.domElement.requestPointerLock()
 }
 
 playButton.addEventListener('click', () => startGame(false))
@@ -668,15 +677,26 @@ restartButton.addEventListener('click', restartGame)
 playAgainButton.addEventListener('click', restartGame)
 
 document.addEventListener('pointerlockchange', () => {
+  if (usesTouchControls) return
   const isLocked = document.pointerLockElement === renderer.domElement
-  startScreen.hidden = isLocked || playerCaught || playerEscaped
   if (isLocked) {
+    gameRunning = true
+    startScreen.hidden = true
     scareDirector.reset()
     runTimer.start()
-  } else {
+  } else if (!playerCaught && !playerEscaped) {
+    gameRunning = false
+    startScreen.hidden = false
     runTimer.pause()
   }
   if (!isLocked) pressedKeys.clear()
+})
+
+document.addEventListener('pointerlockerror', () => {
+  if (usesTouchControls || playerCaught || playerEscaped) return
+  gameRunning = false
+  startScreen.hidden = false
+  runTimer.pause()
 })
 
 document.addEventListener('mousemove', (event) => {
