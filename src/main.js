@@ -10,6 +10,7 @@ import {
 } from './house.js'
 import { createBlackPuddles, createMotherDrips } from './effects.js'
 import { createHidingSystem } from './hiding.js'
+import { createHauntedPlaces } from './haunted-places.js'
 import { createKeySystem } from './keys.js'
 import { createMobileControls } from './mobile-controls.js'
 import {
@@ -71,6 +72,7 @@ document.body.classList.toggle('uses-touch-controls', usesTouchControls)
 const clock = new THREE.Clock()
 const audio = createAudioSystem()
 const house = createHauntedHouse(scene)
+createHauntedPlaces(scene)
 const blackPuddles = createBlackPuddles(house.group)
 furnishEntrance(house.group)
 furnishLivingRoom(house.group)
