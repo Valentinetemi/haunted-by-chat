@@ -241,13 +241,13 @@ scene.add(ghost)
 
 function updateHunterEffects(time) {
   const isStunned = time < hunterFrozenUntil
-  const chaseIntensity = time < ghostRushEndsAt ? 2.2 : 1
-  updateMotherAnimation(mother, time, chaseIntensity, isStunned)
-  updateMotherFaceReveal(
-    mother,
-    Math.hypot(camera.position.x - ghost.position.x, camera.position.z - ghost.position.z),
-    time,
+  const motherDistance = Math.hypot(
+    camera.position.x - ghost.position.x,
+    camera.position.z - ghost.position.z,
   )
+  const chaseIntensity = time < ghostRushEndsAt ? 2.4 : motherDistance < 9 ? 1.65 : 1
+  updateMotherAnimation(mother, time, chaseIntensity, isStunned)
+  updateMotherFaceReveal(mother, motherDistance, time)
   mother.skinMaterial.emissiveIntensity = 0.2 + Math.sin(time * 0.002) * 0.05
 }
 

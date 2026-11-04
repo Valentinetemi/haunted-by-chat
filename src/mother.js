@@ -189,9 +189,10 @@ export function createMother() {
 
 export function updateMotherAnimation(mother, time, chaseIntensity, isStunned) {
   if (isStunned) {
-    mother.group.position.y = 0
+    mother.group.position.set(0, 0, 0)
+    mother.group.rotation.x = 0
     mother.group.rotation.z = Math.sin(time * 0.045) * 0.018
-    mother.head.rotation.z = -0.08
+    mother.head.rotation.set(0, 0, -0.08)
     for (const limb of mother.limbs) {
       limb.mesh.rotation.x = 0
       limb.mesh.rotation.z = limb.baseZ
@@ -200,18 +201,41 @@ export function updateMotherAnimation(mother, time, chaseIntensity, isStunned) {
   }
 
   const seconds = time * 0.001
-  const pace = 2.4 + chaseIntensity * 1.15
-  const reach = 0.08 + chaseIntensity * 0.055
-  mother.group.position.y = Math.sin(seconds * pace * 1.9) * 0.045
-  mother.group.rotation.z = Math.sin(seconds * pace * 0.42) * 0.025
-  mother.torso.rotation.y = Math.sin(seconds * pace * 0.55) * 0.055
-  mother.head.rotation.z = -0.08 + Math.sin(seconds * 0.7) * 0.06
-  mother.head.rotation.y = Math.sin(seconds * 0.43) * 0.12
+  const isHunched = chaseIntensity > 1.35
+  const pace = isHunched ? 9.5 + chaseIntensity : 3.1
+  const poseInterval = isHunched ? 85 : 235
+  const pose = Math.floor(time / poseInterval)
+  const poseNoise = (offset) => {
+    const value = Math.sin((pose + offset) * 12.9898) * 43758.5453
+    return value - Math.floor(value)
+  }
+  const twitchPose = Math.floor(time / 48)
+  const twitchNoise = Math.sin(twitchPose * 78.233) * 19417.287
+  const twitch = twitchNoise - Math.floor(twitchNoise) > 0.78
+  const hunch = isHunched ? 0.48 + Math.sin(seconds * pace) * 0.06 : 0
 
-  for (const limb of mother.limbs) {
-    const swing = Math.sin(seconds * pace + limb.phase) * reach
-    limb.mesh.rotation.x = swing
-    limb.mesh.rotation.z = limb.baseZ + limb.side * Math.abs(swing) * 0.18
+  mother.group.position.x = twitch ? (poseNoise(8) - 0.5) * 0.055 : 0
+  mother.group.position.y = Math.abs(Math.sin(seconds * pace)) * (isHunched ? 0.035 : 0.018)
+  mother.group.position.z = isHunched ? Math.sin(seconds * pace * 0.5) * 0.035 : 0
+  mother.group.rotation.x = hunch
+  mother.group.rotation.z = (poseNoise(1) - 0.5) * (isHunched ? 0.09 : 0.05)
+  mother.torso.rotation.y = (poseNoise(2) - 0.5) * (isHunched ? 0.22 : 0.1)
+  mother.head.rotation.x = (poseNoise(3) - 0.5) * (isHunched ? 0.38 : 0.16)
+  mother.head.rotation.y = (poseNoise(4) - 0.5) * (isHunched ? 0.62 : 0.34)
+  mother.head.rotation.z = -0.08 + (poseNoise(5) - 0.5) * (isHunched ? 0.32 : 0.16)
+
+  for (const [index, limb] of mother.limbs.entries()) {
+    const snappedReach = (poseNoise(index + 10) - 0.5) * (isHunched ? 0.95 : 0.24)
+    const runningSwing = isHunched ? Math.sin(seconds * pace + limb.phase) * 0.52 : 0
+    limb.mesh.rotation.x = snappedReach + runningSwing
+    limb.mesh.rotation.z =
+      limb.baseZ + limb.side * (isHunched ? 0.34 : 0.08) + (twitch ? (poseNoise(index + 20) - 0.5) * 0.22 : 0)
+  }
+
+  for (const strand of mother.hairStrands) {
+    strand.mesh.position.y = 2.02 - (strand.phase % 1.2) * 0.035 + Math.sin(seconds * pace + strand.phase) * 0.025
+    strand.mesh.position.z = 0.19 + Math.sin(seconds * pace * 0.7 + strand.phase) * (isHunched ? 0.055 : 0.022)
+    strand.mesh.rotation.x = Math.sin(seconds * pace + strand.phase) * (isHunched ? 0.18 : 0.06)
   }
 }
 
