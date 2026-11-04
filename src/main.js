@@ -55,7 +55,6 @@ camera.add(flashlightSpill)
 const renderer = new THREE.WebGLRenderer({ antialias: true })
 renderer.outputColorSpace = THREE.SRGBColorSpace
 renderer.toneMapping = THREE.ACESFilmicToneMapping
-renderer.toneMappingExposure = 1.15
 renderer.shadowMap.enabled = true
 renderer.shadowMap.type = THREE.PCFSoftShadowMap
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
@@ -91,6 +90,8 @@ const playButton = document.querySelector('#play-button')
 const streamerButton = document.querySelector('#streamer-button')
 const howToButton = document.querySelector('#how-to-button')
 const howToPanel = document.querySelector('#how-to-panel')
+const brightnessSlider = document.querySelector('#brightness-slider')
+const brightnessValue = document.querySelector('#brightness-value')
 const whisperMessage = document.querySelector('#whisper-message')
 const twitchFeed = document.querySelector('#twitch-feed')
 const stunHud = document.querySelector('#stun-hud')
@@ -121,6 +122,36 @@ let playerCaught = false
 let playerEscaped = false
 let stamina = maxStamina
 let whisperTimeoutId = 0
+
+const brightnessStorageKey = 'haunted-by-chat-brightness'
+
+function loadBrightness() {
+  try {
+    const savedBrightness = Number.parseFloat(localStorage.getItem(brightnessStorageKey))
+    if (Number.isFinite(savedBrightness)) {
+      return THREE.MathUtils.clamp(savedBrightness, 0.75, 1.65)
+    }
+  } catch {
+    // Storage can be unavailable in private browsing; the default still works.
+  }
+  return 1.15
+}
+
+function setBrightness(value, save = true) {
+  const brightness = THREE.MathUtils.clamp(Number.parseFloat(value), 0.75, 1.65)
+  renderer.toneMappingExposure = brightness
+  brightnessSlider.value = String(brightness)
+  brightnessValue.textContent = `${brightness.toFixed(2)}×`
+  if (!save) return
+  try {
+    localStorage.setItem(brightnessStorageKey, String(brightness))
+  } catch {
+    // Keep the current-session setting even when persistence is unavailable.
+  }
+}
+
+setBrightness(loadBrightness(), false)
+brightnessSlider.addEventListener('input', () => setBrightness(brightnessSlider.value))
 
 const flickerDuration = 2000
 let flickerEndsAt = 0

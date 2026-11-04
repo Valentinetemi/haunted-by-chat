@@ -125,6 +125,30 @@ canvas {
   font: 0.65rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+.brightness-control {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  color: #9c928a;
+  font: 700 0.65rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.brightness-control input {
+  width: 100%;
+  accent-color: #c7a06e;
+  cursor: pointer;
+}
+
+.brightness-control output {
+  min-width: 3.5rem;
+  color: #dec7a5;
+  text-align: right;
+}
+
 kbd {
   color: #ead4b7;
   font: inherit;
