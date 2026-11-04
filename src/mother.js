@@ -173,6 +173,10 @@ export function createMother() {
   stunLight.position.set(0, 1.2, 0.35)
   group.add(stunLight)
 
+  const rimLight = new THREE.PointLight(0x6b0b12, 3.2, 4.5, 2)
+  rimLight.position.set(-0.25, 1.55, -0.65)
+  group.add(rimLight)
+
   return {
     dressMaterial,
     eye,
@@ -181,6 +185,7 @@ export function createMother() {
     head,
     limbs,
     mouth,
+    rimLight,
     skinMaterial,
     stunLight,
     torso,
