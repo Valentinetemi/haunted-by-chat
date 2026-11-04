@@ -2,6 +2,14 @@ export function createAudioSystem() {
   let context = null
   let master = null
   let ambienceStarted = false
+  let lullabyGain = null
+  let lullabyLead = null
+  let lullabyShadow = null
+  let lullabyNoteIndex = 0
+  let nextLullabyNoteAt = 0
+  let nextMotherClickAt = 0
+  let nextWetDripAt = 0
+  const lullabyNotes = [196, 220, 174.61, 146.83, 164.81, 130.81, 146.83, 98]
 
   const ensureContext = () => {
     if (!context) {
@@ -64,6 +72,48 @@ export function createAudioSystem() {
       oscillator.connect(gain).connect(master)
       oscillator.start()
     }
+
+    lullabyGain = audioContext.createGain()
+    lullabyGain.gain.value = 0.0001
+    lullabyGain.connect(master)
+    lullabyLead = audioContext.createOscillator()
+    lullabyLead.type = 'triangle'
+    lullabyLead.frequency.value = lullabyNotes[0]
+    lullabyLead.connect(lullabyGain)
+    lullabyLead.start()
+    lullabyShadow = audioContext.createOscillator()
+    lullabyShadow.type = 'sine'
+    lullabyShadow.frequency.value = lullabyNotes[0] * 0.498
+    lullabyShadow.detune.value = -17
+    lullabyShadow.connect(lullabyGain)
+    lullabyShadow.start()
+  }
+
+  const updateMother = (time, distance, isMoving, active) => {
+    if (!context || !lullabyGain) return
+    const proximity = active ? Math.max(0, Math.min(1, (18 - distance) / 16.5)) : 0
+    const audioTime = context.currentTime
+    lullabyGain.gain.setTargetAtTime(0.0001 + proximity ** 2 * 0.13, audioTime, 0.22)
+
+    if (time >= nextLullabyNoteAt) {
+      const frequency = lullabyNotes[lullabyNoteIndex % lullabyNotes.length]
+      const brokenPitch = frequency * (lullabyNoteIndex % 5 === 4 ? 0.72 : 1)
+      lullabyLead.frequency.setTargetAtTime(brokenPitch, audioTime, 0.08)
+      lullabyShadow.frequency.setTargetAtTime(brokenPitch * 0.498, audioTime, 0.12)
+      lullabyNoteIndex += 1
+      nextLullabyNoteAt = time + 950 + Math.random() * 520
+    }
+
+    if (active && isMoving && time >= nextMotherClickAt) {
+      tone(210 + Math.random() * 55, 72, 0.08, 0.025 + proximity * 0.075, 'square')
+      nextMotherClickAt = time + 270 + (1 - proximity) * 390 + Math.random() * 90
+    }
+
+    if (active && time >= nextWetDripAt) {
+      noise(0.09, 0.008 + proximity * 0.035, 330)
+      tone(74, 46, 0.13, 0.008 + proximity * 0.025, 'sine')
+      nextWetDripAt = time + 850 + Math.random() * 1450
+    }
   }
 
   return {
@@ -98,6 +148,7 @@ export function createAudioSystem() {
     stun() {
       tone(1100, 180, 0.5, 0.2, 'square')
     },
+    updateMother,
     whisper() {
       noise(1.8, 0.055, 780)
       tone(94, 76, 1.6, 0.035, 'sine')

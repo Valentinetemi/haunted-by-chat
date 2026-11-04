@@ -555,6 +555,14 @@ renderer.setAnimationLoop((time) => {
     if (time >= hunterFrozenUntil && ghostReachedPlayer()) catchPlayer()
   }
   motherDrips.update(time, delta, mother, !playerCaught && !playerEscaped)
+  audio.updateMother(
+    time,
+    Math.hypot(camera.position.x - ghost.position.x, camera.position.z - ghost.position.z),
+    time >= hunterFrozenUntil,
+    !playerCaught &&
+      !playerEscaped &&
+      document.pointerLockElement === renderer.domElement,
+  )
   applyCameraShake(time)
   renderer.render(scene, camera)
   camera.position.sub(cameraShakeOffset)
