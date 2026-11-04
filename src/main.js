@@ -56,6 +56,11 @@ const forward = new THREE.Vector3()
 const right = new THREE.Vector3()
 const cameraShakeOffset = new THREE.Vector3()
 const movementSpeed = 5
+const sprintSpeed = 8.4
+const maxStamina = 3.2
+const staminaRecoveryRate = 0.72
+const staminaFill = document.querySelector('#stamina-fill')
+const staminaHud = document.querySelector('#stamina-hud')
 const lookSensitivity = 0.002
 const maxPitch = Math.PI / 2 - 0.01
 const startScreen = document.querySelector('#start-screen')
@@ -81,6 +86,7 @@ let yaw = 0
 let pitch = 0
 let playerCaught = false
 let playerEscaped = false
+let stamina = maxStamina
 let whisperTimeoutId = 0
 
 const flickerDuration = 2000
@@ -339,6 +345,17 @@ function catchPlayer() {
   if (document.pointerLockElement === renderer.domElement) document.exitPointerLock()
 }
 
+function updateStamina(delta, isSprinting) {
+  stamina = THREE.MathUtils.clamp(
+    stamina + (isSprinting ? -delta : delta * staminaRecoveryRate),
+    0,
+    maxStamina,
+  )
+  const staminaRatio = stamina / maxStamina
+  staminaFill.style.transform = `scaleX(${staminaRatio})`
+  staminaHud.classList.toggle('is-exhausted', staminaRatio < 0.12)
+}
+
 function escapeHouse() {
   playerEscaped = true
   pressedKeys.clear()
@@ -404,6 +421,8 @@ const scareDirector = createScareDirector({
 function restartGame() {
   playerCaught = false
   playerEscaped = false
+  stamina = maxStamina
+  updateStamina(0, false)
   yaw = 0
   pitch = 0
   camera.position.copy(PLAYER_START)
@@ -462,8 +481,17 @@ renderer.setAnimationLoop((time) => {
   if (pressedKeys.has('KeyS')) movement.sub(forward)
   if (pressedKeys.has('KeyD')) movement.add(right)
   if (pressedKeys.has('KeyA')) movement.sub(right)
+  const isSprinting =
+    pressedKeys.has('ShiftLeft') &&
+    movement.lengthSq() > 0 &&
+    stamina > 0.02 &&
+    !hiding.isHidden
+  updateStamina(delta, isSprinting)
   if (movement.lengthSq() > 0 && !hiding.isHidden) {
-    camera.position.addScaledVector(movement.normalize(), movementSpeed * delta)
+    camera.position.addScaledVector(
+      movement.normalize(),
+      (isSprinting ? sprintSpeed : movementSpeed) * delta,
+    )
   }
 
   if (!playerCaught && !playerEscaped && document.pointerLockElement === renderer.domElement) {
