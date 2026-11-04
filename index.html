@@ -27,12 +27,18 @@
       <span>House keys</span>
       <strong id="keys-collected">0 / 5</strong>
     </aside>
+    <aside id="timer-hud" aria-label="Escape timer">
+      <span>Escape time</span>
+      <strong id="run-time">00:00.000</strong>
+    </aside>
     <section id="caught-screen" role="dialog" aria-modal="true" aria-labelledby="caught-title" hidden>
       <h1 id="caught-title">Terminated</h1>
       <button id="restart-button" type="button">Restart</button>
     </section>
     <section id="escape-screen" role="dialog" aria-modal="true" aria-labelledby="escape-title" hidden>
       <h1 id="escape-title">Escaped</h1>
+      <p class="score-line">Time <strong id="final-time">--:--.---</strong></p>
+      <p class="score-line">Best <strong id="best-time">No escape yet</strong></p>
       <button id="play-again-button" type="button">Play again</button>
     </section>
     <script type="module" src="/src/main.js"></script>

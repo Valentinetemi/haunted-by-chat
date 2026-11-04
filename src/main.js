@@ -13,6 +13,7 @@ import { createHidingSystem } from './hiding.js'
 import { createKeySystem } from './keys.js'
 import { createMother, updateMotherAnimation } from './mother.js'
 import { createScareDirector } from './scares.js'
+import { createRunTimer } from './timer.js'
 import {
   furnishBathroom,
   furnishAttic,
@@ -70,6 +71,11 @@ const interactionPrompt = document.querySelector('#interaction-prompt')
 const goalPrompt = document.querySelector('#goal-prompt')
 const jumpscare = document.querySelector('#jumpscare')
 const hiding = createHidingSystem(camera, interactionPrompt)
+const runTimer = createRunTimer({
+  bestDisplay: document.querySelector('#best-time'),
+  finalDisplay: document.querySelector('#final-time'),
+  hudDisplay: document.querySelector('#run-time'),
+})
 let jumpscareTimeoutId = 0
 let yaw = 0
 let pitch = 0
@@ -329,6 +335,7 @@ function catchPlayer() {
   startScreen.hidden = true
   caughtScreen.hidden = false
   audio.caught()
+  runTimer.pause()
   if (document.pointerLockElement === renderer.domElement) document.exitPointerLock()
 }
 
@@ -337,6 +344,7 @@ function escapeHouse() {
   pressedKeys.clear()
   startScreen.hidden = true
   escapeScreen.hidden = false
+  runTimer.finish()
   if (document.pointerLockElement === renderer.domElement) document.exitPointerLock()
 }
 
@@ -416,6 +424,7 @@ function restartGame() {
   bathroomProps.reset()
   hiding.reset()
   keySystem.reset()
+  runTimer.reset()
   scareDirector.reset()
   jumpscare.hidden = true
   pressedKeys.clear()
@@ -439,6 +448,7 @@ renderer.setAnimationLoop((time) => {
     !playerCaught && !playerEscaped && document.pointerLockElement === renderer.domElement,
   )
   scareDirector.update(time)
+  runTimer.update(time)
   updateStunBolts(delta, time)
   updateHunterEffects(time)
   updateHunterStun(time)
@@ -487,7 +497,12 @@ playAgainButton.addEventListener('click', restartGame)
 document.addEventListener('pointerlockchange', () => {
   const isLocked = document.pointerLockElement === renderer.domElement
   startScreen.hidden = isLocked || playerCaught || playerEscaped
-  if (isLocked) scareDirector.reset()
+  if (isLocked) {
+    scareDirector.reset()
+    runTimer.start()
+  } else {
+    runTimer.pause()
+  }
   if (!isLocked) pressedKeys.clear()
 })
 

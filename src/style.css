@@ -260,6 +260,31 @@ canvas {
   font-size: 1.25rem;
 }
 
+#timer-hud {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 15;
+  display: grid;
+  justify-items: end;
+  gap: 0.2rem;
+  color: #e5e1d9;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-shadow: 0 1px 0 #000;
+  pointer-events: none;
+}
+
+#timer-hud span {
+  color: #99928a;
+  font-size: 0.62rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+#timer-hud strong {
+  font-size: 1.15rem;
+}
+
 @keyframes twitch-feed-in {
   from {
     opacity: 0;
@@ -323,6 +348,19 @@ canvas {
   line-height: 0.9;
   text-shadow: 0 0 2rem #775b27;
   text-transform: uppercase;
+}
+
+.score-line {
+  margin: -0.5rem 0 0;
+  color: #a99f8d;
+  font: 0.8rem/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.score-line strong {
+  color: #ffe4a7;
+  font-size: 1rem;
 }
 
 #restart-button,
