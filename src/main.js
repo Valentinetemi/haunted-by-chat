@@ -526,6 +526,7 @@ const mobileControls = createMobileControls({
   interactButton: document.querySelector('#mobile-use'),
   joystick: document.querySelector('#move-stick'),
   joystickKnob: document.querySelector('#move-stick-knob'),
+  joystickZone: document.querySelector('#move-zone'),
   lookZone: document.querySelector('#touch-look-zone'),
   onInteract: performInteraction,
   onLook: (deltaX, deltaY) => applyLookDelta(deltaX, deltaY, 0.0042),
@@ -623,6 +624,7 @@ function restartGame() {
 
 renderer.setAnimationLoop((time) => {
   const delta = Math.min(clock.getDelta(), 0.1)
+  mobileControls.update(delta)
   updateLightFlicker(time)
   blackPuddles.update(time)
   updateDoorSlam(time)
