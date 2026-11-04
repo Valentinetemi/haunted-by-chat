@@ -1,5 +1,7 @@
 # Haunted by Chat 👁️
 
+![Haunted by Chat cover artwork](public/assets/haunted-by-chat-cover.png)
+
 A replayable first-person browser horror game set inside a haunted house. Search the entrance hall, living room, kitchen, bathroom, kid's bedroom, basement, and attic for five randomized keys while Mother hunts you.
 
 The game is single-player by default. Twitch chat controls are available only when you explicitly choose **Streamer mode**.
