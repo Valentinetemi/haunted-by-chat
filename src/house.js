@@ -231,8 +231,8 @@ export function createHauntedHouse(scene) {
     ceilingLights.push({ fixture, light, baseIntensity: room.intensity, baseEmissive: 1.25, roomId: room.id })
   }
 
-  addBox(group, [4, 0.2, 25], [0, FLOOR_Y - 0.1, -10.5], hallFloorMaterial, 'main-hall-floor')
-  addBox(group, [4, 0.16, 25], [0, CEILING_Y + 0.08, -10.5], ceilingMaterial, 'main-hall-ceiling')
+  addBox(group, [8, 0.2, 25], [0, FLOOR_Y - 0.1, -10.5], hallFloorMaterial, 'main-hall-floor')
+  addBox(group, [8, 0.16, 25], [0, CEILING_Y + 0.08, -10.5], ceilingMaterial, 'main-hall-ceiling')
 
   for (const z of [-4.5, -10.5, -16.5]) {
     const fixtureMaterial = new THREE.MeshStandardMaterial({
@@ -287,4 +287,42 @@ export function getRoomAt(position) {
       bounds: { minX: -2, maxX: 2, minZ: -23, maxZ: 2 },
     }
   )
+}
+
+const DOORWAY_Z_CENTERS = [4, -7, -17.5]
+const PLAYER_WALL_CLEARANCE = 0.32
+
+function crossesBoundary(start, end, boundary) {
+  return (start < boundary && end >= boundary) || (start > boundary && end <= boundary)
+}
+
+function isInsideDoorway(z) {
+  return DOORWAY_Z_CENTERS.some((center) => Math.abs(z - center) < 1.02)
+}
+
+export function movePlayerWithinHouse(position, displacement) {
+  let nextX = THREE.MathUtils.clamp(position.x + displacement.x, -11.62, 11.62)
+  let nextZ = THREE.MathUtils.clamp(position.z + displacement.z, -22.62, 9.58)
+
+  for (const wallX of [-4, 4]) {
+    if (crossesBoundary(position.x, nextX, wallX) && !isInsideDoorway(nextZ)) {
+      nextX =
+        position.x < wallX
+          ? wallX - PLAYER_WALL_CLEARANCE
+          : wallX + PLAYER_WALL_CLEARANCE
+    }
+  }
+
+  for (const wallZ of [-12, -2]) {
+    const isInsideSideRooms = Math.abs(nextX) > 4 + PLAYER_WALL_CLEARANCE
+    if (isInsideSideRooms && crossesBoundary(position.z, nextZ, wallZ)) {
+      nextZ =
+        position.z < wallZ
+          ? wallZ - PLAYER_WALL_CLEARANCE
+          : wallZ + PLAYER_WALL_CLEARANCE
+    }
+  }
+
+  position.x = nextX
+  position.z = nextZ
 }

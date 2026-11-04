@@ -6,6 +6,7 @@ import {
   PLAYER_START,
   createHauntedHouse,
   getRoomAt,
+  movePlayerWithinHouse,
 } from './house.js'
 import { createBlackPuddles } from './effects.js'
 import { createHidingSystem } from './hiding.js'
@@ -534,10 +535,8 @@ renderer.setAnimationLoop((time) => {
     !hiding.isHidden
   updateStamina(delta, isSprinting)
   if (movement.lengthSq() > 0 && !hiding.isHidden) {
-    camera.position.addScaledVector(
-      movement.normalize(),
-      (isSprinting ? sprintSpeed : movementSpeed) * delta,
-    )
+    movement.normalize().multiplyScalar((isSprinting ? sprintSpeed : movementSpeed) * delta)
+    movePlayerWithinHouse(camera.position, movement)
   }
 
   if (!playerCaught && !playerEscaped && document.pointerLockElement === renderer.domElement) {
