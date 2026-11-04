@@ -62,7 +62,11 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 renderer.setSize(window.innerWidth, window.innerHeight)
 document.querySelector('#app').appendChild(renderer.domElement)
 
-const usesTouchControls = window.matchMedia('(pointer: coarse), (hover: none)').matches
+const usesTouchControls =
+  navigator.maxTouchPoints > 0 &&
+  (window.matchMedia('(pointer: coarse), (hover: none)').matches ||
+    Math.min(window.screen.width, window.screen.height) <= 1024)
+document.body.classList.toggle('uses-touch-controls', usesTouchControls)
 
 const clock = new THREE.Clock()
 const audio = createAudioSystem()
@@ -733,8 +737,14 @@ async function requestMobileLandscape() {
 }
 
 function syncMobileOrientation() {
-  if (!usesTouchControls || !document.body.classList.contains('is-playing')) return
-  const isPortrait = window.matchMedia('(orientation: portrait)').matches
+  if (!usesTouchControls) return
+  const viewport = window.visualViewport
+  const viewportWidth = viewport?.width ?? window.innerWidth
+  const viewportHeight = viewport?.height ?? window.innerHeight
+  const isPortrait = viewportHeight > viewportWidth
+  const isPlaying = document.body.classList.contains('is-playing')
+  document.body.classList.toggle('is-mobile-portrait', isPlaying && isPortrait)
+  if (!isPlaying) return
 
   if (isPortrait && gameRunning) {
     gameRunning = false
@@ -752,6 +762,23 @@ function syncMobileOrientation() {
     runTimer.start()
   }
 }
+
+let orientationSyncTimeoutIds = []
+
+function queueMobileOrientationSync() {
+  if (!usesTouchControls) return
+  syncMobileOrientation()
+  for (const timeoutId of orientationSyncTimeoutIds) window.clearTimeout(timeoutId)
+  orientationSyncTimeoutIds = [120, 360, 800].map((delay) =>
+    window.setTimeout(syncMobileOrientation, delay),
+  )
+  window.requestAnimationFrame(syncMobileOrientation)
+}
+
+window.addEventListener('orientationchange', queueMobileOrientationSync)
+screen.orientation?.addEventListener?.('change', queueMobileOrientationSync)
+window.visualViewport?.addEventListener('resize', queueMobileOrientationSync)
+window.matchMedia('(orientation: portrait)').addEventListener?.('change', queueMobileOrientationSync)
 
 playButton.addEventListener('click', () => startGame(false))
 streamerButton.addEventListener('click', () => startGame(true))
@@ -800,7 +827,7 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix()
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   renderer.setSize(window.innerWidth, window.innerHeight)
-  syncMobileOrientation()
+  queueMobileOrientationSync()
 })
 
 const requestedTwitchChannel = new URLSearchParams(window.location.search).get('channel')?.trim()
