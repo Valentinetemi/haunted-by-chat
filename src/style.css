@@ -213,6 +213,10 @@ kbd {
   display: none;
 }
 
+#rotate-device {
+  display: none;
+}
+
 #touch-look-zone {
   position: absolute;
   top: 0;
@@ -348,6 +352,64 @@ kbd {
 @media (pointer: fine) {
   #mobile-controls {
     display: none !important;
+  }
+}
+
+@media (orientation: portrait) and (pointer: coarse),
+  (orientation: portrait) and (hover: none) {
+  body.is-playing #rotate-device {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 0.75rem;
+    padding: 2rem;
+    color: #eadbc8;
+    background:
+      radial-gradient(circle at 50% 42%, rgb(101 18 21 / 34%), transparent 34%),
+      rgb(5 3 4 / 96%);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  body.is-playing #rotate-device span {
+    width: 3.2rem;
+    height: 5.4rem;
+    border: 0.18rem solid #b99a74;
+    border-radius: 0.6rem;
+    box-shadow: 0 0 1.5rem rgb(142 16 25 / 45%);
+    animation: rotate-phone 1.8s ease-in-out infinite;
+  }
+
+  body.is-playing #rotate-device strong {
+    margin-top: 0.5rem;
+    font-size: 1rem;
+    letter-spacing: 0.13em;
+  }
+
+  body.is-playing #rotate-device small {
+    color: #8e837a;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+  }
+
+  body.is-playing #mobile-controls {
+    visibility: hidden;
+  }
+}
+
+@keyframes rotate-phone {
+  0%,
+  25% {
+    transform: rotate(0deg);
+  }
+
+  70%,
+  100% {
+    transform: rotate(90deg);
   }
 }
 

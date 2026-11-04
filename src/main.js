@@ -124,6 +124,7 @@ let pitch = 0
 let playerCaught = false
 let playerEscaped = false
 let gameRunning = false
+let mobileOrientationPaused = false
 let stamina = maxStamina
 let whisperTimeoutId = 0
 
@@ -416,6 +417,8 @@ function ghostReachedPlayer() {
 function catchPlayer() {
   playerCaught = true
   gameRunning = false
+  mobileOrientationPaused = false
+  document.body.classList.remove('is-playing')
   mobileControls.setActive(false)
   pressedKeys.clear()
   startScreen.hidden = true
@@ -452,6 +455,8 @@ function updateStamina(delta, isSprinting) {
 function escapeHouse() {
   playerEscaped = true
   gameRunning = false
+  mobileOrientationPaused = false
+  document.body.classList.remove('is-playing')
   mobileControls.setActive(false)
   pressedKeys.clear()
   startScreen.hidden = true
@@ -572,6 +577,8 @@ function restartGame() {
   playerCaught = false
   playerEscaped = false
   gameRunning = false
+  mobileOrientationPaused = false
+  document.body.classList.remove('is-playing')
   mobileControls.setActive(false)
   stamina = maxStamina
   updateStamina(0, false)
@@ -695,12 +702,55 @@ function startGame(streamerMode = false) {
     disconnectStreamerMode()
   }
   audio.start()
+  document.body.classList.add('is-playing')
   gameRunning = true
   startScreen.hidden = true
   mobileControls.setActive(usesTouchControls)
   scareDirector.reset()
   runTimer.start()
-  if (!usesTouchControls) renderer.domElement.requestPointerLock()
+  if (usesTouchControls) {
+    syncMobileOrientation()
+    void requestMobileLandscape()
+  } else {
+    renderer.domElement.requestPointerLock()
+  }
+}
+
+async function requestMobileLandscape() {
+  if (!usesTouchControls) return
+  try {
+    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+      await document.documentElement.requestFullscreen()
+    }
+  } catch {
+    // iOS and embedded browsers may not permit programmatic fullscreen.
+  }
+  try {
+    if (screen.orientation?.lock) await screen.orientation.lock('landscape')
+  } catch {
+    // The portrait blocker still guides rotation when orientation locking is unavailable.
+  }
+}
+
+function syncMobileOrientation() {
+  if (!usesTouchControls || !document.body.classList.contains('is-playing')) return
+  const isPortrait = window.matchMedia('(orientation: portrait)').matches
+
+  if (isPortrait && gameRunning) {
+    gameRunning = false
+    mobileOrientationPaused = true
+    mobileControls.setActive(false)
+    runTimer.pause()
+    return
+  }
+
+  if (!isPortrait && mobileOrientationPaused && !playerCaught && !playerEscaped) {
+    mobileOrientationPaused = false
+    gameRunning = true
+    mobileControls.setActive(true)
+    scareDirector.reset()
+    runTimer.start()
+  }
 }
 
 playButton.addEventListener('click', () => startGame(false))
@@ -750,6 +800,7 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix()
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   renderer.setSize(window.innerWidth, window.innerHeight)
+  syncMobileOrientation()
 })
 
 const requestedTwitchChannel = new URLSearchParams(window.location.search).get('channel')?.trim()
