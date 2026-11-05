@@ -120,6 +120,9 @@ const currentObjective = document.querySelector('#current-objective')
 const jumpscare = document.querySelector('#jumpscare')
 const dangerVignette = document.querySelector('#danger-vignette')
 const rewardToast = document.querySelector('#reward-toast')
+const locationCard = document.querySelector('#location-card')
+const locationName = document.querySelector('#location-name')
+const locationTagline = document.querySelector('#location-tagline')
 const hiding = createHidingSystem(camera, interactionPrompt)
 const runTimer = createRunTimer({
   bestDisplay: document.querySelector('#best-time'),
@@ -129,6 +132,7 @@ const runTimer = createRunTimer({
 let jumpscareTimeoutId = 0
 let catchTimeoutId = 0
 let rewardTimeoutId = 0
+let locationCardTimeoutId = 0
 let dangerWasClose = false
 let nearMissCooldownUntil = 0
 let yaw = 0
@@ -450,6 +454,7 @@ function catchPlayer() {
   document.body.classList.remove('is-playing')
   mobileControls.setActive(false)
   objectiveHud.hidden = true
+  locationCard.hidden = true
   pressedKeys.clear()
   startScreen.hidden = true
   audio.caught()
@@ -489,6 +494,7 @@ function escapeHouse() {
   document.body.classList.remove('is-playing')
   mobileControls.setActive(false)
   objectiveHud.hidden = true
+  locationCard.hidden = true
   pressedKeys.clear()
   startScreen.hidden = true
   escapeScreen.hidden = false
@@ -507,6 +513,26 @@ function showReward(text) {
     rewardToast.hidden = true
     rewardToast.classList.remove('is-visible')
   }, 1800)
+}
+
+function showLocationCard(destination, name) {
+  const taglines = {
+    courtyard: 'The graves are listening',
+    crypt: 'Something woke below',
+    house: 'It remembers you',
+    mirror: 'Do not trust your reflection',
+  }
+  window.clearTimeout(locationCardTimeoutId)
+  locationName.textContent = name
+  locationTagline.textContent = taglines[destination] ?? 'There is no way back'
+  locationCard.hidden = false
+  locationCard.classList.remove('is-visible')
+  void locationCard.offsetWidth
+  locationCard.classList.add('is-visible')
+  locationCardTimeoutId = window.setTimeout(() => {
+    locationCard.hidden = true
+    locationCard.classList.remove('is-visible')
+  }, 2800)
 }
 
 function updateObjective(keyCount) {
@@ -563,7 +589,7 @@ const portalSystem = createPortalSystem({
   onTravel: ({ destination, name }) => {
     relocateHunterForDestination(destination)
     cameraShakeEndsAt = performance.now() + 180
-    showReward(`Entered · ${name}`)
+    showLocationCard(destination, name)
   },
   parent: hauntedPlaces.group,
   prompt: goalPrompt,
@@ -673,6 +699,7 @@ function restartGame() {
   cameraShakeOffset.set(0, 0, 0)
   window.clearTimeout(whisperTimeoutId)
   window.clearTimeout(catchTimeoutId)
+  window.clearTimeout(locationCardTimeoutId)
   whisperMessage.hidden = true
   whisperMessage.classList.remove('is-visible')
   for (const door of house.doors) door.hinge.rotation.y = door.openRotation
@@ -681,6 +708,8 @@ function restartGame() {
   keySystem.reset()
   updateObjective(0)
   objectiveHud.hidden = true
+  locationCard.hidden = true
+  locationCard.classList.remove('is-visible')
   portalSystem.reset()
   runTimer.reset()
   scareDirector.reset()
@@ -787,6 +816,7 @@ function startGame(streamerMode = false) {
   gameRunning = true
   startScreen.hidden = true
   objectiveHud.hidden = false
+  showLocationCard('house', 'The House')
   mobileControls.setActive(usesTouchControls)
   scareDirector.reset()
   runTimer.start()

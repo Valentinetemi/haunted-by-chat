@@ -614,6 +614,60 @@ body.is-playing.is-mobile-portrait #mobile-controls {
   animation: reward-pop 1.8s ease-out forwards;
 }
 
+#location-card {
+  position: fixed;
+  top: 14%;
+  left: 50%;
+  z-index: 16;
+  display: grid;
+  justify-items: center;
+  width: min(34rem, 82vw);
+  gap: 0.35rem;
+  color: #e9e5dc;
+  font-family: Georgia, 'Times New Roman', serif;
+  text-align: center;
+  text-shadow: 0 0.2rem 1rem #000;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+#location-card[hidden] {
+  display: none;
+}
+
+#location-card::before,
+#location-card::after {
+  width: min(18rem, 58vw);
+  height: 1px;
+  content: '';
+  background: linear-gradient(90deg, transparent, rgb(210 194 168 / 70%), transparent);
+}
+
+#location-card span {
+  color: #a89d8e;
+  font: 700 0.58rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+}
+
+#location-card strong {
+  font-size: clamp(1.45rem, 4vw, 2.7rem);
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+#location-card small {
+  color: #aaa298;
+  font-size: clamp(0.72rem, 1.6vw, 0.95rem);
+  font-style: italic;
+  letter-spacing: 0.08em;
+}
+
+#location-card.is-visible {
+  animation: location-reveal 2.8s ease-in-out forwards;
+}
+
 @keyframes reward-pop {
   from {
     opacity: 0;
@@ -629,6 +683,27 @@ body.is-playing.is-mobile-portrait #mobile-controls {
   to {
     opacity: 0;
     transform: translate(-50%, -0.6rem) scale(1.04);
+  }
+}
+
+@keyframes location-reveal {
+  0% {
+    opacity: 0;
+    filter: blur(0.35rem);
+    transform: translate(-50%, 0.8rem);
+  }
+
+  18%,
+  68% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translate(-50%, 0);
+  }
+
+  100% {
+    opacity: 0;
+    filter: blur(0.2rem);
+    transform: translate(-50%, -0.6rem);
   }
 }
 
