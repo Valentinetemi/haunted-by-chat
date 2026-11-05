@@ -289,11 +289,17 @@ function applyCameraShake(now) {
 const ghost = new THREE.Group()
 const ghostDirection = new THREE.Vector3()
 const ghostStartPosition = HUNTER_SPAWNS[Math.floor(Math.random() * HUNTER_SPAWNS.length)].clone()
+const hunterLastSeenPosition = new THREE.Vector3()
+const hunterPatrolTarget = new THREE.Vector3()
 const ghostDriftSpeed = 0.58
 const ghostCatchDistance = 1.05
 const ghostRushDuration = 4000
 const ghostRushMultiplier = 3
 let ghostRushEndsAt = 0
+let hunterSearchEndsAt = 0
+let nextHunterPatrolAt = 0
+let hunterState = 'chase'
+let playerWasHidden = false
 const mother = createMother()
 const motherDrips = createMotherDrips(scene)
 const hunterVisual = mother.group
@@ -400,16 +406,88 @@ function resetStunBlaster() {
 
 function rushGhost() {
   ghostRushEndsAt = performance.now() + ghostRushDuration
+  hunterLastSeenPosition.copy(camera.position)
+  hunterSearchEndsAt = ghostRushEndsAt
+  hunterState = 'search'
+}
+
+const HUNTER_PATROL_POINTS = {
+  courtyard: [[31.5, -6], [45, -5.5], [31, 6], [44.5, 5.5]],
+  crypt: [[-7, -62], [7, -60], [6, -49], [-6, -49]],
+  house: HUNTER_SPAWNS.map(({ x, z }) => [x, z]),
+  mirror: [[-46, -6], [-30, -5.5], [-45, 5], [-31, 5.5]],
+}
+
+function getWorldZone(position) {
+  return getHauntedPlaceAt(position)?.id ?? 'house'
+}
+
+function getSightZone(position) {
+  return getHauntedPlaceAt(position)?.id ?? getRoomAt(position).id
+}
+
+function motherCanSeePlayer() {
+  if (hiding.isHidden) return false
+  const distanceSquared = ghost.position.distanceToSquared(camera.position)
+  if (distanceSquared <= 4.5 ** 2) return true
+  return distanceSquared <= 15 ** 2 && getSightZone(ghost.position) === getSightZone(camera.position)
+}
+
+function chooseHunterPatrolTarget(time, moveAwayFromPlayer = false) {
+  const patrolPoints = HUNTER_PATROL_POINTS[getWorldZone(ghost.position)]
+  const distantPoints = patrolPoints.filter(([x, z]) => {
+    if (!moveAwayFromPlayer) return true
+    return (x - camera.position.x) ** 2 + (z - camera.position.z) ** 2 > 9 ** 2
+  })
+  const candidates = distantPoints.length > 0 ? distantPoints : patrolPoints
+  const [x, z] = candidates[Math.floor(Math.random() * candidates.length)]
+  hunterPatrolTarget.set(x, ghostStartPosition.y, z)
+  nextHunterPatrolAt = time + 5500 + Math.random() * 3500
+}
+
+function resetHunterAwareness() {
+  hunterLastSeenPosition.copy(camera.position)
+  hunterPatrolTarget.copy(ghost.position)
+  hunterSearchEndsAt = 0
+  nextHunterPatrolAt = 0
+  hunterState = 'chase'
+  playerWasHidden = false
 }
 
 function updateGhost(delta, time) {
-  ghostDirection.set(camera.position.x - ghost.position.x, 0, camera.position.z - ghost.position.z)
+  const canSeePlayer = motherCanSeePlayer()
+  if (canSeePlayer) {
+    hunterState = 'chase'
+    hunterLastSeenPosition.copy(camera.position)
+    hunterSearchEndsAt = time + 2300
+  } else if (hiding.isHidden) {
+    if (!playerWasHidden || hunterState !== 'patrol') chooseHunterPatrolTarget(time, true)
+    hunterState = 'patrol'
+    hunterSearchEndsAt = 0
+  } else if (time < hunterSearchEndsAt) {
+    hunterState = 'search'
+  } else {
+    hunterState = 'patrol'
+    const reachedPatrolTarget = ghost.position.distanceToSquared(hunterPatrolTarget) < 1.2 ** 2
+    if (time >= nextHunterPatrolAt || reachedPatrolTarget) chooseHunterPatrolTarget(time)
+  }
+  playerWasHidden = hiding.isHidden
+
+  const target = hunterState === 'chase'
+    ? camera.position
+    : hunterState === 'search'
+      ? hunterLastSeenPosition
+      : hunterPatrolTarget
+  ghostDirection.set(target.x - ghost.position.x, 0, target.z - ghost.position.z)
   if (ghostDirection.lengthSq() > 0.0001) {
     const difficultyMultiplier = 1 + keySystem.count * 0.16
+    const awarenessMultiplier = hunterState === 'chase' ? 1 : hunterState === 'search' ? 0.82 : 1.05
     const speedMultiplier =
-      difficultyMultiplier * (time < ghostRushEndsAt ? ghostRushMultiplier : 1)
+      difficultyMultiplier *
+      awarenessMultiplier *
+      (time < ghostRushEndsAt && hunterState !== 'patrol' ? ghostRushMultiplier : 1)
     ghost.position.addScaledVector(ghostDirection.normalize(), ghostDriftSpeed * speedMultiplier * delta)
-    ghost.lookAt(camera.position.x, ghost.position.y, camera.position.z)
+    ghost.lookAt(target.x, ghost.position.y, target.z)
   }
   ghost.position.y = ghostStartPosition.y + Math.sin(time * 0.0012) * 0.08
 }
@@ -421,6 +499,7 @@ function randomizeHunterSpawn() {
   const candidates = distantSpawns.length > 0 ? distantSpawns : HUNTER_SPAWNS
   ghostStartPosition.copy(candidates[Math.floor(Math.random() * candidates.length)])
   ghost.position.copy(ghostStartPosition)
+  resetHunterAwareness()
 }
 
 function relocateHunterForDestination(destination) {
@@ -438,6 +517,7 @@ function relocateHunterForDestination(destination) {
   const [x, z] = candidates[Math.floor(Math.random() * candidates.length)]
   ghost.position.set(x, ghostStartPosition.y, z)
   ghostStartPosition.copy(ghost.position)
+  resetHunterAwareness()
 }
 
 function ghostReachedPlayer() {
