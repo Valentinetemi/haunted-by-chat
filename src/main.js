@@ -300,6 +300,7 @@ let hunterSearchEndsAt = 0
 let nextHunterPatrolAt = 0
 let hunterState = 'chase'
 let playerWasHidden = false
+let hasIntroducedWidowsRoom = false
 const mother = createMother()
 const motherDrips = createMotherDrips(scene)
 const hunterVisual = mother.group
@@ -522,6 +523,7 @@ function relocateHunterForDestination(destination) {
 
 function ghostReachedPlayer() {
   if (hiding.isHidden) return false
+  if (Math.abs(camera.position.y - ghost.position.y) > 2.5) return false
   const xDistance = camera.position.x - ghost.position.x
   const zDistance = camera.position.z - ghost.position.z
   return xDistance ** 2 + zDistance ** 2 <= ghostCatchDistance ** 2
@@ -601,6 +603,7 @@ function showLocationCard(destination, name) {
     crypt: 'Something woke below',
     house: 'It remembers you',
     mirror: 'Do not trust your reflection',
+    widows: 'She kept the room exactly as it was',
   }
   window.clearTimeout(locationCardTimeoutId)
   locationName.textContent = name
@@ -798,6 +801,7 @@ function restartGame() {
   dangerVignette.style.opacity = '0'
   dangerWasClose = false
   nearMissCooldownUntil = 0
+  hasIntroducedWidowsRoom = false
   pressedKeys.clear()
   caughtScreen.hidden = true
   escapeScreen.hidden = true
@@ -852,6 +856,10 @@ renderer.setAnimationLoop((time) => {
   if (movement.lengthSq() > 0 && !hiding.isHidden) {
     movement.normalize().multiplyScalar((isSprinting ? sprintSpeed : movementSpeed) * delta)
     movePlayerWithinWorld(camera.position, movement)
+  }
+  if (!hasIntroducedWidowsRoom && camera.position.y > 3.8) {
+    hasIntroducedWidowsRoom = true
+    showLocationCard('widows', "Widow's Room")
   }
 
   if (isGameplayActive()) {

@@ -2,7 +2,12 @@ import * as THREE from 'three'
 
 export const FLOOR_Y = -1.7
 export const CEILING_Y = 2.5
+export const UPPER_PLAYER_Y = 4.36
 export const PLAYER_START = new THREE.Vector3(0, 0, 6)
+
+const UPPER_FLOOR_Y = CEILING_Y + 0.16
+const UPPER_CEILING_Y = 6.75
+const STAIR_BOUNDS = { minX: -7.05, maxX: -5.05, minZ: -1.45, maxZ: 4.85 }
 
 export const ROOM_DEFINITIONS = [
   {
@@ -203,6 +208,100 @@ function createFrontDoor(group, material) {
   return frontDoor
 }
 
+function createLivingCeilingWithStairOpening(group, material) {
+  addBox(group, [4.8, 0.16, 12], [-9.6, CEILING_Y + 0.08, 4], material, 'living-upper-floor')
+  addBox(group, [0.6, 0.16, 12], [-4.3, CEILING_Y + 0.08, 4], material, 'living-upper-floor')
+  addBox(group, [2.6, 0.16, 0.45], [-5.9, CEILING_Y + 0.08, -1.775], material, 'living-upper-floor')
+  addBox(group, [2.6, 0.16, 4.8], [-5.9, CEILING_Y + 0.08, 7.6], material, 'living-upper-floor')
+}
+
+function createStaircaseAndUpperRoom(group, ceilingLights) {
+  const stairWood = new THREE.MeshStandardMaterial({ color: 0x2a1712, roughness: 0.88 })
+  const railWood = new THREE.MeshStandardMaterial({ color: 0x160d0a, roughness: 0.82 })
+  const upperWall = new THREE.MeshStandardMaterial({ color: 0x504842, roughness: 0.97 })
+  const upperCeiling = new THREE.MeshStandardMaterial({ color: 0x242326, roughness: 1 })
+  const fadedCloth = new THREE.MeshStandardMaterial({ color: 0x57434b, roughness: 1 })
+  const mattress = new THREE.MeshStandardMaterial({ color: 0x8f8980, roughness: 1 })
+  const stepCount = 12
+  const stepDepth = (STAIR_BOUNDS.maxZ - STAIR_BOUNDS.minZ) / stepCount
+  const totalRise = UPPER_FLOOR_Y - FLOOR_Y
+
+  for (let index = 0; index < stepCount; index += 1) {
+    const height = totalRise * ((index + 1) / stepCount)
+    const z = STAIR_BOUNDS.minZ + stepDepth * (index + 0.5)
+    addBox(
+      group,
+      [1.72, height, stepDepth + 0.025],
+      [-6.05, FLOOR_Y + height / 2, z],
+      stairWood,
+      'climbable-stair',
+    )
+    if (index % 2 === 0) {
+      const stepTop = FLOOR_Y + height
+      for (const x of [-7, -5.1]) {
+        addBox(group, [0.08, 0.92, 0.08], [x, stepTop + 0.46, z], railWood)
+      }
+    }
+  }
+  for (const x of [-7, -5.1]) {
+    const rail = addBox(group, [0.09, 0.09, 6.7], [x, 1.58, 1.7], railWood)
+    rail.rotation.x = -0.57
+  }
+
+  const upperWallHeight = UPPER_CEILING_Y - UPPER_FLOOR_Y
+  const upperWallCenterY = UPPER_FLOOR_Y + upperWallHeight / 2
+  addBox(group, [0.22, upperWallHeight, 12], [-11.9, upperWallCenterY, 4], upperWall)
+  addBox(group, [0.22, upperWallHeight, 12], [-4.1, upperWallCenterY, 4], upperWall)
+  addBox(group, [8, upperWallHeight, 0.22], [-8, upperWallCenterY, -1.9], upperWall)
+  addBox(group, [8, upperWallHeight, 0.22], [-8, upperWallCenterY, 9.9], upperWall)
+  addBox(group, [8, 0.18, 12], [-8, UPPER_CEILING_Y, 4], upperCeiling)
+
+  addBox(group, [5, upperWallHeight, 0.18], [-9.5, upperWallCenterY, 5.55], upperWall)
+  addBox(group, [1.1, upperWallHeight, 0.18], [-4.55, upperWallCenterY, 5.55], upperWall)
+  addBox(group, [0.18, 2.9, 0.26], [-6.92, UPPER_FLOOR_Y + 1.45, 5.55], railWood)
+  addBox(group, [0.18, 2.9, 0.26], [-5.08, UPPER_FLOOR_Y + 1.45, 5.55], railWood)
+  addBox(group, [2.02, 0.18, 0.26], [-6, UPPER_FLOOR_Y + 2.9, 5.55], railWood)
+
+  for (const z of [0.2, 2.4, 4.65]) {
+    for (const x of [-7.12, -4.98]) {
+      addBox(group, [0.08, 1.05, 0.08], [x, UPPER_FLOOR_Y + 0.52, z], railWood)
+    }
+  }
+  addBox(group, [0.08, 0.08, 5.5], [-7.12, UPPER_FLOOR_Y + 1.02, 2.1], railWood)
+  addBox(group, [0.08, 0.08, 5.5], [-4.98, UPPER_FLOOR_Y + 1.02, 2.1], railWood)
+
+  addBox(group, [3.4, 0.5, 1.75], [-9.7, UPPER_FLOOR_Y + 0.3, 8.4], stairWood, 'widows-bed')
+  addBox(group, [3.05, 0.28, 1.5], [-9.65, UPPER_FLOOR_Y + 0.66, 8.4], mattress)
+  addBox(group, [2.15, 0.08, 1.42], [-9.9, UPPER_FLOOR_Y + 0.86, 8.4], fadedCloth)
+  addBox(group, [0.2, 1.85, 1.9], [-11.3, UPPER_FLOOR_Y + 0.92, 8.4], railWood)
+  addBox(group, [1.45, 2.75, 0.8], [-10.9, UPPER_FLOOR_Y + 1.38, 6.25], stairWood, 'widows-wardrobe')
+  addBox(group, [2.5, 0.035, 2.1], [-7.8, UPPER_FLOOR_Y + 0.025, 7.7], fadedCloth, 'widows-rug')
+
+  const moonWindow = new THREE.MeshStandardMaterial({
+    color: 0x92abc4,
+    emissive: 0x668cb3,
+    emissiveIntensity: 1.25,
+    roughness: 0.25,
+  })
+  addBox(group, [0.06, 1.65, 1.65], [-11.76, UPPER_FLOOR_Y + 2.25, 7.4], moonWindow)
+  const upperLight = new THREE.PointLight(0x9dbbd5, 17, 11, 2)
+  upperLight.position.set(-8, UPPER_FLOOR_Y + 2.7, 7.2)
+  group.add(upperLight)
+  const fixture = addBox(
+    group,
+    [0.65, 0.08, 0.65],
+    [-8, UPPER_CEILING_Y - 0.12, 7.2],
+    moonWindow,
+  )
+  ceilingLights.push({
+    baseEmissive: 1.25,
+    baseIntensity: 17,
+    fixture,
+    light: upperLight,
+    roomId: 'widows-room',
+  })
+}
+
 export function createHauntedHouse(scene) {
   const group = new THREE.Group()
   group.name = 'haunted-house'
@@ -218,7 +317,11 @@ export function createHauntedHouse(scene) {
     const floorMaterial = new THREE.MeshStandardMaterial({ color: room.floor, roughness: 0.86 })
 
     addBox(group, [width, 0.2, depth], [x, FLOOR_Y - 0.1, z], floorMaterial, `${room.id}-floor`)
-    addBox(group, [width, 0.16, depth], [x, CEILING_Y + 0.08, z], ceilingMaterial, `${room.id}-ceiling`)
+    if (room.id === 'living') {
+      createLivingCeilingWithStairOpening(group, ceilingMaterial)
+    } else {
+      addBox(group, [width, 0.16, depth], [x, CEILING_Y + 0.08, z], ceilingMaterial, `${room.id}-ceiling`)
+    }
 
     const fixtureMaterial = new THREE.MeshStandardMaterial({
       color: room.light,
@@ -232,6 +335,8 @@ export function createHauntedHouse(scene) {
     group.add(light)
     ceilingLights.push({ fixture, light, baseIntensity: room.intensity, baseEmissive: 1.6, roomId: room.id })
   }
+
+  createStaircaseAndUpperRoom(group, ceilingLights)
 
   addBox(group, [8, 0.2, 25], [0, FLOOR_Y - 0.1, -10.5], hallFloorMaterial, 'main-hall-floor')
   addBox(group, [8, 0.16, 25], [0, CEILING_Y + 0.08, -10.5], ceilingMaterial, 'main-hall-ceiling')
@@ -309,6 +414,13 @@ export function createHauntedHouse(scene) {
 }
 
 export function getRoomAt(position) {
+  if (position.y > 2.2 && position.x >= -12 && position.x <= -4 && position.z >= -2 && position.z <= 10) {
+    return {
+      id: 'widows-room',
+      name: "Widow's Room",
+      bounds: { minX: -12, maxX: -4, minZ: -2, maxZ: 10 },
+    }
+  }
   return (
     ROOM_DEFINITIONS.find(
       ({ bounds }) =>
@@ -336,6 +448,46 @@ function isInsideDoorway(z) {
 }
 
 export function movePlayerWithinHouse(position, displacement) {
+  const attemptedX = position.x + displacement.x
+  const attemptedZ = position.z + displacement.z
+  const insideStairFootprint =
+    attemptedX >= STAIR_BOUNDS.minX &&
+    attemptedX <= STAIR_BOUNDS.maxX &&
+    attemptedZ >= STAIR_BOUNDS.minZ &&
+    attemptedZ <= STAIR_BOUNDS.maxZ
+  const isBetweenFloors = position.y > 0.05 && position.y < UPPER_PLAYER_Y - 0.05
+  const enteringFromBottom =
+    position.y <= 0.05 &&
+    position.z <= STAIR_BOUNDS.minZ + 0.7
+  const enteringFromTop =
+    position.y >= UPPER_PLAYER_Y - 0.05 &&
+    position.z >= STAIR_BOUNDS.maxZ - 0.7
+
+  if (insideStairFootprint && (isBetweenFloors || enteringFromBottom || enteringFromTop)) {
+    position.x = THREE.MathUtils.clamp(attemptedX, STAIR_BOUNDS.minX + 0.18, STAIR_BOUNDS.maxX - 0.18)
+    position.z = THREE.MathUtils.clamp(attemptedZ, STAIR_BOUNDS.minZ, STAIR_BOUNDS.maxZ)
+    const progress = THREE.MathUtils.clamp(
+      (position.z - STAIR_BOUNDS.minZ) / (STAIR_BOUNDS.maxZ - STAIR_BOUNDS.minZ),
+      0,
+      1,
+    )
+    position.y = THREE.MathUtils.lerp(0, UPPER_PLAYER_Y, progress)
+    return
+  }
+
+  if (position.y > 2.2) {
+    const upperX = THREE.MathUtils.clamp(attemptedX, -11.6, -4.4)
+    let upperZ = THREE.MathUtils.clamp(attemptedZ, -1.6, 9.55)
+    const isInsideUpperDoorway = upperX > -7.05 && upperX < -4.95
+    if (crossesBoundary(position.z, upperZ, 5.55) && !isInsideUpperDoorway) {
+      upperZ = position.z < 5.55 ? 5.25 : 5.85
+    }
+    position.x = upperX
+    position.z = upperZ
+    position.y = UPPER_PLAYER_Y
+    return
+  }
+
   let nextX = THREE.MathUtils.clamp(position.x + displacement.x, -11.62, 11.62)
   let nextZ = THREE.MathUtils.clamp(position.z + displacement.z, -22.62, 9.58)
 
@@ -360,4 +512,5 @@ export function movePlayerWithinHouse(position, displacement) {
 
   position.x = nextX
   position.z = nextZ
+  position.y = 0
 }

@@ -6,6 +6,7 @@ const ROOM_WEIGHTS = {
   bedroom: { jumpscare: 1.8, whisper: 2.7 },
   basement: { flicker: 1.5, teleport: 2.6 },
   attic: { slam: 1.4, teleport: 2.3, whisper: 1.5 },
+  'widows-room': { jumpscare: 1.8, teleport: 1.2, whisper: 3.1 },
   courtyard: { jumpscare: 0.7, slam: 0.35, teleport: 1.8, whisper: 2.8 },
   crypt: { flicker: 0.65, jumpscare: 1.7, slam: 0.35, teleport: 2.7, whisper: 1.6 },
   mirror: { flicker: 0.8, jumpscare: 3.2, slam: 0.25, teleport: 2.4, whisper: 2.1 },
