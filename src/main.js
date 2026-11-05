@@ -698,6 +698,7 @@ function restartGame() {
 renderer.setAnimationLoop((time) => {
   const delta = Math.min(clock.getDelta(), 0.1)
   mobileControls.update(delta)
+  hauntedPlaces.update(time)
   updateLightFlicker(time)
   blackPuddles.update(time)
   updateDoorSlam(time)
