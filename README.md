@@ -30,7 +30,8 @@ The Twitch connection is anonymous and read-only. It does not use OAuth or requi
 - Use `WASD` to move and the mouse to look.
 - Hold `Shift` to sprint while stamina lasts.
 - Left-click to fire the stun blaster. Each run starts with three charges.
-- Press `E` near a hiding spot to hide or leave.
+- Press `E` near a hiding spot to hide or leave. Mother searches her last sighting, then patrols away while you remain concealed.
+- Climb the staircase inside the living room to explore the upstairs Widow's Room.
 - Press `Esc` to release the pointer and pause the timer.
 
 On a phone, rotate to landscape. Drag anywhere in the lower-left movement zone to place the dynamic joystick, swipe the right side to look, and use the on-screen RUN, USE, and STUN controls.
