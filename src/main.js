@@ -623,7 +623,7 @@ function updateObjective(keyCount) {
     'Search the house',
     'Enter the moonlit courtyard',
     'Descend into the crypt',
-    'Search old ground again',
+    'Search every unlocked room',
     'Enter the fractured mirror realm',
     'Return to the front door',
   ][keyCount]

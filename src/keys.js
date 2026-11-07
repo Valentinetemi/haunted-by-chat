@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 
-import { FLOOR_Y } from './house.js'
+import { FLOOR_Y, UPPER_PLAYER_Y } from './house.js'
 
 const KEY_SPOTS_BY_ROOM = {
   living: [[-10.6, 6.6], [-6.2, 2.8], [-9.1, 4.8]],
@@ -14,11 +14,17 @@ const KEY_SPOTS_BY_ROOM = {
 const COURTYARD_KEY_SPOTS = [[31.8, -6.2], [44.5, -5.4], [45.2, 5.2], [34.2, 4.6]]
 const CRYPT_KEY_SPOTS = [[-4.3, -61], [4.1, -59.6], [-5.2, -51.1], [4.5, -49.2]]
 const MIRROR_KEY_SPOTS = [[-45.1, -5.2], [-31.2, -4.4], [-44.2, 4.1], [-33.7, 5.3]]
+const WIDOWS_ROOM_KEY_SPOTS = [
+  [-8.1, 7.5, UPPER_PLAYER_Y - 1],
+  [-10.7, 6.6, UPPER_PLAYER_Y - 1],
+  [-6.3, 8.7, UPPER_PLAYER_Y - 1],
+]
 const HOUSE_KEY_SPOTS = Object.values(KEY_SPOTS_BY_ROOM).flat()
 const BACKTRACK_KEY_SPOTS = [
   ...HOUSE_KEY_SPOTS,
   ...COURTYARD_KEY_SPOTS,
   ...CRYPT_KEY_SPOTS,
+  ...WIDOWS_ROOM_KEY_SPOTS,
 ]
 const KEY_STAGES = [
   HOUSE_KEY_SPOTS,
@@ -79,7 +85,8 @@ export function createKeySystem({ audio, hudCount, onEscape, onPickup, parent, p
     prompt.hidden = true
 
     keys.forEach((key, index) => {
-      const [x, z] = pick(KEY_STAGES[index])
+      const [x, z, y = FLOOR_Y + 0.7] = pick(KEY_STAGES[index])
+      key.baseY = y
       key.mesh.position.set(x, key.baseY, z)
       key.mesh.visible = index === 0
       key.collected = false
@@ -99,9 +106,10 @@ export function createKeySystem({ audio, hudCount, onEscape, onPickup, parent, p
 
       const distanceToKey = Math.hypot(
         key.mesh.position.x - playerPosition.x,
+        key.mesh.position.y - playerPosition.y,
         key.mesh.position.z - playerPosition.z,
       )
-      if (distanceToKey <= 1.15) {
+      if (distanceToKey <= 1.55) {
         key.collected = true
         key.mesh.visible = false
         collectedCount += 1
