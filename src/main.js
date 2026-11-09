@@ -117,6 +117,7 @@ const interactionPrompt = document.querySelector('#interaction-prompt')
 const goalPrompt = document.querySelector('#goal-prompt')
 const objectiveHud = document.querySelector('#objective-hud')
 const currentObjective = document.querySelector('#current-objective')
+const keyHud = document.querySelector('#key-hud')
 const jumpscare = document.querySelector('#jumpscare')
 const dangerVignette = document.querySelector('#danger-vignette')
 const rewardToast = document.querySelector('#reward-toast')
@@ -649,12 +650,19 @@ function updateNearMiss(time) {
   }
 }
 
+function pulseKeyHud() {
+  keyHud.classList.remove('is-picking-up')
+  void keyHud.offsetWidth
+  keyHud.classList.add('is-picking-up')
+}
+
 const keySystem = createKeySystem({
   audio,
   hudCount: document.querySelector('#keys-collected'),
   hudPips: document.querySelector('#key-pips'),
   onEscape: escapeHouse,
   onPickup: (count, total) => {
+    pulseKeyHud()
     updateObjective(count)
     const unlockMessage = {
       1: 'Courtyard unsealed',

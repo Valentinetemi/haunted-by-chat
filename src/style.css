@@ -965,6 +965,20 @@ body.is-playing.is-mobile-portrait #mobile-controls {
   transform: scaleY(1.35);
 }
 
+#key-hud.is-picking-up {
+  animation: key-hud-pickup 620ms ease-out;
+}
+
+@keyframes key-hud-pickup {
+  0% { transform: scale(1); }
+  24% {
+    border-left-color: #fff1ad;
+    box-shadow: 0 0 1.8rem rgb(226 174 73 / 48%);
+    transform: scale(1.08);
+  }
+  100% { transform: scale(1); }
+}
+
 #objective-hud {
   position: fixed;
   top: 5.4rem;
