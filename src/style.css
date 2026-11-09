@@ -182,6 +182,33 @@ body:not(.is-playing) #aim-reticle {
   line-height: 1.55;
 }
 
+.menu-features {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem;
+  margin: -0.7rem 0 1.35rem;
+  padding: 0;
+  list-style: none;
+}
+
+.menu-features li {
+  padding: 0.35rem 0.55rem;
+  border: 1px solid rgb(160 129 91 / 22%);
+  color: #91857c;
+  background: rgb(7 5 6 / 48%);
+  font: 600 0.56rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.menu-features li::before {
+  margin-right: 0.38rem;
+  color: #8f1820;
+  content: '◆';
+  font-size: 0.48rem;
+}
+
 .menu-actions {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
