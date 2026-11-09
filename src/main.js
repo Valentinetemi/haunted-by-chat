@@ -120,6 +120,7 @@ const currentObjective = document.querySelector('#current-objective')
 const keyHud = document.querySelector('#key-hud')
 const jumpscare = document.querySelector('#jumpscare')
 const dangerVignette = document.querySelector('#danger-vignette')
+const exhaustionVignette = document.querySelector('#exhaustion-vignette')
 const rewardToast = document.querySelector('#reward-toast')
 const locationCard = document.querySelector('#location-card')
 const locationName = document.querySelector('#location-name')
@@ -570,6 +571,7 @@ function updateStamina(delta, isSprinting) {
   const staminaRatio = stamina / maxStamina
   staminaFill.style.transform = `scaleX(${staminaRatio})`
   staminaHud.classList.toggle('is-exhausted', staminaRatio < 0.12)
+  exhaustionVignette.classList.toggle('is-visible', isSprinting && staminaRatio < 0.2)
 }
 
 function escapeHouse() {

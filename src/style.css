@@ -687,6 +687,31 @@ body.is-playing.is-mobile-portrait #mobile-controls {
   transition: opacity 140ms linear;
 }
 
+#exhaustion-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 7;
+  opacity: 0;
+  background: radial-gradient(ellipse at center, transparent 45%, rgb(34 10 8 / 72%) 100%);
+  box-shadow: inset 0 0 7rem rgb(20 4 3 / 78%);
+  pointer-events: none;
+}
+
+#exhaustion-vignette.is-visible {
+  animation: exhausted-breath 1.05s ease-in-out infinite;
+}
+
+@keyframes exhausted-breath {
+  0%, 100% {
+    opacity: 0.18;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.62;
+    transform: scale(1.025);
+  }
+}
+
 #reward-toast {
   position: fixed;
   top: 18%;
