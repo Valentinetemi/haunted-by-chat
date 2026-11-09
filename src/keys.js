@@ -59,7 +59,7 @@ function createKeyMesh(material) {
   return group
 }
 
-export function createKeySystem({ audio, hudCount, onEscape, onPickup, parent, prompt }) {
+export function createKeySystem({ audio, hudCount, hudPips, onEscape, onPickup, parent, prompt }) {
   const material = new THREE.MeshStandardMaterial({
     color: 0xc99c45,
     emissive: 0x5a3210,
@@ -77,6 +77,9 @@ export function createKeySystem({ audio, hudCount, onEscape, onPickup, parent, p
 
   const updateHud = () => {
     hudCount.textContent = `${collectedCount} / ${keys.length}`
+    ;[...hudPips.children].forEach((pip, index) => {
+      pip.classList.toggle('is-collected', index < collectedCount)
+    })
   }
 
   const reset = () => {

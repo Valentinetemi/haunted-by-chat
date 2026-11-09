@@ -652,6 +652,7 @@ function updateNearMiss(time) {
 const keySystem = createKeySystem({
   audio,
   hudCount: document.querySelector('#keys-collected'),
+  hudPips: document.querySelector('#key-pips'),
   onEscape: escapeHouse,
   onPickup: (count, total) => {
     updateObjective(count)

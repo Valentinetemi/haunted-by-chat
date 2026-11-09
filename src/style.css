@@ -945,6 +945,26 @@ body.is-playing.is-mobile-portrait #mobile-controls {
   font-size: 1.25rem;
 }
 
+#key-pips {
+  display: flex;
+  gap: 0.28rem;
+  margin-top: 0.18rem;
+}
+
+#key-pips i {
+  width: 0.78rem;
+  height: 0.16rem;
+  background: #3a3026;
+  box-shadow: inset 0 0 0 1px rgb(210 174 99 / 12%);
+  transition: background 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
+
+#key-pips i.is-collected {
+  background: #e4b85e;
+  box-shadow: 0 0 0.45rem rgb(228 184 94 / 72%);
+  transform: scaleY(1.35);
+}
+
 #objective-hud {
   position: fixed;
   top: 5.4rem;
