@@ -124,6 +124,8 @@ const rewardToast = document.querySelector('#reward-toast')
 const locationCard = document.querySelector('#location-card')
 const locationName = document.querySelector('#location-name')
 const locationTagline = document.querySelector('#location-tagline')
+const motherWarning = document.querySelector('#mother-warning')
+const motherProximity = document.querySelector('#mother-proximity')
 const hiding = createHidingSystem(camera, interactionPrompt)
 const runTimer = createRunTimer({
   bestDisplay: document.querySelector('#best-time'),
@@ -633,11 +635,15 @@ function updateObjective(keyCount) {
 function updateNearMiss(time) {
   if (!isGameplayActive() || hiding.isHidden) {
     dangerVignette.style.opacity = '0'
+    motherWarning.classList.remove('is-visible')
     dangerWasClose = false
     return
   }
 
   const distance = Math.hypot(camera.position.x - ghost.position.x, camera.position.z - ghost.position.z)
+  const proximity = THREE.MathUtils.clamp((11 - distance) / 9, 0, 1)
+  motherProximity.style.transform = `scaleX(${proximity})`
+  motherWarning.classList.toggle('is-visible', distance < 10)
   const dangerStrength = THREE.MathUtils.clamp((5.5 - distance) / 4, 0, 0.72)
   dangerVignette.style.opacity = String(dangerStrength)
   if (distance < 2.25) dangerWasClose = true

@@ -1038,6 +1038,47 @@ body.is-playing.is-mobile-portrait #mobile-controls {
   font-size: 1.15rem;
 }
 
+#mother-warning {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  z-index: 15;
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  width: min(9rem, 28vw);
+  color: #b46c6c;
+  font: 700 0.55rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -0.4rem);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+#mother-warning div {
+  width: 100%;
+  height: 0.16rem;
+  overflow: hidden;
+  background: rgb(56 8 11 / 68%);
+}
+
+#mother-proximity {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #562026, #e22937);
+  box-shadow: 0 0 0.7rem #b30d1c;
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+#mother-warning.is-visible {
+  opacity: 0.82;
+  transform: translate(-50%, 0);
+}
+
 @keyframes twitch-feed-in {
   from {
     opacity: 0;
