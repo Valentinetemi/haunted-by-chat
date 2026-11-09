@@ -47,6 +47,53 @@ canvas {
   100% { transform: translate3d(-2%, 1%, 0); }
 }
 
+#aim-reticle {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 13;
+  width: 1.8rem;
+  height: 1.8rem;
+  opacity: 0.58;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: opacity 180ms ease;
+}
+
+#aim-reticle::before,
+#aim-reticle::after,
+#aim-reticle i::before,
+#aim-reticle i::after {
+  position: absolute;
+  content: '';
+  background: rgb(214 235 239 / 82%);
+  box-shadow: 0 0 0.35rem rgb(98 190 220 / 65%);
+}
+
+#aim-reticle::before,
+#aim-reticle::after {
+  top: 50%;
+  width: 0.38rem;
+  height: 1px;
+}
+
+#aim-reticle::before { left: 0; }
+#aim-reticle::after { right: 0; }
+
+#aim-reticle i::before,
+#aim-reticle i::after {
+  left: 50%;
+  width: 1px;
+  height: 0.38rem;
+}
+
+#aim-reticle i::before { top: 0; }
+#aim-reticle i::after { bottom: 0; }
+
+body:not(.is-playing) #aim-reticle {
+  opacity: 0;
+}
+
 #start-screen {
   position: fixed;
   inset: 0;
