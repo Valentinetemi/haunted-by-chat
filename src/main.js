@@ -125,6 +125,7 @@ const rewardToast = document.querySelector('#reward-toast')
 const locationCard = document.querySelector('#location-card')
 const locationName = document.querySelector('#location-name')
 const locationTagline = document.querySelector('#location-tagline')
+const portalTransition = document.querySelector('#portal-transition')
 const motherWarning = document.querySelector('#mother-warning')
 const motherProximity = document.querySelector('#mother-proximity')
 const hiding = createHidingSystem(camera, interactionPrompt)
@@ -137,6 +138,7 @@ let jumpscareTimeoutId = 0
 let catchTimeoutId = 0
 let rewardTimeoutId = 0
 let locationCardTimeoutId = 0
+let portalTransitionTimeoutId = 0
 let dangerWasClose = false
 let nearMissCooldownUntil = 0
 let yaw = 0
@@ -624,6 +626,19 @@ function showLocationCard(destination, name) {
   }, 2800)
 }
 
+function playPortalTransition(destination) {
+  window.clearTimeout(portalTransitionTimeoutId)
+  portalTransition.dataset.location = destination
+  portalTransition.hidden = false
+  portalTransition.classList.remove('is-active')
+  void portalTransition.offsetWidth
+  portalTransition.classList.add('is-active')
+  portalTransitionTimeoutId = window.setTimeout(() => {
+    portalTransition.hidden = true
+    portalTransition.classList.remove('is-active')
+  }, 760)
+}
+
 function updateObjective(keyCount) {
   currentObjective.textContent = [
     'Search the house',
@@ -693,6 +708,7 @@ const portalSystem = createPortalSystem({
   onTravel: ({ destination, name }) => {
     relocateHunterForDestination(destination)
     cameraShakeEndsAt = performance.now() + 180
+    playPortalTransition(destination)
     showLocationCard(destination, name)
   },
   parent: hauntedPlaces.group,
@@ -804,6 +820,7 @@ function restartGame() {
   window.clearTimeout(whisperTimeoutId)
   window.clearTimeout(catchTimeoutId)
   window.clearTimeout(locationCardTimeoutId)
+  window.clearTimeout(portalTransitionTimeoutId)
   whisperMessage.hidden = true
   whisperMessage.classList.remove('is-visible')
   for (const door of house.doors) door.hinge.rotation.y = door.openRotation
@@ -814,6 +831,8 @@ function restartGame() {
   objectiveHud.hidden = true
   locationCard.hidden = true
   locationCard.classList.remove('is-visible')
+  portalTransition.hidden = true
+  portalTransition.classList.remove('is-active')
   portalSystem.reset()
   runTimer.reset()
   scareDirector.reset()
