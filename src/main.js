@@ -633,6 +633,9 @@ function updateObjective(keyCount) {
     'Enter the fractured mirror realm',
     'Return to the front door',
   ][keyCount]
+  objectiveHud.classList.remove('is-updating')
+  void objectiveHud.offsetWidth
+  objectiveHud.classList.add('is-updating')
 }
 
 function updateNearMiss(time) {
