@@ -25,6 +25,28 @@ canvas {
   touch-action: none;
 }
 
+#film-grain {
+  position: fixed;
+  inset: -35%;
+  z-index: 9;
+  opacity: 0.075;
+  background-image:
+    repeating-radial-gradient(circle at 20% 30%, #fff 0 0.045rem, transparent 0.06rem 0.18rem),
+    repeating-radial-gradient(circle at 80% 60%, #000 0 0.05rem, transparent 0.07rem 0.22rem);
+  background-size: 5rem 4rem, 7rem 6rem;
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+  animation: film-grain-shift 420ms steps(2) infinite;
+}
+
+@keyframes film-grain-shift {
+  0% { transform: translate3d(-2%, 1%, 0); }
+  25% { transform: translate3d(2%, -2%, 0); }
+  50% { transform: translate3d(-1%, 2%, 0); }
+  75% { transform: translate3d(1%, -1%, 0); }
+  100% { transform: translate3d(-2%, 1%, 0); }
+}
+
 #start-screen {
   position: fixed;
   inset: 0;
