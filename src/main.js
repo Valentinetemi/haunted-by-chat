@@ -613,6 +613,7 @@ function showLocationCard(destination, name) {
   window.clearTimeout(locationCardTimeoutId)
   locationName.textContent = name
   locationTagline.textContent = taglines[destination] ?? 'There is no way back'
+  locationCard.dataset.location = destination
   locationCard.hidden = false
   locationCard.classList.remove('is-visible')
   void locationCard.offsetWidth

@@ -736,6 +736,7 @@ body.is-playing.is-mobile-portrait #mobile-controls {
 }
 
 #location-card {
+  --location-accent: #d2c2a8;
   position: fixed;
   top: 14%;
   left: 50%;
@@ -761,7 +762,7 @@ body.is-playing.is-mobile-portrait #mobile-controls {
   width: min(18rem, 58vw);
   height: 1px;
   content: '';
-  background: linear-gradient(90deg, transparent, rgb(210 194 168 / 70%), transparent);
+  background: linear-gradient(90deg, transparent, var(--location-accent), transparent);
 }
 
 #location-card span {
@@ -772,11 +773,17 @@ body.is-playing.is-mobile-portrait #mobile-controls {
 }
 
 #location-card strong {
+  color: var(--location-accent);
   font-size: clamp(1.45rem, 4vw, 2.7rem);
   font-weight: 400;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
+
+#location-card[data-location='courtyard'] { --location-accent: #9bc9df; }
+#location-card[data-location='crypt'] { --location-accent: #9fb58d; }
+#location-card[data-location='mirror'] { --location-accent: #c3adff; }
+#location-card[data-location='widows'] { --location-accent: #c18d9a; }
 
 #location-card small {
   color: #aaa298;
