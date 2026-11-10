@@ -448,6 +448,11 @@ kbd {
   touch-action: none;
 }
 
+#mobile-reload {
+  grid-row: 1;
+  grid-column: 1;
+}
+
 #mobile-run {
   grid-row: 2;
   grid-column: 1;
