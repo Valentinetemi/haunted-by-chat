@@ -1588,8 +1588,8 @@ body.is-playing.is-mobile-portrait #mobile-controls {
 
 #caught-screen h1 {
   margin: 0;
-  color: #d7c7c7;
-  font-size: clamp(2.6rem, 9vw, 6.5rem);
+  color: #ffd7d0;
+  font-size: clamp(2rem, 7vw, 4.5rem);
   letter-spacing: 0.12em;
   line-height: 0.9;
   text-shadow: 0 0 2rem #8d0000;
