@@ -1296,7 +1296,7 @@ export async function bootGame(reportProgress = () => {}) {
     }
     const blast = thrownGrenades.update(delta, time)
     if (blast) {
-      audio.slam()
+      audio.boom()
       cameraShakeEndsAt = time + 320
       for (const zombie of horde.blast(blast, 4.4)) {
         if (zombie.type === 'brute') brutesDropped += 1
@@ -1582,6 +1582,27 @@ export async function bootGame(reportProgress = () => {}) {
     ['s', { name: 'SLAM', action: slamDoor }],
     ['!hunt', { name: 'HUNT', action: rushGhost }],
     ['c', { name: 'HUNT', action: rushGhost }],
+    ['!horde', {
+      name: 'HORDE',
+      action: () => {
+        waveNumber += 1
+        horde.spawnWave(waveNumber + 1, camera.position)
+        showReward('Chat called a horde')
+      },
+    }],
+    ['!zombie', {
+      name: 'ZOMBIE',
+      action: () => {
+        horde.spawn('runner', camera.position.x + 6, camera.position.z - 4)
+        horde.spawn('walker', camera.position.x - 6, camera.position.z - 3)
+      },
+    }],
+    ['z', {
+      name: 'ZOMBIE',
+      action: () => {
+        horde.spawn('walker', camera.position.x + 5, camera.position.z + 4)
+      },
+    }],
   ])
   let twitchClient = null
   let streamerConnectionRequested = false
