@@ -1226,8 +1226,8 @@ body.is-playing.is-mobile-portrait #mobile-controls {
   right: 1rem;
   bottom: 6.4rem;
   z-index: 15;
-  width: 10rem;
-  height: 0.55rem;
+  width: 11rem;
+  height: 0.85rem;
   overflow: hidden;
   border: 1px solid rgb(255 120 96 / 45%);
   background: rgb(20 6 6 / 80%);
