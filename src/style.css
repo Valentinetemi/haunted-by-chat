@@ -1178,6 +1178,8 @@ body.is-playing.is-mobile-portrait #mobile-controls {
 
 #score-hud {
   left: 50%;
+  border-width: 2px;
+  border-color: #f0c56a;
   transform: translateX(-50%);
 }
 
