@@ -14,9 +14,9 @@
       property="og:description"
       content="A replayable browser survival horror game spanning a haunted house and three cursed realms."
     />
-    <meta property="og:image" content="assets/haunted-by-chat-preview.png" />
-    <meta property="og:image:width" content="1734" />
-    <meta property="og:image:height" content="907" />
+    <meta property="og:image" content="assets/haunted-by-chat-preview.jpg" />
+    <meta property="og:image:width" content="1400" />
+    <meta property="og:image:height" content="732" />
     <meta property="og:image:alt" content="Mother stalking the moonlit halls in Haunted by Chat" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Haunted by Chat" />
@@ -24,18 +24,26 @@
       name="twitter:description"
       content="Cross cursed realms, find five keys, survive Mother, and escape."
     />
-    <meta name="twitter:image" content="assets/haunted-by-chat-preview.png" />
+    <meta name="twitter:image" content="assets/haunted-by-chat-preview.jpg" />
     <title>Haunted by Chat</title>
   </head>
   <body>
     <div id="app"></div>
+    <div id="loading-screen" role="status" aria-live="polite">
+      <div class="menu-card">
+        <p class="eyebrow">A house that remembers</p>
+        <h1 data-text="Haunted by Chat">Haunted by Chat</h1>
+        <p id="load-status">The lock is turning…</p>
+        <div id="load-bar" aria-hidden="true"><i id="load-bar-fill"></i></div>
+      </div>
+    </div>
     <div id="film-grain" aria-hidden="true"></div>
     <div id="aim-reticle" aria-hidden="true"><i></i></div>
     <section id="start-screen" aria-labelledby="game-title">
       <div class="menu-card">
         <p class="eyebrow">A house that remembers</p>
         <h1 id="game-title" data-text="Haunted by Chat">Haunted by Chat</h1>
-        <p class="menu-copy">Find five keys across four haunted places. Reach the front door. Do not let Mother hear you.</p>
+        <p class="menu-copy">Find five keys through the house and the rooms beyond it. The revolver staggers Mother. It does not keep her away.</p>
         <ul class="menu-features" aria-label="Game features">
           <li>Random scares</li>
           <li>Mobile ready</li>
@@ -54,10 +62,10 @@
         </label>
         <div id="how-to-panel" hidden>
           <p><kbd>WASD</kbd> move · <kbd>Shift</kbd> sprint · <kbd>Mouse</kbd> look</p>
-          <p><kbd>Click</kbd> stun Mother · <kbd>E</kbd> hide, leave, or unlock</p>
-          <p>Hiding breaks Mother's sight so she searches, then walks away. Find the living-room stairs to explore upstairs.</p>
-          <p class="mobile-help">Use the left stick to move, drag the right side to look, and tap RUN, STUN, or USE.</p>
-          <p>Keys progressively unseal the courtyard, crypt, and mirror realm. Follow the NEXT objective and return to the front door with all five.</p>
+          <p><kbd>Click</kbd> fire · <kbd>R</kbd> reload · <kbd>E</kbd> hide, leave, or unlock</p>
+          <p>Shots stagger Mother and she hears them. Enough hits drive her off, but she comes back angrier. Hiding breaks her sight.</p>
+          <p class="mobile-help">Use the left stick to move, drag the right side to look, and tap RUN, FIRE, RELOAD, or USE.</p>
+          <p>The house now includes a study, pantry, nursery, guest bathroom, and cellar washroom. Keys name the room. Follow NEXT, then return to the front door.</p>
         </div>
       </div>
     </section>
@@ -77,10 +85,10 @@
     </div>
     <div id="portal-transition" aria-hidden="true" hidden></div>
     <aside id="twitch-feed" aria-live="polite" aria-label="Twitch scare feed" hidden></aside>
-    <aside id="stun-hud" aria-label="Stun blaster ammunition">
-      <span>Stun</span>
-      <strong id="shots-remaining">3</strong>
-      <small>shots</small>
+    <aside id="stun-hud" aria-label="Revolver ammunition">
+      <span>Ammo</span>
+      <strong id="shots-remaining">5</strong>
+      <small id="ammo-reserve">0</small>
     </aside>
     <aside id="stamina-hud" aria-label="Sprint stamina">
       <span>Stamina</span>
@@ -112,9 +120,10 @@
         </div>
       </div>
       <div id="mobile-actions">
+        <button id="mobile-reload" type="button">Reload</button>
         <button id="mobile-run" type="button">Run</button>
         <button id="mobile-use" type="button">Use</button>
-        <button id="mobile-stun" type="button">Stun</button>
+        <button id="mobile-stun" type="button">Fire</button>
       </div>
     </div>
     <div id="rotate-device" role="status" aria-live="polite">

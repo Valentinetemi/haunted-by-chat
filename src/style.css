@@ -94,6 +94,51 @@ body:not(.is-playing) #aim-reticle {
   opacity: 0;
 }
 
+#loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  background:
+    radial-gradient(circle at 50% 40%, rgb(73 18 16 / 45%), transparent 36%),
+    #050304;
+  transition: opacity 280ms ease;
+}
+
+#loading-screen[hidden] {
+  display: none;
+}
+
+#loading-screen.is-done {
+  opacity: 0;
+}
+
+#load-status {
+  margin: 1.1rem 0 0;
+  color: #a3988c;
+  font: 0.75rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.08em;
+}
+
+#load-bar {
+  height: 0.38rem;
+  margin-top: 0.9rem;
+  overflow: hidden;
+  border: 1px solid rgb(202 166 110 / 35%);
+  background: #140e0c;
+}
+
+#load-bar-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #6d1814, #e0c987);
+  transform: scaleX(0.06);
+  transform-origin: left center;
+}
+
 #start-screen {
   position: fixed;
   inset: 0;
@@ -401,6 +446,11 @@ kbd {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   touch-action: none;
+}
+
+#mobile-reload {
+  grid-row: 1;
+  grid-column: 1;
 }
 
 #mobile-run {

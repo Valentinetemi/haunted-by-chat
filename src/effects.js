@@ -5,6 +5,7 @@ import { FLOOR_Y } from './house.js'
 export function createBlackPuddles(parent) {
   const group = new THREE.Group()
   group.name = 'black-puddles'
+  group.userData.keepSeparate = true
   const material = new THREE.MeshStandardMaterial({
     color: 0x050407,
     metalness: 0.15,

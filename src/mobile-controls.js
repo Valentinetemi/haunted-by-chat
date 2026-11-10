@@ -6,7 +6,9 @@ export function createMobileControls({
   lookZone,
   onInteract,
   onLook,
+  onReload,
   onStun,
+  reloadButton,
   root,
   runButton,
   stunButton,
@@ -136,6 +138,11 @@ export function createMobileControls({
     if (!active) return
     event.preventDefault()
     onStun()
+  })
+  reloadButton.addEventListener('pointerdown', (event) => {
+    if (!active) return
+    event.preventDefault()
+    onReload()
   })
   interactButton.addEventListener('pointerdown', (event) => {
     if (!active) return

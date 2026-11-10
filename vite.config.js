@@ -6,5 +6,13 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 650,
     target: 'es2020',
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/three')) return 'three'
+          if (id.includes('node_modules/tmi.js')) return 'tmi'
+        },
+      },
+    },
   },
 })
