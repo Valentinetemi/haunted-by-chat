@@ -469,7 +469,36 @@ export async function bootGame(reportProgress = () => {}) {
     mother.skinMaterial.emissiveIntensity = 0.2 + Math.sin(time * 0.002) * 0.05
   }
 
-  const weaponNameDisplay = document.querySelector('#stun-hud span')
+  const hitMarker = document.querySelector('#hit-marker')
+  const killFeed = document.querySelector('#kill-feed')
+  const levelBanner = document.querySelector('#level-banner')
+  let hitMarkerUntil = 0
+  let levelBannerUntil = 0
+
+  function flashHit(headshot) {
+    hitMarker.hidden = false
+    hitMarker.classList.toggle('is-head', headshot)
+    hitMarkerUntil = performance.now() + 120
+  }
+
+  function pushKillFeed(text) {
+    const line = document.createElement('p')
+    line.textContent = text
+    killFeed.prepend(line)
+    while (killFeed.childElementCount > 4) killFeed.lastElementChild.remove()
+    window.setTimeout(() => line.remove(), 2200)
+  }
+
+  function shoutLevel(text) {
+    levelBanner.textContent = text
+    levelBanner.hidden = false
+    levelBannerUntil = performance.now() + 900
+  }
+
+  function updateJuice(time) {
+    if (time >= hitMarkerUntil) hitMarker.hidden = true
+    if (time >= levelBannerUntil) levelBanner.hidden = true
+  }
 
   function updateStunHud() {
     const reloading = arsenal.reloading()
@@ -510,6 +539,7 @@ export async function bootGame(reportProgress = () => {}) {
         force: pellet.headDamage > 3 ? 4.4 : 2.4,
       })
       audio.hit()
+      flashHit(zombieHit.headshot)
       cameraShakeEndsAt = performance.now() + (zombieHit.headshot ? 140 : 70)
       if (killed) {
         const payout = scoreSystem.addKill({
@@ -519,6 +549,8 @@ export async function bootGame(reportProgress = () => {}) {
         })
         arsenal.addBullets(arsenal.currentId === 'grenade' ? 'revolver' : arsenal.currentId, zombieHit.zombie.type === 'brute' ? 8 : 4)
         if (zombieHit.zombie.type === 'brute') brutesDropped += 1
+        pushKillFeed(`${zombieHit.headshot ? 'Headshot' : 'Dropped'} ${zombieHit.zombie.type}`)
+        if (payout.streak === 5 || payout.streak === 10) shoutLevel(`Streak x${payout.streak}`)
         showReward(`${zombieHit.headshot ? 'HEADSHOT' : 'Kill'} +${payout.gained}`)
       }
       return
@@ -1144,6 +1176,9 @@ export async function bootGame(reportProgress = () => {}) {
     nextWaveAt = Infinity
     brutesDropped = 0
     missions.reset(performance.now())
+    killFeed.replaceChildren()
+    levelBanner.hidden = true
+    hitMarker.hidden = true
     caughtScreen.hidden = true
     escapeScreen.hidden = true
     startScreen.hidden = false
@@ -1186,6 +1221,7 @@ export async function bootGame(reportProgress = () => {}) {
     scareDirector.update(time)
     runTimer.update(time)
     scoreSystem.tick(time)
+    updateJuice(time)
     updateWaves(time)
     missions.update({
       brutes: brutesDropped,

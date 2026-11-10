@@ -958,6 +958,87 @@ body.is-playing.is-mobile-portrait #mobile-controls {
   opacity: 0;
 }
 
+#hit-marker {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 14;
+  width: 1.4rem;
+  height: 1.4rem;
+  pointer-events: none;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+#hit-marker::before,
+#hit-marker::after {
+  position: absolute;
+  background: #ffe7b0;
+  content: '';
+}
+
+#hit-marker::before {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+}
+
+#hit-marker::after {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+}
+
+#hit-marker.is-head {
+  filter: drop-shadow(0 0 0.4rem #ff4a32);
+}
+
+#hit-marker.is-head::before,
+#hit-marker.is-head::after {
+  background: #ff4a32;
+}
+
+#kill-feed {
+  position: fixed;
+  top: 8rem;
+  right: 1rem;
+  z-index: 15;
+  display: grid;
+  gap: 0.3rem;
+  justify-items: end;
+  pointer-events: none;
+}
+
+#kill-feed p {
+  margin: 0;
+  padding: 0.28rem 0.45rem;
+  color: #ffe7c2;
+  background: rgb(12 6 6 / 72%);
+  font: 700 0.68rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+#level-banner {
+  position: fixed;
+  top: 38%;
+  left: 50%;
+  z-index: 17;
+  margin: 0;
+  color: #ffe08a;
+  font: 900 clamp(2.4rem, 8vw, 5rem)/0.9 Impact, Haettenschweiler, sans-serif;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0.08em 0 #6a140c, 0 0 1.2rem #ff7a32;
+  text-transform: uppercase;
+  transform: translate(-50%, -50%) scale(1);
+  pointer-events: none;
+}
+
+#level-banner[hidden] {
+  display: none;
+}
+
 #mission-banner {
   position: fixed;
   top: 4.4rem;
