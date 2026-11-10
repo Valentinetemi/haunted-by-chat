@@ -222,6 +222,7 @@ export function createArsenal(camera) {
     setReloadScale(scale) {
       reloadScale = scale
     },
+    setHand(color) {
       palm.material.color.set(color)
     },
     setTrigger(held) {

@@ -25,6 +25,15 @@ import { createMother,
 } from './mother.js'
 import { createScoreSystem } from './score.js'
 import { createScareDirector } from './scares.js'
+import {
+  SURVIVORS,
+  loadSurvivorId,
+  loadUnlocks,
+  saveSurvivorId,
+  saveUnlocks,
+  survivorById,
+  weaponPrice,
+} from './survivors.js'
 import { createRunTimer } from './timer.js'
 import { createArsenal, createGrenades, createWeaponPickups } from './arsenal.js'
 import { createAmmoPickups } from './weapon.js'
@@ -221,6 +230,87 @@ export async function bootGame(reportProgress = () => {}) {
   }
 
   paintHealth()
+  let selectedSurvivorId = loadSurvivorId()
+  let unlocks = loadUnlocks()
+  let pendingStreamer = false
+  let moveScale = 1
+  const loadoutPanel = document.querySelector('#loadout-panel')
+  const menuActions = document.querySelector('.menu-actions')
+
+  function renderLoadout() {
+    const list = document.querySelector('#survivor-list')
+    list.replaceChildren()
+    for (const survivor of SURVIVORS) {
+      const locked = survivor.price > 0 && !unlocks[survivor.id]
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.className = 'survivor-card'
+      if (survivor.id === selectedSurvivorId && !locked) button.classList.add('is-selected')
+      button.innerHTML = `<i class="survivor-swatch" style="background:${survivor.hand}"></i><span><b>${survivor.name}</b><br>${locked ? `Unlock $${survivor.price}` : survivor.perk}</span>`
+      button.addEventListener('click', () => {
+        if (locked) {
+          if (!scoreSystem.spend(survivor.price)) {
+            showReward('Need more cash')
+            return
+          }
+          unlocks[survivor.id] = true
+          saveUnlocks(unlocks)
+        }
+        selectedSurvivorId = survivor.id
+        saveSurvivorId(selectedSurvivorId)
+        renderLoadout()
+      })
+      list.append(button)
+    }
+    const shop = document.querySelector('#shop-list')
+    shop.replaceChildren()
+    for (const [id, label] of [['shotgun', 'Shotgun'], ['smg', 'SMG']]) {
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.className = 'shop-card'
+      const price = weaponPrice(id)
+      button.disabled = Boolean(unlocks[id])
+      button.textContent = unlocks[id] ? `${label} owned` : `Unlock ${label} · $${price}`
+      button.addEventListener('click', () => {
+        if (unlocks[id]) return
+        if (!scoreSystem.spend(price)) {
+          showReward('Need more cash')
+          return
+        }
+        unlocks[id] = true
+        saveUnlocks(unlocks)
+        shoutLevel(`${label} unlocked`)
+        renderLoadout()
+      })
+      shop.append(button)
+    }
+    document.querySelector('#bank-readout').textContent = `Cash ${scoreSystem.bank}`
+  }
+
+  function openLoadout(streamer) {
+    pendingStreamer = streamer
+    loadoutPanel.hidden = false
+    menuActions.hidden = true
+    renderLoadout()
+  }
+
+  function applySurvivor() {
+    const picked = survivorById(selectedSurvivorId)
+    const active = picked.price > 0 && !unlocks[picked.id] ? survivorById('vale') : picked
+    selectedSurvivorId = active.id
+    maxHealth = active.health
+    health = maxHealth
+    paintHealth()
+    moveScale = active.speed
+    arsenal.setHand(active.hand)
+    arsenal.setReloadScale(active.reload)
+    arsenal.setGrenadeStock(active.grenades)
+    arsenal.reset()
+    if (unlocks.shotgun) arsenal.grant('shotgun')
+    if (unlocks.smg) arsenal.grant('smg')
+    updateStunHud()
+  }
+
   const scoreSystem = createScoreSystem({
     cashDisplay: document.querySelector('#cash-value'),
     scoreDisplay: document.querySelector('#score-value'),
@@ -1335,7 +1425,7 @@ export async function bootGame(reportProgress = () => {}) {
       !hiding.isHidden
     updateStamina(delta, isSprinting)
     if (movement.lengthSq() > 0 && !hiding.isHidden) {
-      movement.normalize().multiplyScalar((isSprinting ? sprintSpeed : movementSpeed) * delta)
+      movement.normalize().multiplyScalar((isSprinting ? sprintSpeed : movementSpeed) * moveScale * delta)
       movePlayerWithinWorld(camera.position, movement)
     }
     if (!hasIntroducedWidowsRoom && camera.position.y > 3.8) {
@@ -1423,6 +1513,7 @@ export async function bootGame(reportProgress = () => {}) {
       disconnectStreamerMode()
     }
     audio.start()
+    applySurvivor()
     document.body.classList.add('is-playing')
     gameRunning = true
     startScreen.hidden = true
@@ -1504,8 +1595,9 @@ export async function bootGame(reportProgress = () => {}) {
   window.visualViewport?.addEventListener('resize', queueMobileOrientationSync)
   window.matchMedia('(orientation: portrait)').addEventListener?.('change', queueMobileOrientationSync)
 
-  playButton.addEventListener('click', () => startGame(false))
-  streamerButton.addEventListener('click', () => startGame(true))
+  playButton.addEventListener('click', () => openLoadout(false))
+  streamerButton.addEventListener('click', () => openLoadout(true))
+  document.querySelector('#deploy-button').addEventListener('click', () => startGame(pendingStreamer))
   howToButton.addEventListener('click', () => {
     const isOpening = howToPanel.hidden
     howToPanel.hidden = !isOpening
