@@ -571,6 +571,7 @@ export async function bootGame(reportProgress = () => {}) {
     mother.skinMaterial.emissiveIntensity = 0.2 + Math.sin(time * 0.002) * 0.05
   }
 
+  const weaponNameDisplay = document.querySelector('#stun-hud span')
   const hitMarker = document.querySelector('#hit-marker')
   const killFeed = document.querySelector('#kill-feed')
   const levelBanner = document.querySelector('#level-banner')
