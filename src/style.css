@@ -958,6 +958,68 @@ body.is-playing.is-mobile-portrait #mobile-controls {
   opacity: 0;
 }
 
+#score-hud,
+#cash-hud {
+  position: fixed;
+  top: 1rem;
+  z-index: 15;
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid rgb(240 197 106 / 35%);
+  color: #ffe7b0;
+  background: rgb(12 8 6 / 78%);
+  font: 800 0.72rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+#score-hud {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#score-hud strong {
+  font-size: 1.35rem;
+  letter-spacing: 0;
+}
+
+#streak-value {
+  color: #ff5a3a;
+  font-size: 1rem;
+}
+
+#streak-value[hidden] {
+  display: none;
+}
+
+#cash-hud {
+  left: 11.5rem;
+}
+
+#health-hud {
+  position: fixed;
+  right: 1rem;
+  bottom: 6.4rem;
+  z-index: 15;
+  width: 10rem;
+  height: 0.55rem;
+  overflow: hidden;
+  border: 1px solid rgb(255 120 96 / 45%);
+  background: rgb(20 6 6 / 80%);
+  pointer-events: none;
+}
+
+#health-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #8d1d1d, #f0c56a);
+  transform-origin: left center;
+}
+
 #stun-hud {
   position: fixed;
   right: 1rem;
