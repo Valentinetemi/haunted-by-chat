@@ -1177,7 +1177,15 @@ export async function bootGame(reportProgress = () => {}) {
     pressedKeys.clear()
     mobileControls.reset()
   })
+  let lastStreamerMode = false
+
+  function replayRun() {
+    restartGame()
+    startGame(lastStreamerMode)
+  }
+
   function startGame(streamerMode = false) {
+    lastStreamerMode = streamerMode
     if (streamerMode) {
       connectStreamerMode()
     } else {
@@ -1268,8 +1276,8 @@ export async function bootGame(reportProgress = () => {}) {
     howToPanel.hidden = !isOpening
     howToButton.setAttribute('aria-expanded', String(isOpening))
   })
-  restartButton.addEventListener('click', restartGame)
-  playAgainButton.addEventListener('click', restartGame)
+  restartButton.addEventListener('click', replayRun)
+  playAgainButton.addEventListener('click', replayRun)
 
   document.addEventListener('pointerlockchange', () => {
     if (usesTouchControls) return
