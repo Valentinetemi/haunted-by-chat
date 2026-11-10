@@ -149,13 +149,21 @@
       <small>Haunted by Chat plays in landscape</small>
     </div>
     <section id="caught-screen" role="dialog" aria-modal="true" aria-labelledby="caught-title" hidden>
-      <h1 id="caught-title">Mother found you</h1>
-      <button id="restart-button" type="button">Restart</button>
+      <h1 id="caught-title">The horde got you</h1>
+      <p class="score-line">Score <strong id="caught-score">0</strong></p>
+      <p class="score-line">Cash <strong id="caught-cash">0</strong></p>
+      <p class="score-line">Kills <strong id="caught-kills">0</strong></p>
+      <p class="score-line">Best <strong id="caught-best">0</strong></p>
+      <button id="restart-button" type="button">Play again</button>
     </section>
     <section id="escape-screen" role="dialog" aria-modal="true" aria-labelledby="escape-title" hidden>
       <h1 id="escape-title">Escaped</h1>
       <p class="score-line">Time <strong id="final-time">--:--.---</strong></p>
-      <p class="score-line">Best <strong id="best-time">No escape yet</strong></p>
+      <p class="score-line">Score <strong id="escape-score">0</strong></p>
+      <p class="score-line">Cash <strong id="escape-cash">0</strong></p>
+      <p class="score-line">Kills <strong id="escape-kills">0</strong></p>
+      <p class="score-line">Best time <strong id="best-time">No escape yet</strong></p>
+      <p class="score-line">Best score <strong id="escape-best">0</strong></p>
       <button id="play-again-button" type="button">Play again</button>
     </section>
     <script type="module" src="/src/main.js"></script>

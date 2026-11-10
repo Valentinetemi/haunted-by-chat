@@ -677,6 +677,22 @@ export async function bootGame(reportProgress = () => {}) {
     return xDistance ** 2 + zDistance ** 2 <= ghostCatchDistance ** 2
   }
 
+  function showRunSummary() {
+    scoreSystem.bankRun()
+    const score = String(scoreSystem.score)
+    const cash = String(scoreSystem.bank)
+    const kills = String(scoreSystem.kills)
+    const best = String(scoreSystem.best)
+    document.querySelector('#caught-score').textContent = score
+    document.querySelector('#caught-cash').textContent = cash
+    document.querySelector('#caught-kills').textContent = kills
+    document.querySelector('#caught-best').textContent = best
+    document.querySelector('#escape-score').textContent = score
+    document.querySelector('#escape-cash').textContent = cash
+    document.querySelector('#escape-kills').textContent = kills
+    document.querySelector('#escape-best').textContent = best
+  }
+
   function catchPlayer() {
     playerCaught = true
     gameRunning = false
@@ -702,6 +718,7 @@ export async function bootGame(reportProgress = () => {}) {
     catchTimeoutId = window.setTimeout(() => {
       jumpscare.hidden = true
       jumpscare.classList.remove('is-catch')
+      showRunSummary()
       caughtScreen.hidden = false
     }, 640)
   }
@@ -729,6 +746,7 @@ export async function bootGame(reportProgress = () => {}) {
     pressedKeys.clear()
     startScreen.hidden = true
     escapeScreen.hidden = false
+    showRunSummary()
     runTimer.finish()
     if (document.pointerLockElement === renderer.domElement) document.exitPointerLock()
   }
