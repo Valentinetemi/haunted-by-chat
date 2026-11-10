@@ -215,7 +215,11 @@ export async function bootGame(reportProgress = () => {}) {
     }
     waveNumber += 1
     const spawned = horde.spawnWave(waveNumber, camera.position)
-    if (spawned > 0) showReward(`Wave ${waveNumber}`)
+    if (spawned > 0) {
+      showReward(`Wave ${waveNumber}`)
+      const waveValue = document.querySelector('#wave-value')
+      if (waveValue) waveValue.textContent = String(waveNumber)
+    }
     nextWaveAt = time + 16000
   }
 

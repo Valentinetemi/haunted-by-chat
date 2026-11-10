@@ -1177,7 +1177,28 @@ body.is-playing.is-mobile-portrait #mobile-controls {
 }
 
 #cash-hud {
-  left: 11.5rem;
+  right: 1rem;
+  left: auto;
+}
+
+#wave-hud {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 15;
+  display: flex;
+  gap: 0.4rem;
+  align-items: baseline;
+  color: #ffb15a;
+  font: 800 0.78rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+#wave-hud strong {
+  color: #fff;
+  font-size: 1.2rem;
 }
 
 #health-hud {
@@ -1283,7 +1304,7 @@ body.is-playing.is-mobile-portrait #mobile-controls {
 
 #key-hud {
   position: fixed;
-  top: 1rem;
+  top: 2.8rem;
   left: 1rem;
   z-index: 15;
   display: grid;
@@ -1344,7 +1365,7 @@ body.is-playing.is-mobile-portrait #mobile-controls {
 
 #objective-hud {
   position: fixed;
-  top: 5.4rem;
+  top: 7.2rem;
   left: 1rem;
   z-index: 15;
   display: grid;
@@ -1382,8 +1403,8 @@ body.is-playing.is-mobile-portrait #mobile-controls {
 
 #key-compass {
   position: fixed;
-  top: 4.5rem;
-  left: 50%;
+  top: 11rem;
+  left: 1rem;
   z-index: 15;
   display: grid;
   justify-items: center;
@@ -1392,7 +1413,6 @@ body.is-playing.is-mobile-portrait #mobile-controls {
   font: 700 0.68rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.08em;
   pointer-events: none;
-  transform: translateX(-50%);
 }
 
 #key-compass[hidden] {
@@ -1437,7 +1457,7 @@ body.is-playing.is-mobile-portrait #mobile-controls {
 
 #timer-hud {
   position: fixed;
-  top: 1rem;
+  top: 3.3rem;
   right: 1rem;
   z-index: 15;
   display: grid;
