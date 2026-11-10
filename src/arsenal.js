@@ -155,6 +155,8 @@ export function createArsenal(camera) {
     }
   }
   let grenades = 2
+  let grenadeStock = 2
+  let reloadScale = 1
   let currentId = 'revolver'
   let kick = 0
   let flashUntil = 0
@@ -214,7 +216,12 @@ export function createArsenal(camera) {
       }
     },
     owns: (id) => Boolean(owned[id]),
-    setHand(color) {
+    setGrenadeStock(amount) {
+      grenadeStock = amount
+    },
+    setReloadScale(scale) {
+      reloadScale = scale
+    },
       palm.material.color.set(color)
     },
     setTrigger(held) {
@@ -248,7 +255,7 @@ export function createArsenal(camera) {
       if (currentId === 'grenade') return false
       const weapon = current()
       if (weapon.loaded >= weapon.magSize || weapon.reserve <= 0) return false
-      weapon.reloadReadyAt = time + (weapon.magSize > 8 ? 1100 : 1400)
+      weapon.reloadReadyAt = time + (weapon.magSize > 8 ? 1100 : 1400) * reloadScale
       return true
     },
     finishReload(time) {
@@ -324,7 +331,7 @@ export function createArsenal(camera) {
     },
     reset() {
       currentId = 'revolver'
-      grenades = owned.grenade ? 2 : 0
+      grenades = owned.grenade ? grenadeStock : 0
       for (const [id, definition] of Object.entries(DEFINITIONS)) {
         state[id].loaded = owned[id] ? definition.magSize : 0
         state[id].reserve = owned[id] ? definition.reserve : 0
