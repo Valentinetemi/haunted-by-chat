@@ -93,7 +93,7 @@ export async function bootGame(reportProgress = () => {}) {
   const clock = new THREE.Clock()
   const audio = createAudioSystem()
   const house = createHauntedHouse(scene)
-  const hauntedPlaces = createHauntedPlaces(scene)
+  const hauntedPlaces = await createHauntedPlaces(scene, report)
   const blackPuddles = createBlackPuddles(house.group)
   furnishEntrance(house.group)
   furnishLivingRoom(house.group)
