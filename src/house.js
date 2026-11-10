@@ -1,5 +1,7 @@
 import * as THREE from 'three'
 
+import { createStaticBatch } from './batch.js'
+
 export const FLOOR_Y = -1.7
 export const CEILING_Y = 2.5
 export const UPPER_PLAYER_Y = 4.36
@@ -89,6 +91,16 @@ export const HUNTER_SPAWNS = [
   new THREE.Vector3(8, FLOOR_Y + 0.08, -7),
 ]
 
+const doorFrameMaterial = new THREE.MeshStandardMaterial({ color: 0x17110e, roughness: 0.92 })
+const doorPanelMaterial = new THREE.MeshStandardMaterial({ color: 0x3a251b, roughness: 0.82 })
+const doorMetalMaterial = new THREE.MeshStandardMaterial({
+  color: 0x756246,
+  metalness: 0.65,
+  roughness: 0.38,
+})
+
+let shellBatch = null
+
 export function addBox(parent, size, position, material, name = '') {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material)
   mesh.position.set(...position)
@@ -99,13 +111,16 @@ export function addBox(parent, size, position, material, name = '') {
   return mesh
 }
 
+function addShell(size, position, material, rotation = 0) {
+  shellBatch.box(size, position, material, rotation)
+}
+
 function addSegmentedWallX(group, x, minZ, maxZ, gaps, material) {
   let cursor = minZ
 
   for (const [gapStart, gapEnd] of [...gaps].sort((a, b) => a[0] - b[0])) {
     if (gapStart > cursor) {
-      addBox(
-        group,
+      addShell(
         [0.2, CEILING_Y - FLOOR_Y, gapStart - cursor],
         [x, (FLOOR_Y + CEILING_Y) / 2, (cursor + gapStart) / 2],
         material,
@@ -115,8 +130,7 @@ function addSegmentedWallX(group, x, minZ, maxZ, gaps, material) {
   }
 
   if (cursor < maxZ) {
-    addBox(
-      group,
+    addShell(
       [0.2, CEILING_Y - FLOOR_Y, maxZ - cursor],
       [x, (FLOOR_Y + CEILING_Y) / 2, (cursor + maxZ) / 2],
       material,
@@ -129,8 +143,7 @@ function addSegmentedWallZ(group, z, minX, maxX, gaps, material) {
 
   for (const [gapStart, gapEnd] of [...gaps].sort((a, b) => a[0] - b[0])) {
     if (gapStart > cursor) {
-      addBox(
-        group,
+      addShell(
         [gapStart - cursor, CEILING_Y - FLOOR_Y, 0.2],
         [(cursor + gapStart) / 2, (FLOOR_Y + CEILING_Y) / 2, z],
         material,
@@ -140,8 +153,7 @@ function addSegmentedWallZ(group, z, minX, maxX, gaps, material) {
   }
 
   if (cursor < maxX) {
-    addBox(
-      group,
+    addShell(
       [maxX - cursor, CEILING_Y - FLOOR_Y, 0.2],
       [(cursor + maxX) / 2, (FLOOR_Y + CEILING_Y) / 2, z],
       material,
@@ -152,27 +164,33 @@ function addSegmentedWallZ(group, z, minX, maxX, gaps, material) {
 function createRoomDoor(group, roomId, x, z, opensToward) {
   const doorWidth = 1.7
   const doorHeight = 3
-  const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x17110e, roughness: 0.92 })
-  const panelMaterial = new THREE.MeshStandardMaterial({ color: 0x3a251b, roughness: 0.82 })
-  const metalMaterial = new THREE.MeshStandardMaterial({
-    color: 0x756246,
-    metalness: 0.65,
-    roughness: 0.38,
-  })
   const door = new THREE.Group()
   door.position.set(x, 0, z)
+  door.userData.keepSeparate = true
 
-  addBox(door, [0.25, doorHeight + 0.2, 0.16], [0, FLOOR_Y + doorHeight / 2, -doorWidth / 2], frameMaterial)
-  addBox(door, [0.25, doorHeight + 0.2, 0.16], [0, FLOOR_Y + doorHeight / 2, doorWidth / 2], frameMaterial)
-  addBox(door, [0.25, 0.16, doorWidth + 0.16], [0, FLOOR_Y + doorHeight, 0], frameMaterial)
+  addShell(
+    [0.25, doorHeight + 0.2, 0.16],
+    [x, FLOOR_Y + doorHeight / 2, z - doorWidth / 2],
+    doorFrameMaterial,
+  )
+  addShell(
+    [0.25, doorHeight + 0.2, 0.16],
+    [x, FLOOR_Y + doorHeight / 2, z + doorWidth / 2],
+    doorFrameMaterial,
+  )
+  addShell(
+    [0.25, 0.16, doorWidth + 0.16],
+    [x, FLOOR_Y + doorHeight, z],
+    doorFrameMaterial,
+  )
 
   const hinge = new THREE.Group()
   const openRotation = opensToward * 0.62
   hinge.position.z = -doorWidth / 2
   hinge.rotation.y = openRotation
-  addBox(hinge, [0.16, doorHeight, doorWidth], [0, FLOOR_Y + doorHeight / 2, doorWidth / 2], panelMaterial)
+  addBox(hinge, [0.16, doorHeight, doorWidth], [0, FLOOR_Y + doorHeight / 2, doorWidth / 2], doorPanelMaterial)
 
-  const handle = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8), metalMaterial)
+  const handle = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 6), doorMetalMaterial)
   handle.position.set(opensToward * 0.11, FLOOR_Y + 1.2, doorWidth - 0.24)
   hinge.add(handle)
   door.add(hinge)
@@ -196,9 +214,9 @@ function createFrontDoor(group, material) {
   })
 
   addBox(frontDoor, [2.4, 3.35, 0.18], [0, FLOOR_Y + 1.675, 9.92], panelMaterial, 'front-door')
-  addBox(frontDoor, [0.2, 3.55, 0.28], [-1.3, FLOOR_Y + 1.775, 9.92], material)
-  addBox(frontDoor, [0.2, 3.55, 0.28], [1.3, FLOOR_Y + 1.775, 9.92], material)
-  addBox(frontDoor, [2.8, 0.2, 0.28], [0, FLOOR_Y + 3.45, 9.92], material)
+  addShell([0.2, 3.55, 0.28], [-1.3, FLOOR_Y + 1.775, 9.92], material)
+  addShell([0.2, 3.55, 0.28], [1.3, FLOOR_Y + 1.775, 9.92], material)
+  addShell([2.8, 0.2, 0.28], [0, FLOOR_Y + 3.45, 9.92], material)
 
   const knob = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 8), metalMaterial)
   knob.position.set(0.82, FLOOR_Y + 1.25, 9.72)
@@ -208,11 +226,11 @@ function createFrontDoor(group, material) {
   return frontDoor
 }
 
-function createLivingCeilingWithStairOpening(group, material) {
-  addBox(group, [4.8, 0.16, 12], [-9.6, CEILING_Y + 0.08, 4], material, 'living-upper-floor')
-  addBox(group, [0.6, 0.16, 12], [-4.3, CEILING_Y + 0.08, 4], material, 'living-upper-floor')
-  addBox(group, [2.6, 0.16, 0.45], [-5.9, CEILING_Y + 0.08, -1.775], material, 'living-upper-floor')
-  addBox(group, [2.6, 0.16, 4.8], [-5.9, CEILING_Y + 0.08, 7.6], material, 'living-upper-floor')
+function createLivingCeilingWithStairOpening(material) {
+  addShell([4.8, 0.16, 12], [-9.6, CEILING_Y + 0.08, 4], material)
+  addShell([0.6, 0.16, 12], [-4.3, CEILING_Y + 0.08, 4], material)
+  addShell([2.6, 0.16, 0.45], [-5.9, CEILING_Y + 0.08, -1.775], material)
+  addShell([2.6, 0.16, 4.8], [-5.9, CEILING_Y + 0.08, 7.6], material)
 }
 
 function createStaircaseAndUpperRoom(group, ceilingLights) {
@@ -229,53 +247,46 @@ function createStaircaseAndUpperRoom(group, ceilingLights) {
   for (let index = 0; index < stepCount; index += 1) {
     const height = totalRise * ((index + 1) / stepCount)
     const z = STAIR_BOUNDS.minZ + stepDepth * (index + 0.5)
-    addBox(
-      group,
-      [1.72, height, stepDepth + 0.025],
-      [-6.05, FLOOR_Y + height / 2, z],
-      stairWood,
-      'climbable-stair',
-    )
+    addShell([1.72, height, stepDepth + 0.025], [-6.05, FLOOR_Y + height / 2, z], stairWood)
     if (index % 2 === 0) {
       const stepTop = FLOOR_Y + height
       for (const x of [-7, -5.1]) {
-        addBox(group, [0.08, 0.92, 0.08], [x, stepTop + 0.46, z], railWood)
+        addShell([0.08, 0.92, 0.08], [x, stepTop + 0.46, z], railWood)
       }
     }
   }
   for (const x of [-7, -5.1]) {
-    const rail = addBox(group, [0.09, 0.09, 6.7], [x, 1.58, 1.7], railWood)
-    rail.rotation.x = -0.57
+    addShell([0.09, 0.09, 6.7], [x, 1.58, 1.7], railWood, [-0.57, 0, 0])
   }
 
   const upperWallHeight = UPPER_CEILING_Y - UPPER_FLOOR_Y
   const upperWallCenterY = UPPER_FLOOR_Y + upperWallHeight / 2
-  addBox(group, [0.22, upperWallHeight, 12], [-11.9, upperWallCenterY, 4], upperWall)
-  addBox(group, [0.22, upperWallHeight, 12], [-4.1, upperWallCenterY, 4], upperWall)
-  addBox(group, [8, upperWallHeight, 0.22], [-8, upperWallCenterY, -1.9], upperWall)
-  addBox(group, [8, upperWallHeight, 0.22], [-8, upperWallCenterY, 9.9], upperWall)
-  addBox(group, [8, 0.18, 12], [-8, UPPER_CEILING_Y, 4], upperCeiling)
+  addShell([0.22, upperWallHeight, 12], [-11.9, upperWallCenterY, 4], upperWall)
+  addShell([0.22, upperWallHeight, 12], [-4.1, upperWallCenterY, 4], upperWall)
+  addShell([8, upperWallHeight, 0.22], [-8, upperWallCenterY, -1.9], upperWall)
+  addShell([8, upperWallHeight, 0.22], [-8, upperWallCenterY, 9.9], upperWall)
+  addShell([8, 0.18, 12], [-8, UPPER_CEILING_Y, 4], upperCeiling)
 
-  addBox(group, [5, upperWallHeight, 0.18], [-9.5, upperWallCenterY, 5.55], upperWall)
-  addBox(group, [1.1, upperWallHeight, 0.18], [-4.55, upperWallCenterY, 5.55], upperWall)
-  addBox(group, [0.18, 2.9, 0.26], [-6.92, UPPER_FLOOR_Y + 1.45, 5.55], railWood)
-  addBox(group, [0.18, 2.9, 0.26], [-5.08, UPPER_FLOOR_Y + 1.45, 5.55], railWood)
-  addBox(group, [2.02, 0.18, 0.26], [-6, UPPER_FLOOR_Y + 2.9, 5.55], railWood)
+  addShell([5, upperWallHeight, 0.18], [-9.5, upperWallCenterY, 5.55], upperWall)
+  addShell([1.1, upperWallHeight, 0.18], [-4.55, upperWallCenterY, 5.55], upperWall)
+  addShell([0.18, 2.9, 0.26], [-6.92, UPPER_FLOOR_Y + 1.45, 5.55], railWood)
+  addShell([0.18, 2.9, 0.26], [-5.08, UPPER_FLOOR_Y + 1.45, 5.55], railWood)
+  addShell([2.02, 0.18, 0.26], [-6, UPPER_FLOOR_Y + 2.9, 5.55], railWood)
 
   for (const z of [0.2, 2.4, 4.65]) {
     for (const x of [-7.12, -4.98]) {
-      addBox(group, [0.08, 1.05, 0.08], [x, UPPER_FLOOR_Y + 0.52, z], railWood)
+      addShell([0.08, 1.05, 0.08], [x, UPPER_FLOOR_Y + 0.52, z], railWood)
     }
   }
-  addBox(group, [0.08, 0.08, 5.5], [-7.12, UPPER_FLOOR_Y + 1.02, 2.1], railWood)
-  addBox(group, [0.08, 0.08, 5.5], [-4.98, UPPER_FLOOR_Y + 1.02, 2.1], railWood)
+  addShell([0.08, 0.08, 5.5], [-7.12, UPPER_FLOOR_Y + 1.02, 2.1], railWood)
+  addShell([0.08, 0.08, 5.5], [-4.98, UPPER_FLOOR_Y + 1.02, 2.1], railWood)
 
-  addBox(group, [3.4, 0.5, 1.75], [-9.7, UPPER_FLOOR_Y + 0.3, 8.4], stairWood, 'widows-bed')
-  addBox(group, [3.05, 0.28, 1.5], [-9.65, UPPER_FLOOR_Y + 0.66, 8.4], mattress)
-  addBox(group, [2.15, 0.08, 1.42], [-9.9, UPPER_FLOOR_Y + 0.86, 8.4], fadedCloth)
-  addBox(group, [0.2, 1.85, 1.9], [-11.3, UPPER_FLOOR_Y + 0.92, 8.4], railWood)
-  addBox(group, [1.45, 2.75, 0.8], [-10.9, UPPER_FLOOR_Y + 1.38, 6.25], stairWood, 'widows-wardrobe')
-  addBox(group, [2.5, 0.035, 2.1], [-7.8, UPPER_FLOOR_Y + 0.025, 7.7], fadedCloth, 'widows-rug')
+  addShell([3.4, 0.5, 1.75], [-9.7, UPPER_FLOOR_Y + 0.3, 8.4], stairWood)
+  addShell([3.05, 0.28, 1.5], [-9.65, UPPER_FLOOR_Y + 0.66, 8.4], mattress)
+  addShell([2.15, 0.08, 1.42], [-9.9, UPPER_FLOOR_Y + 0.86, 8.4], fadedCloth)
+  addShell([0.2, 1.85, 1.9], [-11.3, UPPER_FLOOR_Y + 0.92, 8.4], railWood)
+  addShell([1.45, 2.75, 0.8], [-10.9, UPPER_FLOOR_Y + 1.38, 6.25], stairWood)
+  addShell([2.5, 0.035, 2.1], [-7.8, UPPER_FLOOR_Y + 0.025, 7.7], fadedCloth)
 
   const moonWindow = new THREE.MeshStandardMaterial({
     color: 0x92abc4,
@@ -283,7 +294,7 @@ function createStaircaseAndUpperRoom(group, ceilingLights) {
     emissiveIntensity: 1.25,
     roughness: 0.25,
   })
-  addBox(group, [0.06, 1.65, 1.65], [-11.76, UPPER_FLOOR_Y + 2.25, 7.4], moonWindow)
+  addShell([0.06, 1.65, 1.65], [-11.76, UPPER_FLOOR_Y + 2.25, 7.4], moonWindow)
   const upperLight = new THREE.PointLight(0x9dbbd5, 17, 11, 2)
   upperLight.position.set(-8, UPPER_FLOOR_Y + 2.7, 7.2)
   group.add(upperLight)
@@ -305,6 +316,7 @@ function createStaircaseAndUpperRoom(group, ceilingLights) {
 export function createHauntedHouse(scene) {
   const group = new THREE.Group()
   group.name = 'haunted-house'
+  shellBatch = createStaticBatch()
   const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x5b5149, roughness: 0.94 })
   const ceilingMaterial = new THREE.MeshStandardMaterial({ color: 0x302d2b, roughness: 1 })
   const hallFloorMaterial = new THREE.MeshStandardMaterial({ color: 0x2c2825, roughness: 0.9 })
@@ -316,11 +328,11 @@ export function createHauntedHouse(scene) {
     const [width, depth] = room.size
     const floorMaterial = new THREE.MeshStandardMaterial({ color: room.floor, roughness: 0.86 })
 
-    addBox(group, [width, 0.2, depth], [x, FLOOR_Y - 0.1, z], floorMaterial, `${room.id}-floor`)
+    addShell([width, 0.2, depth], [x, FLOOR_Y - 0.1, z], floorMaterial)
     if (room.id === 'living') {
-      createLivingCeilingWithStairOpening(group, ceilingMaterial)
+      createLivingCeilingWithStairOpening(ceilingMaterial)
     } else {
-      addBox(group, [width, 0.16, depth], [x, CEILING_Y + 0.08, z], ceilingMaterial, `${room.id}-ceiling`)
+      addShell([width, 0.16, depth], [x, CEILING_Y + 0.08, z], ceilingMaterial)
     }
 
     const fixtureMaterial = new THREE.MeshStandardMaterial({
@@ -338,8 +350,8 @@ export function createHauntedHouse(scene) {
 
   createStaircaseAndUpperRoom(group, ceilingLights)
 
-  addBox(group, [8, 0.2, 25], [0, FLOOR_Y - 0.1, -10.5], hallFloorMaterial, 'main-hall-floor')
-  addBox(group, [8, 0.16, 25], [0, CEILING_Y + 0.08, -10.5], ceilingMaterial, 'main-hall-ceiling')
+  addShell([8, 0.2, 25], [0, FLOOR_Y - 0.1, -10.5], hallFloorMaterial)
+  addShell([8, 0.16, 25], [0, CEILING_Y + 0.08, -10.5], ceilingMaterial)
 
   for (const z of [-4.5, -10.5, -16.5]) {
     const fixtureMaterial = new THREE.MeshStandardMaterial({
@@ -361,13 +373,7 @@ export function createHauntedHouse(scene) {
     roughness: 0.3,
   })
   for (const [side, z] of [[-1, 5.8], [1, 5.2], [-1, -7.4], [1, -7.1]]) {
-    addBox(
-      group,
-      [0.06, 1.55, 1.45],
-      [side * 11.86, FLOOR_Y + 2.25, z],
-      moonWindowMaterial,
-      'moonlit-window',
-    )
+    addShell([0.06, 1.55, 1.45], [side * 11.86, FLOOR_Y + 2.25, z], moonWindowMaterial)
   }
 
   addSegmentedWallZ(group, 10, -12, 12, [[-1.3, 1.3]], wallMaterial)
@@ -405,6 +411,8 @@ export function createHauntedHouse(scene) {
   moonLight.shadow.camera.far = 45
   moonLight.shadow.bias = -0.0004
   group.add(moonLight, moonLight.target)
+  shellBatch.flush(group)
+  shellBatch = null
   scene.add(group)
 
   return { group, doors, ceilingLights, frontDoor }
