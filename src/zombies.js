@@ -213,6 +213,27 @@ export function createZombieHorde(parent) {
     return bites
   }
 
+  const blast = (position, radius) => {
+    const killed = []
+    for (const zombie of living()) {
+      const distance = Math.hypot(
+        zombie.mesh.position.x - position.x,
+        zombie.mesh.position.z - position.z,
+      )
+      if (distance > radius) continue
+      const direction = new THREE.Vector3(
+        zombie.mesh.position.x - position.x,
+        0,
+        zombie.mesh.position.z - position.z,
+      )
+      if (direction.lengthSq() < 0.0001) direction.set(0, 0, 1)
+      direction.normalize()
+      const dead = damage(zombie, { amount: 8, direction, force: 7 })
+      if (dead) killed.push(zombie)
+    }
+    return killed
+  }
+
   const reset = () => {
     for (const zombie of pool) zombie.mesh.visible = false
     zombies.length = 0
@@ -224,6 +245,7 @@ export function createZombieHorde(parent) {
     },
     damage,
     rayHit,
+    blast,
     reset,
     spawn,
     spawnWave,
