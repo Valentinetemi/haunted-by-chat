@@ -368,9 +368,6 @@ export function createHauntedHouse(scene) {
       moonWindowMaterial,
       'moonlit-window',
     )
-    const windowLight = new THREE.PointLight(0x8eb8e8, 7, 8, 2)
-    windowLight.position.set(side * 10.9, FLOOR_Y + 2.1, z)
-    group.add(windowLight)
   }
 
   addSegmentedWallZ(group, 10, -12, 12, [[-1.3, 1.3]], wallMaterial)
@@ -399,7 +396,7 @@ export function createHauntedHouse(scene) {
   moonLight.position.set(-9, 8, 7)
   moonLight.target.position.set(0, FLOOR_Y, -8)
   moonLight.castShadow = true
-  moonLight.shadow.mapSize.set(1024, 1024)
+  moonLight.shadow.mapSize.set(512, 512)
   moonLight.shadow.camera.left = -18
   moonLight.shadow.camera.right = 18
   moonLight.shadow.camera.top = 18

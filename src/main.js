@@ -44,13 +44,19 @@ camera.position.copy(PLAYER_START)
 camera.rotation.order = 'YXZ'
 scene.add(camera)
 
+const usesTouchControls =
+  navigator.maxTouchPoints > 0 &&
+  (window.matchMedia('(pointer: coarse), (hover: none)').matches ||
+    Math.min(window.screen.width, window.screen.height) <= 1024)
+document.body.classList.toggle('uses-touch-controls', usesTouchControls)
+
 const flashlight = new THREE.SpotLight(0xe5f1ff, 92, 22, 0.38, 0.58, 1.7)
 flashlight.position.set(0, -0.08, 0.05)
-flashlight.castShadow = true
-flashlight.shadow.mapSize.set(512, 512)
+flashlight.castShadow = !usesTouchControls
+flashlight.shadow.mapSize.set(usesTouchControls ? 256 : 512, usesTouchControls ? 256 : 512)
 flashlight.shadow.camera.near = 0.25
-flashlight.shadow.camera.far = 22
-flashlight.shadow.bias = -0.00035
+flashlight.shadow.camera.far = 18
+flashlight.shadow.bias = -0.0008
 flashlight.target.position.set(0, -0.08, -1)
 camera.add(flashlight, flashlight.target)
 
@@ -58,20 +64,22 @@ const flashlightSpill = new THREE.PointLight(0xc9ddf2, 4.5, 4, 2)
 flashlightSpill.position.set(0, -0.25, -0.35)
 camera.add(flashlightSpill)
 
-const renderer = new THREE.WebGLRenderer({ antialias: true })
+const renderer = new THREE.WebGLRenderer({
+  antialias: !usesTouchControls && window.devicePixelRatio <= 1.5,
+  powerPreference: 'high-performance',
+})
 renderer.outputColorSpace = THREE.SRGBColorSpace
 renderer.toneMapping = THREE.ACESFilmicToneMapping
 renderer.shadowMap.enabled = true
-renderer.shadowMap.type = THREE.PCFSoftShadowMap
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+renderer.shadowMap.type = usesTouchControls ? THREE.BasicShadowMap : THREE.PCFShadowMap
+let renderScale = usesTouchControls ? 1.15 : 1.5
+let slowFrames = 0
+const applyRenderScale = () => {
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, renderScale))
+}
+applyRenderScale()
 renderer.setSize(window.innerWidth, window.innerHeight)
 document.querySelector('#app').appendChild(renderer.domElement)
-
-const usesTouchControls =
-  navigator.maxTouchPoints > 0 &&
-  (window.matchMedia('(pointer: coarse), (hover: none)').matches ||
-    Math.min(window.screen.width, window.screen.height) <= 1024)
-document.body.classList.toggle('uses-touch-controls', usesTouchControls)
 
 const clock = new THREE.Clock()
 const audio = createAudioSystem()
@@ -850,6 +858,16 @@ function restartGame() {
 
 renderer.setAnimationLoop((time) => {
   const delta = Math.min(clock.getDelta(), 0.1)
+  if (delta > 0.034) {
+    slowFrames += 1
+    if (slowFrames > 45 && renderScale > 0.8) {
+      renderScale = Math.max(0.8, renderScale - 0.2)
+      applyRenderScale()
+      slowFrames = 0
+    }
+  } else {
+    slowFrames = 0
+  }
   mobileControls.update(delta)
   hauntedPlaces.update(time)
   updateLightFlicker(time)
@@ -1061,7 +1079,7 @@ document.addEventListener('mousedown', (event) => {
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight
   camera.updateProjectionMatrix()
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  applyRenderScale()
   renderer.setSize(window.innerWidth, window.innerHeight)
   queueMobileOrientationSync()
 })

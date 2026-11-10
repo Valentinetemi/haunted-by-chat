@@ -208,12 +208,7 @@ function createCourtyard() {
   const moon = new THREE.DirectionalLight(0x9cc8ff, 3.2)
   moon.position.set(32, 12, 4)
   moon.target.position.set(38, FLOOR_Y, 0)
-  moon.castShadow = true
-  moon.shadow.mapSize.set(512, 512)
-  moon.shadow.camera.left = -12
-  moon.shadow.camera.right = 12
-  moon.shadow.camera.top = 12
-  moon.shadow.camera.bottom = -12
+  moon.castShadow = false
   group.add(moon, moon.target)
 
   const mistGlow = new THREE.PointLight(0x7198c7, 15, 22, 2)
@@ -281,8 +276,6 @@ function createCrypt() {
   for (const [x, z] of [[-6, -57.8], [6, -53.4]]) {
     const sicklyLight = new THREE.PointLight(0x72977a, 16, 11, 2)
     sicklyLight.position.set(x, FLOOR_Y + 2.4, z)
-    sicklyLight.castShadow = true
-    sicklyLight.shadow.mapSize.set(256, 256)
     group.add(sicklyLight)
   }
 
