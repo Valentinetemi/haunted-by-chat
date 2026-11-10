@@ -1182,8 +1182,9 @@ body.is-playing.is-mobile-portrait #mobile-controls {
 }
 
 #score-hud strong {
-  font-size: 1.35rem;
+  font-size: 1.8rem;
   letter-spacing: 0;
+  color: #fff;
 }
 
 #streak-value {
