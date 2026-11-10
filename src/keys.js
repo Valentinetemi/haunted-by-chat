@@ -71,6 +71,9 @@ function pick(values) {
   return values[Math.floor(Math.random() * values.length)]
 }
 
+const KEY_SCALE = 1.85
+const KEY_GLOW = 11
+
 const KEY_DESIGNS = [
   { color: 0xd7a441, emissive: 0x6a3a08, gem: 0xffe1a3, name: 'brass' },
   { color: 0x8d9298, emissive: 0x1c242c, gem: 0xd5dde6, name: 'iron' },
@@ -84,14 +87,14 @@ function createKeyMesh(design) {
   const metal = new THREE.MeshStandardMaterial({
     color: design.color,
     emissive: design.emissive,
-    emissiveIntensity: 0.9,
+    emissiveIntensity: 1.8,
     metalness: design.name === 'bone' ? 0.05 : 0.82,
     roughness: design.name === 'bone' ? 0.72 : 0.28,
   })
   const gemMaterial = new THREE.MeshStandardMaterial({
     color: design.gem,
     emissive: design.gem,
-    emissiveIntensity: 1.6,
+    emissiveIntensity: 2.8,
     roughness: 0.2,
   })
 
@@ -130,16 +133,37 @@ function createKeyMesh(design) {
   gem.position.y = 0.3
   group.add(gem)
 
-  const moteMaterial = new THREE.MeshBasicMaterial({ color: design.gem, transparent: true, opacity: 0.85 })
+  const moteMaterial = new THREE.MeshBasicMaterial({
+    color: design.gem,
+    transparent: true,
+    opacity: 0.92,
+    depthWrite: false,
+  })
   const motes = []
-  for (let index = 0; index < 5; index += 1) {
-    const mote = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 4), moteMaterial)
+  for (let index = 0; index < 10; index += 1) {
+    const mote = new THREE.Mesh(new THREE.SphereGeometry(0.045, 6, 4), moteMaterial)
     group.add(mote)
     motes.push(mote)
   }
-  const glow = new THREE.PointLight(design.gem, 0, 2.4, 2)
+  const beam = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.05, 0.42, 4.4, 8, 1, true),
+    new THREE.MeshBasicMaterial({
+      color: design.gem,
+      transparent: true,
+      opacity: 0.28,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+    }),
+  )
+  beam.position.y = 2.05
+  group.add(beam)
+  const glow = new THREE.PointLight(design.gem, 0, 18, 1.35)
+  glow.position.y = 0.4
   group.add(glow)
+  group.scale.setScalar(KEY_SCALE)
   group.userData.glow = glow
+  group.userData.beam = beam
   group.userData.motes = motes
   return group
 }
@@ -190,11 +214,12 @@ export function createKeySystem({
       key.roomChimed = false
       key.mesh.position.set(spot.x, key.baseY, spot.z)
       key.mesh.visible = index === 0
-      key.mesh.scale.setScalar(1)
+      key.mesh.scale.setScalar(KEY_SCALE)
       key.collected = false
       key.collecting = false
       key.phase = Math.random() * Math.PI * 2
-      key.mesh.userData.glow.intensity = index === 0 ? 2.2 : 0
+      key.mesh.userData.glow.intensity = index === 0 ? KEY_GLOW : 0
+      key.mesh.userData.beam.visible = index === 0
     })
     updateHud()
   }
@@ -208,16 +233,22 @@ export function createKeySystem({
       if (!key.mesh.visible && !key.collecting) continue
       key.mesh.rotation.y = time * 0.0014 + key.phase
       key.mesh.userData.motes.forEach((mote, index) => {
-        const angle = time * 0.003 + key.phase + index * 1.25
-        const radius = 0.28 + (index % 2) * 0.08
-        mote.position.set(Math.cos(angle) * radius, 0.15 + Math.sin(angle * 1.3) * 0.12, Math.sin(angle) * radius)
+        const angle = time * 0.0022 + key.phase + index * 0.62
+        const radius = 0.55 + (index % 3) * 0.16
+        mote.position.set(
+          Math.cos(angle) * radius,
+          0.35 + Math.sin(angle * 1.4) * 0.85,
+          Math.sin(angle) * radius,
+        )
       })
+      const beam = key.mesh.userData.beam
+      beam.material.opacity = 0.16 + Math.sin(time * 0.004 + key.phase) * 0.1
 
       if (key.collecting) {
         const progress = Math.min((time - key.collectStarted) / 420, 1)
         key.mesh.position.y = key.baseY + progress * 1.1
-        key.mesh.scale.setScalar(1 + progress * 0.8)
-        key.mesh.userData.glow.intensity = 2.2 * (1 - progress)
+        key.mesh.scale.setScalar(KEY_SCALE * (1 + progress * 0.45))
+        key.mesh.userData.glow.intensity = KEY_GLOW * (1 - progress)
         if (progress >= 1) {
           key.collecting = false
           key.mesh.visible = false
@@ -241,7 +272,7 @@ export function createKeySystem({
         audio.hint()
       }
 
-      if (distanceToKey <= 1.55) {
+      if (distanceToKey <= 2.15) {
         key.collected = true
         key.collecting = true
         key.collectStarted = time
@@ -249,7 +280,8 @@ export function createKeySystem({
         if (collectedCount < keys.length) {
           const nextKey = keys[collectedCount]
           nextKey.mesh.visible = true
-          nextKey.mesh.userData.glow.intensity = 2.2
+          nextKey.mesh.userData.glow.intensity = KEY_GLOW
+          nextKey.mesh.userData.beam.visible = true
         }
         audio.pickup()
         updateHud()
