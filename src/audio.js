@@ -120,6 +120,24 @@ export function createAudioSystem() {
     blaster() {
       tone(720, 95, 0.22, 0.18, 'sawtooth')
     },
+    dryFire() {
+      noise(0.04, 0.1, 1800)
+      tone(1400, 420, 0.05, 0.06, 'square')
+    },
+    gunshot() {
+      noise(0.09, 0.32, 2400)
+      tone(210, 55, 0.16, 0.26, 'sawtooth')
+      tone(90, 36, 0.28, 0.14, 'triangle', 0.015)
+    },
+    hit() {
+      noise(0.07, 0.14, 900)
+      tone(150, 64, 0.12, 0.1, 'square')
+    },
+    reload() {
+      noise(0.05, 0.08, 1600)
+      tone(240, 160, 0.07, 0.07, 'square', 0.1)
+      tone(360, 220, 0.08, 0.06, 'square', 0.26)
+    },
     caught() {
       noise(0.72, 0.52, 2600)
       tone(1380, 74, 0.54, 0.42, 'sawtooth')

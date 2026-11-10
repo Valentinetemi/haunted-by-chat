@@ -25,6 +25,7 @@ import {
 } from './mother.js'
 import { createScareDirector } from './scares.js'
 import { createRunTimer } from './timer.js'
+import { createAmmoPickups, createWeapon } from './weapon.js'
 import {
   furnishBathroom,
   furnishAttic,
@@ -139,6 +140,7 @@ export async function bootGame(reportProgress = () => {}) {
   const twitchFeed = document.querySelector('#twitch-feed')
   const stunHud = document.querySelector('#stun-hud')
   const shotsRemainingDisplay = document.querySelector('#shots-remaining')
+  const ammoReserveDisplay = document.querySelector('#ammo-reserve')
   const caughtScreen = document.querySelector('#caught-screen')
   const restartButton = document.querySelector('#restart-button')
   const escapeScreen = document.querySelector('#escape-screen')
@@ -342,19 +344,22 @@ export async function bootGame(reportProgress = () => {}) {
   await nextFrame()
   const motherDrips = createMotherDrips(scene)
   const hunterVisual = mother.group
-  const maxStunShots = 3
-  const stunDuration = 3000
-  const stunBoltSpeed = 32
-  const stunBoltLifetime = 3
-  const stunBolts = []
+  const magazineSize = 6
+  const startingAmmo = 5
+  const reloadDuration = 1400
+  const stunDuration = 900
+  const weapon = createWeapon(camera)
+  const ammoPickups = createAmmoPickups(house.group)
+  const shotDirection = new THREE.Vector3()
   const hunterHitBox = new THREE.Box3()
   const hunterHitCenter = new THREE.Vector3()
-  const hunterHitSize = new THREE.Vector3(0.9, 2.35, 0.85)
-  const stunRay = new THREE.Ray()
-  const stunHitPoint = new THREE.Vector3()
-  const stunBoltGeometry = new THREE.SphereGeometry(0.07, 12, 8)
-  const stunBoltMaterial = new THREE.MeshBasicMaterial({ color: 0x39bfff, toneMapped: false })
-  let stunShotsRemaining = maxStunShots
+  const hunterHitSize = new THREE.Vector3(0.95, 2.6, 0.9)
+  const shotRay = new THREE.Ray()
+  const shotHitPoint = new THREE.Vector3()
+  let ammoInGun = startingAmmo
+  let ammoReserve = 0
+  let reloadingUntil = 0
+  let gunKick = 0
   let hunterFrozenUntil = 0
   ghost.add(hunterVisual)
   ghost.position.copy(ghostStartPosition)
@@ -373,32 +378,53 @@ export async function bootGame(reportProgress = () => {}) {
   }
 
   function updateStunHud() {
-    shotsRemainingDisplay.textContent = String(stunShotsRemaining)
-    stunHud.classList.toggle('is-empty', stunShotsRemaining === 0)
+    const reloading = performance.now() < reloadingUntil
+    shotsRemainingDisplay.textContent = reloading ? '…' : String(ammoInGun)
+    ammoReserveDisplay.textContent = reloading ? 'loading' : String(ammoReserve)
+    stunHud.classList.toggle('is-empty', ammoInGun === 0 && ammoReserve === 0 && !reloading)
   }
 
-  function fireStunBlaster() {
-    if (
-      stunShotsRemaining === 0 ||
-      playerCaught ||
-      hiding.isHidden ||
-      !isGameplayActive()
-    ) return
-    const direction = new THREE.Vector3()
-    camera.getWorldDirection(direction)
-    const bolt = new THREE.Mesh(stunBoltGeometry, stunBoltMaterial)
-    bolt.position.copy(camera.position).addScaledVector(direction, 0.4)
-    bolt.add(new THREE.PointLight(0x38bfff, 5, 3, 2))
-    scene.add(bolt)
-    stunBolts.push({ direction, lifetime: stunBoltLifetime, mesh: bolt })
-    stunShotsRemaining -= 1
-    audio.blaster()
+  function startReload() {
+    if (performance.now() < reloadingUntil) return
+    if (ammoInGun >= magazineSize || ammoReserve <= 0 || hiding.isHidden) return
+    reloadingUntil = performance.now() + reloadDuration
+    audio.reload()
     updateStunHud()
   }
 
-  function removeStunBolt(index) {
-    scene.remove(stunBolts[index].mesh)
-    stunBolts.splice(index, 1)
+  function finishReload(time) {
+    if (reloadingUntil === 0 || time < reloadingUntil) return
+    const needed = magazineSize - ammoInGun
+    const taken = Math.min(needed, ammoReserve)
+    ammoInGun += taken
+    ammoReserve -= taken
+    reloadingUntil = 0
+    updateStunHud()
+  }
+
+  function fireStunBlaster() {
+    if (playerCaught || hiding.isHidden || !isGameplayActive()) return
+    if (performance.now() < reloadingUntil) return
+    if (ammoInGun <= 0) {
+      audio.dryFire()
+      if (ammoReserve > 0) startReload()
+      return
+    }
+    ammoInGun -= 1
+    weapon.kick(performance.now())
+    gunKick = 1
+    audio.gunshot()
+    camera.getWorldDirection(shotDirection)
+    shotRay.set(camera.position, shotDirection)
+    hunterHitCenter.set(ghost.position.x, ghost.position.y + 1.2, ghost.position.z)
+    hunterHitBox.setFromCenterAndSize(hunterHitCenter, hunterHitSize)
+    const hit = shotRay.intersectBox(hunterHitBox, shotHitPoint)
+    if (hit && hit.distanceTo(camera.position) < 30 && ghost.visible) {
+      freezeHunter(performance.now())
+      audio.hit()
+      cameraShakeEndsAt = performance.now() + 160
+    }
+    updateStunHud()
   }
 
   function freezeHunter(time) {
@@ -406,25 +432,6 @@ export async function bootGame(reportProgress = () => {}) {
     hunterVisual.position.set(0, 0, 0)
     hunterVisual.rotation.set(0, 0, 0)
     audio.stun()
-  }
-
-  function updateStunBolts(delta, time) {
-    hunterHitCenter.set(ghost.position.x, ghost.position.y + 1.15, ghost.position.z)
-    hunterHitBox.setFromCenterAndSize(hunterHitCenter, hunterHitSize)
-    for (let index = stunBolts.length - 1; index >= 0; index -= 1) {
-      const bolt = stunBolts[index]
-      const travelDistance = stunBoltSpeed * delta
-      stunRay.set(bolt.mesh.position, bolt.direction)
-      const hitPoint = stunRay.intersectBox(hunterHitBox, stunHitPoint)
-      if (hitPoint && hitPoint.distanceToSquared(bolt.mesh.position) <= travelDistance ** 2) {
-        freezeHunter(time)
-        removeStunBolt(index)
-        continue
-      }
-      bolt.mesh.position.addScaledVector(bolt.direction, travelDistance)
-      bolt.lifetime -= delta
-      if (bolt.lifetime <= 0) removeStunBolt(index)
-    }
   }
 
   function updateHunterStun(time) {
@@ -435,11 +442,14 @@ export async function bootGame(reportProgress = () => {}) {
   }
 
   function resetStunBlaster() {
-    for (let index = stunBolts.length - 1; index >= 0; index -= 1) removeStunBolt(index)
-    stunShotsRemaining = maxStunShots
+    ammoInGun = startingAmmo
+    ammoReserve = 0
+    reloadingUntil = 0
+    gunKick = 0
     hunterFrozenUntil = 0
     mother.stunLight.intensity = 0
     mother.skinMaterial.emissive.setHex(0x140c0d)
+    ammoPickups.reset()
     updateStunHud()
   }
 
@@ -916,7 +926,15 @@ export async function bootGame(reportProgress = () => {}) {
     scareDirector.update(time)
     runTimer.update(time)
     updateNearMiss(time)
-    updateStunBolts(delta, time)
+    finishReload(time)
+    const gainedAmmo = ammoPickups.update(camera.position, time, isGameplayActive())
+    if (gainedAmmo > 0) {
+      ammoReserve += gainedAmmo
+      audio.pickup()
+      showReward(`+${gainedAmmo} rounds`)
+      updateStunHud()
+    }
+    gunKick = weapon.update(time, delta)
     updateHunterEffects(time)
     updateHunterStun(time)
 
@@ -961,15 +979,18 @@ export async function bootGame(reportProgress = () => {}) {
       time >= hunterFrozenUntil,
       isGameplayActive(),
     )
-    applyCameraShake(time)
-    renderer.render(scene, camera)
+  applyCameraShake(time)
+  camera.rotation.x -= gunKick * 0.045
+  renderer.render(scene, camera)
+  camera.rotation.x += gunKick * 0.045
     camera.position.sub(cameraShakeOffset)
   })
 
   window.addEventListener('keydown', (event) => {
-    if (event.code === 'KeyE' && !event.repeat && !playerCaught && !playerEscaped) {
-      performInteraction()
-    }
+  if (event.code === 'KeyE' && !event.repeat && !playerCaught && !playerEscaped) {
+    performInteraction()
+  }
+  if (event.code === 'KeyR' && !event.repeat) startReload()
     if (event.code === 'Digit1' && !event.repeat && !playerCaught) whisper('behind you')
     if (event.code === 'Digit2' && !event.repeat) flickerLights()
     if (event.code === 'Digit3' && !event.repeat && !playerCaught) slamDoor()
