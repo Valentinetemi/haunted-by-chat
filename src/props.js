@@ -11,6 +11,36 @@ const brass = new THREE.MeshStandardMaterial({
 })
 const cloth = new THREE.MeshStandardMaterial({ color: 0x3d1117, roughness: 1 })
 
+export function furnishPantry(parent) {
+  const group = new THREE.Group()
+  group.name = 'pantry-props'
+  const jar = new THREE.MeshStandardMaterial({
+    color: 0x3d4636,
+    roughness: 0.4,
+    transparent: true,
+    opacity: 0.78,
+  })
+  const sack = new THREE.MeshStandardMaterial({ color: 0x6a5a3e, roughness: 1 })
+
+  for (const z of [6.7, 8.1, 9.35]) {
+    addBox(group, [0.7, 2.4, 1.15], [17.4, FLOOR_Y + 1.2, z], wood, 'pantry-shelf')
+    for (let index = 0; index < 3; index += 1) {
+      const bottle = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 0.32, 8), jar)
+      bottle.position.set(17.35, FLOOR_Y + 0.55 + index * 0.62, z - 0.28 + (index % 2) * 0.4)
+      group.add(bottle)
+    }
+  }
+  addBox(group, [0.9, 0.7, 0.7], [13.2, FLOOR_Y + 0.35, 6.7], sack, 'flour-sack')
+  addBox(group, [0.75, 0.55, 0.6], [14.1, FLOOR_Y + 0.28, 6.75], sack)
+  const hook = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.02, 6, 10), brass)
+  hook.position.set(13.4, FLOOR_Y + 2.3, 9.7)
+  hook.rotation.y = Math.PI / 2
+  group.add(hook)
+
+  parent.add(group)
+  return group
+}
+
 export function furnishStudy(parent) {
   const group = new THREE.Group()
   group.name = 'study-props'
