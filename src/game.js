@@ -175,6 +175,21 @@ export async function bootGame(reportProgress = () => {}) {
     healthFill.style.transform = `scaleX(${Math.max(0, health / maxHealth)})`
   }
 
+  let waveNumber = 0
+  let nextWaveAt = Infinity
+
+  function updateWaves(time) {
+    if (!isGameplayActive() || time < nextWaveAt) return
+    if (horde.alive > 8) {
+      nextWaveAt = time + 4000
+      return
+    }
+    waveNumber += 1
+    const spawned = horde.spawnWave(waveNumber, camera.position)
+    if (spawned > 0) showReward(`Wave ${waveNumber}`)
+    nextWaveAt = time + 16000
+  }
+
   function hurtPlayer(amount, title = 'The horde got you') {
     if (!isGameplayActive()) return
     health = Math.max(0, health - amount)
@@ -1092,6 +1107,8 @@ export async function bootGame(reportProgress = () => {}) {
     health = maxHealth
     paintHealth()
     horde.reset()
+    waveNumber = 0
+    nextWaveAt = Infinity
     caughtScreen.hidden = true
     escapeScreen.hidden = true
     startScreen.hidden = false
@@ -1134,6 +1151,7 @@ export async function bootGame(reportProgress = () => {}) {
     scareDirector.update(time)
     runTimer.update(time)
     scoreSystem.tick(time)
+    updateWaves(time)
     const bites = horde.update(delta, time, camera.position, isGameplayActive() && !hiding.isHidden)
     for (const bite of bites) {
       audio.hit()
@@ -1251,6 +1269,8 @@ export async function bootGame(reportProgress = () => {}) {
     mobileControls.setActive(usesTouchControls)
     scareDirector.reset()
     runTimer.start()
+    waveNumber = 0
+    nextWaveAt = performance.now() + 3500
     if (usesTouchControls) {
       syncMobileOrientation()
       void requestMobileLandscape()
