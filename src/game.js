@@ -18,8 +18,8 @@ import {
 import { createKeySystem } from './keys.js'
 import { createMobileControls } from './mobile-controls.js'
 import { createPortalSystem } from './portals.js'
-import {
-  createMother,
+import { createMissionSystem } from './missions.js'
+import { createMother,
   updateMotherAnimation,
   updateMotherFaceReveal,
 } from './mother.js'
@@ -176,7 +176,23 @@ export async function bootGame(reportProgress = () => {}) {
     healthFill.style.transform = `scaleX(${Math.max(0, health / maxHealth)})`
   }
 
+  let brutesDropped = 0
   let waveNumber = 0
+  const missions = createMissionSystem({
+    banner: document.querySelector('#mission-banner'),
+    clock: document.querySelector('#mission-clock'),
+    label: document.querySelector('#mission-label'),
+    onComplete: (mission) => {
+      scoreSystem.addCash(mission.cash)
+      scoreSystem.addScore(mission.score)
+      arsenal.addBullets('revolver', 8)
+      health = Math.min(maxHealth, health + 25)
+      paintHealth()
+      showReward(`Paid $${mission.cash}`)
+      updateStunHud()
+    },
+    onFail: () => showReward('Mission failed'),
+  })
   let nextWaveAt = Infinity
 
   function updateWaves(time) {
@@ -502,6 +518,7 @@ export async function bootGame(reportProgress = () => {}) {
           points: zombieHit.zombie.stats.points,
         })
         arsenal.addBullets(arsenal.currentId === 'grenade' ? 'revolver' : arsenal.currentId, zombieHit.zombie.type === 'brute' ? 8 : 4)
+        if (zombieHit.zombie.type === 'brute') brutesDropped += 1
         showReward(`${zombieHit.headshot ? 'HEADSHOT' : 'Kill'} +${payout.gained}`)
       }
       return
@@ -1125,6 +1142,8 @@ export async function bootGame(reportProgress = () => {}) {
     horde.reset()
     waveNumber = 0
     nextWaveAt = Infinity
+    brutesDropped = 0
+    missions.reset(performance.now())
     caughtScreen.hidden = true
     escapeScreen.hidden = true
     startScreen.hidden = false
@@ -1168,6 +1187,14 @@ export async function bootGame(reportProgress = () => {}) {
     runTimer.update(time)
     scoreSystem.tick(time)
     updateWaves(time)
+    missions.update({
+      brutes: brutesDropped,
+      delta,
+      kills: scoreSystem.kills,
+      now: time,
+      playing: isGameplayActive(),
+      room: (getHauntedPlaceAt(camera.position) ?? getRoomAt(camera.position)).id,
+    })
     const bites = horde.update(delta, time, camera.position, isGameplayActive() && !hiding.isHidden)
     for (const bite of bites) {
       audio.hit()
@@ -1208,6 +1235,7 @@ export async function bootGame(reportProgress = () => {}) {
       audio.slam()
       cameraShakeEndsAt = time + 320
       for (const zombie of horde.blast(blast, 4.4)) {
+        if (zombie.type === 'brute') brutesDropped += 1
         scoreSystem.addKill({
           payout: zombie.stats.cash,
           points: zombie.stats.points,
@@ -1342,6 +1370,8 @@ export async function bootGame(reportProgress = () => {}) {
     runTimer.start()
     waveNumber = 0
     nextWaveAt = performance.now() + 3500
+    brutesDropped = 0
+    missions.reset(performance.now())
     if (usesTouchControls) {
       syncMobileOrientation()
       void requestMobileLandscape()

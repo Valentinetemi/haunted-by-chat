@@ -958,6 +958,41 @@ body.is-playing.is-mobile-portrait #mobile-controls {
   opacity: 0;
 }
 
+#mission-banner {
+  position: fixed;
+  top: 4.4rem;
+  left: 50%;
+  z-index: 16;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  min-width: 16rem;
+  padding: 0.55rem 0.8rem;
+  border: 2px solid #f0c56a;
+  color: #fff6df;
+  background: rgb(28 10 8 / 88%);
+  box-shadow: 0 0.6rem 1.4rem rgb(0 0 0 / 45%);
+  font: 800 0.72rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+#mission-banner[hidden] {
+  display: none;
+}
+
+#mission-banner strong {
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+}
+
+#mission-banner b {
+  margin-left: auto;
+  color: #ffb15a;
+}
+
 #score-hud,
 #cash-hud {
   position: fixed;
