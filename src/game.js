@@ -33,6 +33,7 @@ import {
   furnishKitchen,
   furnishKidsBedroom,
   furnishLivingRoom,
+  furnishStudy,
 } from './props.js'
 function nextFrame() {
   return new Promise((resolve) => {
@@ -102,6 +103,7 @@ export async function bootGame(reportProgress = () => {}) {
   furnishKidsBedroom(house.group)
   furnishBasement(house.group)
   furnishAttic(house.group)
+  furnishStudy(house.group)
   mergeStaticMeshes(house.group)
   report(0.92, 'She is moving through the house…')
   await nextFrame()

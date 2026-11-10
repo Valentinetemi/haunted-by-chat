@@ -11,6 +11,53 @@ const brass = new THREE.MeshStandardMaterial({
 })
 const cloth = new THREE.MeshStandardMaterial({ color: 0x3d1117, roughness: 1 })
 
+export function furnishStudy(parent) {
+  const group = new THREE.Group()
+  group.name = 'study-props'
+  const shelf = new THREE.MeshStandardMaterial({ color: 0x24160f, roughness: 0.9 })
+  const paper = new THREE.MeshStandardMaterial({ color: 0xc8b89a, roughness: 0.95 })
+  const leather = new THREE.MeshStandardMaterial({ color: 0x3a2418, roughness: 0.84 })
+  const bookMaterials = [0x6a2420, 0x2a3a34, 0x4a3a22, 0x1c1a24, 0x5a4632].map(
+    (color) => new THREE.MeshStandardMaterial({ color, roughness: 0.8 }),
+  )
+
+  for (const z of [3.2, 4.6, 7.4, 8.8]) {
+    addBox(group, [0.55, 2.7, 1.15], [-21.45, FLOOR_Y + 1.35, z], shelf, 'study-shelf')
+    for (let row = 0; row < 4; row += 1) {
+      for (let book = 0; book < 4; book += 1) {
+        addBox(
+          group,
+          [0.28, 0.34, 0.08],
+          [-21.45, FLOOR_Y + 0.45 + row * 0.55, z - 0.4 + book * 0.22],
+          bookMaterials[(row + book) % bookMaterials.length],
+        )
+      }
+    }
+  }
+
+  addBox(group, [1.7, 0.12, 0.9], [-16.4, FLOOR_Y + 0.92, 8.2], wood, 'study-desk')
+  for (const [x, z] of [[-17.1, 7.85], [-15.7, 7.85], [-17.1, 8.55], [-15.7, 8.55]]) {
+    addBox(group, [0.1, 0.9, 0.1], [x, FLOOR_Y + 0.45, z], darkWood)
+  }
+  addBox(group, [0.7, 0.02, 0.5], [-16.2, FLOOR_Y + 0.99, 8.15], paper)
+  addBox(group, [0.55, 0.9, 0.55], [-15.2, FLOOR_Y + 0.45, 6.7], leather, 'study-chair')
+  addBox(group, [0.55, 0.12, 0.55], [-15.2, FLOOR_Y + 0.96, 6.7], leather)
+
+  const globe = new THREE.Mesh(
+    new THREE.SphereGeometry(0.28, 12, 10),
+    new THREE.MeshStandardMaterial({ color: 0x6d7358, roughness: 0.62 }),
+  )
+  globe.position.set(-17.3, FLOOR_Y + 1.28, 8.15)
+  group.add(globe)
+  addBox(group, [0.08, 0.28, 0.08], [-17.3, FLOOR_Y + 0.98, 8.15], brass)
+
+  addBox(group, [2.4, 0.03, 1.6], [-17.2, FLOOR_Y + 0.02, 5.2], cloth, 'study-rug')
+  addBox(group, [1.1, 1.4, 0.08], [-21.7, FLOOR_Y + 2.2, 6], darkWood, 'study-portrait')
+
+  parent.add(group)
+  return group
+}
+
 export function furnishEntrance(parent) {
   const group = new THREE.Group()
   group.name = 'entrance-props'

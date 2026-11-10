@@ -82,6 +82,16 @@ export const ROOM_DEFINITIONS = [
     light: 0x8c7654,
     intensity: 17,
   },
+  {
+    id: 'study',
+    name: 'Study',
+    bounds: { minX: -22, maxX: -12, minZ: 2, maxZ: 10 },
+    center: [-17, 6],
+    size: [10, 8],
+    floor: 0x2a221c,
+    light: 0xc4a06a,
+    intensity: 16,
+  },
 ]
 
 export const HUNTER_SPAWNS = [
@@ -89,6 +99,7 @@ export const HUNTER_SPAWNS = [
   new THREE.Vector3(8, FLOOR_Y + 0.08, -18),
   new THREE.Vector3(-8, FLOOR_Y + 0.08, -7),
   new THREE.Vector3(8, FLOOR_Y + 0.08, -7),
+  new THREE.Vector3(-17, FLOOR_Y + 0.08, 6.4),
 ]
 
 const doorFrameMaterial = new THREE.MeshStandardMaterial({ color: 0x17110e, roughness: 0.92 })
@@ -202,6 +213,15 @@ function createRoomDoor(group, roomId, x, z, opensToward) {
     roomId,
     position: new THREE.Vector3(x, FLOOR_Y, z),
   }
+}
+
+function addStudy(group, doors, wallMaterial) {
+  addSegmentedWallX(group, -22, 2, 10, [], wallMaterial)
+  addSegmentedWallZ(group, 10, -22, -12, [], wallMaterial)
+  addSegmentedWallZ(group, 2, -22, -12, [], wallMaterial)
+  doors.push(createRoomDoor(group, 'study', -12, 6.5, -1))
+  addWalkableRegion({ minX: -21.62, maxX: -12.38, minZ: 2.38, maxZ: 9.62 })
+  addWalkableRegion({ minX: -12.7, maxX: -11.5, minZ: 5.55, maxZ: 7.45 })
 }
 
 function createFrontDoor(group, material) {
@@ -381,7 +401,8 @@ export function createHauntedHouse(scene) {
 
   addSegmentedWallZ(group, 10, -12, 12, [[-1.3, 1.3]], wallMaterial)
   addSegmentedWallZ(group, -23, -12, 12, [], wallMaterial)
-  addSegmentedWallX(group, -12, -23, 10, [], wallMaterial)
+  addSegmentedWallX(group, -12, -23, 10, [[5.65, 7.35]], wallMaterial)
+  addStudy(group, doors, wallMaterial)
   addSegmentedWallX(group, 12, -23, 10, [], wallMaterial)
   addSegmentedWallX(group, -4, -23, 10, [[-18.35, -16.65], [-7.85, -6.15], [3.15, 4.85]], wallMaterial)
   addSegmentedWallX(group, 4, -23, 10, [[-18.35, -16.65], [-7.85, -6.15], [3.15, 4.85]], wallMaterial)
