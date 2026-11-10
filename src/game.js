@@ -18,14 +18,27 @@ import {
 import { createKeySystem } from './keys.js'
 import { createMobileControls } from './mobile-controls.js'
 import { createPortalSystem } from './portals.js'
-import {
-  createMother,
+import { createMissionSystem } from './missions.js'
+import { createMother,
   updateMotherAnimation,
   updateMotherFaceReveal,
 } from './mother.js'
+import { createScoreSystem } from './score.js'
 import { createScareDirector } from './scares.js'
+import {
+  SURVIVORS,
+  loadSurvivorId,
+  loadUnlocks,
+  replaceUnlocks,
+  saveSurvivorId,
+  survivorById,
+  weaponPrice,
+} from './survivors.js'
 import { createRunTimer } from './timer.js'
-import { createAmmoPickups, createWeapon } from './weapon.js'
+import { createArsenal, createGrenades, createWeaponPickups } from './arsenal.js'
+import { createAmmoPickups } from './weapon.js'
+import { createBreakables } from './breakables.js'
+import { createZombieHorde } from './zombies.js'
 import {
   furnishBathroom,
   furnishAttic,
@@ -114,6 +127,9 @@ export async function bootGame(reportProgress = () => {}) {
   furnishPantry(house.group)
   const nurseryProps = furnishNursery(house.group)
   mergeStaticMeshes(house.group)
+  const horde = createZombieHorde(scene)
+  const breakables = createBreakables(house.group)
+  const shotRaycaster = new THREE.Raycaster()
   report(0.92, 'She is moving through the house…')
   await nextFrame()
   const pressedKeys = new Set()
@@ -164,6 +180,168 @@ export async function bootGame(reportProgress = () => {}) {
   const motherWarning = document.querySelector('#mother-warning')
   const motherProximity = document.querySelector('#mother-proximity')
   const hiding = createHidingSystem(camera, interactionPrompt)
+  const healthFill = document.querySelector('#health-fill')
+  let health = 100
+  let maxHealth = 100
+
+  function paintHealth() {
+    healthFill.style.transform = `scaleX(${Math.max(0, health / maxHealth)})`
+    healthFill.parentElement.classList.toggle('is-critical', health / maxHealth < 0.35)
+  }
+
+  let brutesDropped = 0
+  let waveNumber = 0
+  const missions = createMissionSystem({
+    banner: document.querySelector('#mission-banner'),
+    clock: document.querySelector('#mission-clock'),
+    label: document.querySelector('#mission-label'),
+    onComplete: (mission) => {
+      scoreSystem.addCash(mission.cash)
+      scoreSystem.addScore(mission.score)
+      arsenal.addBullets('revolver', 8)
+      health = Math.min(maxHealth, health + 25)
+      paintHealth()
+      showReward(`Paid $${mission.cash}`)
+      shoutLevel('Paid')
+      updateStunHud()
+    },
+    onFail: () => showReward('Mission failed'),
+  })
+  let nextWaveAt = Infinity
+
+  function updateWaves(time) {
+    if (!isGameplayActive() || time < nextWaveAt) return
+    if (horde.alive > 8) {
+      nextWaveAt = time + 4000
+      return
+    }
+    waveNumber += 1
+    const spawned = horde.spawnWave(waveNumber, camera.position)
+    if (spawned > 0) {
+      showReward(`Wave ${waveNumber}`)
+      audio.groan()
+      const waveValue = document.querySelector('#wave-value')
+      if (waveValue) waveValue.textContent = String(waveNumber)
+    }
+    nextWaveAt = time + 16000
+  }
+
+  function hurtPlayer(amount, title = 'The horde got you') {
+    if (!isGameplayActive()) return
+    health = Math.max(0, health - amount)
+    paintHealth()
+    cameraShakeEndsAt = performance.now() + 220
+    if (health > 0) return
+    document.querySelector('#caught-title').textContent = title
+    catchPlayer()
+  }
+
+  paintHealth()
+  let selectedSurvivorId = loadSurvivorId()
+  let unlocks = loadUnlocks()
+  let pendingStreamer = false
+  let moveScale = 1
+  const loadoutPanel = document.querySelector('#loadout-panel')
+  const menuActions = document.querySelector('.menu-actions')
+
+  function buyUnlock(key, price) {
+    if (scoreSystem.bank < price) {
+      showReward('Need more cash')
+      return false
+    }
+    const previous = loadUnlocks()
+    const next = { ...previous, ...unlocks, [key]: true }
+    if (!replaceUnlocks(next)) {
+      showReward('Could not save unlock')
+      return false
+    }
+    if (!scoreSystem.spend(price)) {
+      replaceUnlocks(previous)
+      showReward('Need more cash')
+      return false
+    }
+    unlocks = { ...unlocks, [key]: true }
+    return true
+  }
+
+  function renderLoadout() {
+    const list = document.querySelector('#survivor-list')
+    list.replaceChildren()
+    for (const survivor of SURVIVORS) {
+      const locked = survivor.price > 0 && !unlocks[survivor.id]
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.className = 'survivor-card'
+      if (survivor.id === selectedSurvivorId && !locked) button.classList.add('is-selected')
+      const swatch = document.createElement('i')
+      swatch.className = 'survivor-swatch'
+      swatch.style.background = survivor.hand
+      const label = document.createElement('span')
+      const name = document.createElement('b')
+      name.textContent = survivor.name
+      label.append(name, document.createElement('br'), document.createTextNode(locked ? `Unlock $${survivor.price}` : survivor.perk))
+      button.append(swatch, label)
+      button.addEventListener('click', () => {
+        if (locked) {
+          if (!buyUnlock(survivor.id, survivor.price)) return
+        }
+        selectedSurvivorId = survivor.id
+        saveSurvivorId(selectedSurvivorId)
+        renderLoadout()
+      })
+      list.append(button)
+    }
+    const shop = document.querySelector('#shop-list')
+    shop.replaceChildren()
+    for (const [id, label] of [['shotgun', 'Shotgun'], ['smg', 'SMG']]) {
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.className = 'shop-card'
+      const price = weaponPrice(id)
+      button.disabled = Boolean(unlocks[id])
+      button.textContent = unlocks[id] ? `${label} owned` : `Unlock ${label} · $${price}`
+      button.addEventListener('click', () => {
+        if (unlocks[id]) return
+        if (!buyUnlock(id, price)) return
+        shoutLevel(`${label} unlocked`)
+        renderLoadout()
+      })
+      shop.append(button)
+    }
+    document.querySelector('#bank-readout').textContent = `Cash ${scoreSystem.bank}`
+    const bestLine = document.querySelector('#menu-best')
+    if (bestLine) bestLine.textContent = `Best score ${scoreSystem.best}`
+  }
+
+  function openLoadout(streamer) {
+    pendingStreamer = streamer
+    loadoutPanel.hidden = false
+    menuActions.hidden = true
+    renderLoadout()
+  }
+
+  function applySurvivor() {
+    const picked = survivorById(selectedSurvivorId)
+    const active = picked.price > 0 && !unlocks[picked.id] ? survivorById('vale') : picked
+    selectedSurvivorId = active.id
+    maxHealth = active.health
+    health = maxHealth
+    paintHealth()
+    moveScale = active.speed
+    arsenal.setHand(active.hand)
+    arsenal.setReloadScale(active.reload)
+    arsenal.setGrenadeStock(active.grenades)
+    if (unlocks.shotgun) arsenal.unlock('shotgun')
+    if (unlocks.smg) arsenal.unlock('smg')
+    arsenal.reset()
+    updateStunHud()
+  }
+
+  const scoreSystem = createScoreSystem({
+    cashDisplay: document.querySelector('#cash-value'),
+    scoreDisplay: document.querySelector('#score-value'),
+    streakDisplay: document.querySelector('#streak-value'),
+  })
   const runTimer = createRunTimer({
     bestDisplay: document.querySelector('#best-time'),
     finalDisplay: document.querySelector('#final-time'),
@@ -377,11 +555,9 @@ export async function bootGame(reportProgress = () => {}) {
   await nextFrame()
   const motherDrips = createMotherDrips(scene)
   const hunterVisual = mother.group
-  const magazineSize = 6
-  const startingAmmo = 6
-  const startingReserve = 24
-  const reloadDuration = 1400
-  const weapon = createWeapon(camera)
+  const arsenal = createArsenal(camera)
+  const thrownGrenades = createGrenades(scene)
+  const weaponPickups = createWeaponPickups(house.group)
   const ammoPickups = createAmmoPickups(house.group)
   const shotDirection = new THREE.Vector3()
   const hunterHitBox = new THREE.Box3()
@@ -389,9 +565,6 @@ export async function bootGame(reportProgress = () => {}) {
   const hunterHitSize = new THREE.Vector3(0.95, 2.6, 0.9)
   const shotRay = new THREE.Ray()
   const shotHitPoint = new THREE.Vector3()
-  let ammoInGun = startingAmmo
-  let ammoReserve = startingReserve
-  let reloadingUntil = 0
   let gunKick = 0
   let hunterFrozenUntil = 0
   let motherHealth = 18
@@ -415,51 +588,167 @@ export async function bootGame(reportProgress = () => {}) {
     mother.skinMaterial.emissiveIntensity = 0.2 + Math.sin(time * 0.002) * 0.05
   }
 
+  const weaponNameDisplay = document.querySelector('#stun-hud span')
+  const hitMarker = document.querySelector('#hit-marker')
+  const killFeed = document.querySelector('#kill-feed')
+  const levelBanner = document.querySelector('#level-banner')
+  let hitMarkerUntil = 0
+  let levelBannerUntil = 0
+
+  function flashHit(headshot) {
+    hitMarker.hidden = false
+    hitMarker.classList.toggle('is-head', headshot)
+    hitMarkerUntil = performance.now() + 120
+  }
+
+  function pushKillFeed(text) {
+    const line = document.createElement('p')
+    line.textContent = text
+    killFeed.prepend(line)
+    while (killFeed.childElementCount > 4) killFeed.lastElementChild.remove()
+    window.setTimeout(() => line.remove(), 2200)
+  }
+
+  function shoutLevel(text) {
+    levelBanner.textContent = text
+    levelBanner.hidden = false
+    levelBannerUntil = performance.now() + 900
+  }
+
+  function updateJuice(time) {
+    if (time >= hitMarkerUntil) hitMarker.hidden = true
+    if (time >= levelBannerUntil) levelBanner.hidden = true
+  }
+
   function updateStunHud() {
-    const reloading = performance.now() < reloadingUntil
-    shotsRemainingDisplay.textContent = reloading ? '…' : String(ammoInGun)
-    ammoReserveDisplay.textContent = reloading ? 'loading' : String(ammoReserve)
-    stunHud.classList.toggle('is-empty', ammoInGun === 0 && ammoReserve === 0 && !reloading)
+    const reloading = arsenal.reloading()
+    shotsRemainingDisplay.textContent = reloading ? '…' : String(arsenal.loaded)
+    ammoReserveDisplay.textContent = arsenal.currentId === 'grenade'
+      ? 'throw'
+      : reloading
+        ? 'loading'
+        : String(arsenal.reserve)
+    weaponNameDisplay.textContent = arsenal.name
+    stunHud.classList.toggle('is-empty', arsenal.loaded === 0 && arsenal.reserve === 0 && !reloading)
   }
 
   function startReload() {
-    if (performance.now() < reloadingUntil) return
-    if (ammoInGun >= magazineSize || ammoReserve <= 0 || hiding.isHidden) return
-    reloadingUntil = performance.now() + reloadDuration
-    audio.reload()
-    updateStunHud()
+    if (!isGameplayActive() || hiding.isHidden) return
+    if (arsenal.reload(performance.now())) {
+      audio.reload()
+      updateStunHud()
+    }
   }
 
   function finishReload(time) {
-    if (reloadingUntil === 0 || time < reloadingUntil) return
-    const needed = magazineSize - ammoInGun
-    const taken = Math.min(needed, ammoReserve)
-    ammoInGun += taken
-    ammoReserve -= taken
-    reloadingUntil = 0
-    updateStunHud()
+    if (arsenal.finishReload(time)) updateStunHud()
+  }
+
+  const coverRaycaster = new THREE.Raycaster()
+
+  function coverDistance(direction) {
+    coverRaycaster.set(camera.position, direction)
+    coverRaycaster.far = 32
+    let nearest = Infinity
+    for (const root of [house.group, hauntedPlaces.group]) {
+      const hits = coverRaycaster.intersectObject(root, true)
+      for (const hit of hits) {
+        if (!hit.object.visible || hit.object.name === 'breakable') continue
+        if (hit.point.y <= -1.25 || hit.distance < 0.35) continue
+        nearest = Math.min(nearest, hit.distance)
+        break
+      }
+    }
+    return nearest
+  }
+
+  function resolveShot(direction, pellet) {
+    shotRay.set(camera.position, direction)
+    hunterHitCenter.set(ghost.position.x, ghost.position.y + 1.2, ghost.position.z)
+    hunterHitBox.setFromCenterAndSize(hunterHitCenter, hunterHitSize)
+    const cover = coverDistance(direction)
+    const motherHit = shotRay.intersectBox(hunterHitBox, shotHitPoint)
+    const motherDistance = motherHit && ghost.visible ? motherHit.distanceTo(camera.position) : Infinity
+    const zombieHit = horde.rayHit(shotRay)
+    if (zombieHit && zombieHit.distance < 30 && zombieHit.distance < cover && zombieHit.distance <= motherDistance) {
+      const amount = zombieHit.headshot ? pellet.headDamage : pellet.damage
+      const killed = horde.damage(zombieHit.zombie, {
+        amount,
+        direction,
+        force: pellet.headDamage > 3 ? 4.4 : 2.4,
+      })
+      audio.hit()
+      flashHit(zombieHit.headshot)
+      cameraShakeEndsAt = performance.now() + (zombieHit.headshot ? 140 : 70)
+      if (killed) {
+        const payout = scoreSystem.addKill({
+          headshot: zombieHit.headshot,
+          payout: zombieHit.zombie.stats.cash,
+          points: zombieHit.zombie.stats.points,
+        })
+        arsenal.addBullets(arsenal.currentId === 'grenade' ? 'revolver' : arsenal.currentId, zombieHit.zombie.type === 'brute' ? 8 : 4)
+        if (zombieHit.zombie.type === 'brute') brutesDropped += 1
+        pushKillFeed(`${zombieHit.headshot ? 'Headshot' : 'Dropped'} ${zombieHit.zombie.type}`)
+        if (payout.streak === 5 || payout.streak === 10) {
+          scoreSystem.addCash(payout.streak * 4)
+          shoutLevel(`Streak x${payout.streak}`)
+        }
+        showReward(`${zombieHit.headshot ? 'HEADSHOT' : 'Kill'} +${payout.gained}`)
+      }
+      return
+    }
+    if (motherHit && motherDistance < 30 && motherDistance < cover) {
+      damageMother(performance.now())
+      cameraShakeEndsAt = performance.now() + 160
+    }
   }
 
   function fireStunBlaster() {
     if (playerCaught || hiding.isHidden || !isGameplayActive()) return
-    if (performance.now() < reloadingUntil) return
-    if (ammoInGun <= 0) {
+    const shot = arsenal.tap(performance.now())
+    if (!shot) return
+    if (shot.empty) {
       audio.dryFire()
-      if (ammoReserve > 0) startReload()
+      if (arsenal.reserve > 0) startReload()
       return
     }
-    ammoInGun -= 1
-    weapon.kick(performance.now())
+    if (shot.grenade) {
+      camera.getWorldDirection(shotDirection)
+      thrownGrenades.throw(camera.position, shotDirection)
+      audio.slam()
+      if (arsenal.grenades <= 0) showReward('Last grenade')
+      updateStunHud()
+      return
+    }
     gunKick = 1
     audio.gunshot()
     camera.getWorldDirection(shotDirection)
-    shotRay.set(camera.position, shotDirection)
-    hunterHitCenter.set(ghost.position.x, ghost.position.y + 1.2, ghost.position.z)
-    hunterHitBox.setFromCenterAndSize(hunterHitCenter, hunterHitSize)
-    const hit = shotRay.intersectBox(hunterHitBox, shotHitPoint)
-    if (hit && hit.distanceTo(camera.position) < 30 && ghost.visible) {
-      damageMother(performance.now())
-      cameraShakeEndsAt = performance.now() + 180
+    shotRaycaster.set(camera.position, shotDirection)
+    if (breakables.shatter(shotRaycaster)) {
+      audio.slam()
+      scoreSystem.addScore(15)
+      showReward('Smashed')
+    }
+    const lightHits = shotRaycaster.intersectObjects(house.ceilingLights.map((entry) => entry.fixture), false)
+    const lightHit = lightHits.find((entry) => entry.distance < 16)
+    if (lightHit) {
+      const fixture = house.ceilingLights.find((entry) => entry.fixture === lightHit.object)
+      if (fixture && fixture.light.intensity > 0.2) {
+        fixture.light.intensity = 0
+        fixture.shotOut = true
+        fixture.fixture.visible = false
+        audio.flicker()
+        scoreSystem.addScore(20)
+        showReward('Lights out')
+      }
+    }
+    const base = shotDirection.clone()
+    for (const pellet of shot.pellets) {
+      const direction = base.clone()
+      direction.x += pellet.spread
+      direction.y += pellet.spreadY
+      direction.normalize()
+      resolveShot(direction, pellet)
     }
     motherHeardShot(performance.now())
     updateStunHud()
@@ -483,6 +772,8 @@ export async function bootGame(reportProgress = () => {}) {
     rushAfterStagger = false
     hunterFrozenUntil = 0
     audio.motherDeath()
+    scoreSystem.addScore(500)
+    scoreSystem.addCash(80)
     showReward('Mother retreats')
   }
 
@@ -530,9 +821,6 @@ export async function bootGame(reportProgress = () => {}) {
   }
 
   function resetStunBlaster() {
-    ammoInGun = startingAmmo
-    ammoReserve = startingReserve
-    reloadingUntil = 0
     gunKick = 0
     hunterFrozenUntil = 0
     mother.stunLight.intensity = 0
@@ -544,6 +832,9 @@ export async function bootGame(reportProgress = () => {}) {
     rushAfterStagger = false
     ghost.visible = true
     ammoPickups.reset()
+    weaponPickups.reset()
+    thrownGrenades.reset()
+    arsenal.reset()
     updateStunHud()
   }
 
@@ -671,7 +962,29 @@ export async function bootGame(reportProgress = () => {}) {
     return xDistance ** 2 + zDistance ** 2 <= ghostCatchDistance ** 2
   }
 
+  function stopLiveCombat() {
+    arsenal.setTrigger(false)
+    thrownGrenades.reset()
+  }
+
+  function showRunSummary() {
+    scoreSystem.bankRun()
+    const score = String(scoreSystem.score)
+    const cash = String(scoreSystem.bank)
+    const kills = String(scoreSystem.kills)
+    const best = String(scoreSystem.best)
+    document.querySelector('#caught-score').textContent = score
+    document.querySelector('#caught-cash').textContent = cash
+    document.querySelector('#caught-kills').textContent = kills
+    document.querySelector('#caught-best').textContent = best
+    document.querySelector('#escape-score').textContent = score
+    document.querySelector('#escape-cash').textContent = cash
+    document.querySelector('#escape-kills').textContent = kills
+    document.querySelector('#escape-best').textContent = best
+  }
+
   function catchPlayer() {
+    stopLiveCombat()
     playerCaught = true
     gameRunning = false
     mobileOrientationPaused = false
@@ -696,6 +1009,7 @@ export async function bootGame(reportProgress = () => {}) {
     catchTimeoutId = window.setTimeout(() => {
       jumpscare.hidden = true
       jumpscare.classList.remove('is-catch')
+      showRunSummary()
       caughtScreen.hidden = false
     }, 640)
   }
@@ -713,6 +1027,7 @@ export async function bootGame(reportProgress = () => {}) {
   }
 
   function escapeHouse() {
+    stopLiveCombat()
     playerEscaped = true
     gameRunning = false
     mobileOrientationPaused = false
@@ -723,6 +1038,7 @@ export async function bootGame(reportProgress = () => {}) {
     pressedKeys.clear()
     startScreen.hidden = true
     escapeScreen.hidden = false
+    showRunSummary()
     runTimer.finish()
     if (document.pointerLockElement === renderer.domElement) document.exitPointerLock()
   }
@@ -890,12 +1206,22 @@ export async function bootGame(reportProgress = () => {}) {
     lookZone: document.querySelector('#touch-look-zone'),
     onInteract: performInteraction,
     onLook: (deltaX, deltaY) => applyLookDelta(deltaX, deltaY, 0.0042),
+    onFireHold: (held) => arsenal.setTrigger(held),
+    onGrenade: () => {
+      if (arsenal.switchTo('grenade')) fireStunBlaster()
+    },
     onReload: startReload,
     onStun: fireStunBlaster,
+    onSwap: () => {
+      arsenal.cycle()
+      updateStunHud()
+    },
+    grenadeButton: document.querySelector('#mobile-nade'),
     reloadButton: document.querySelector('#mobile-reload'),
     root: document.querySelector('#mobile-controls'),
     runButton: document.querySelector('#mobile-run'),
     stunButton: document.querySelector('#mobile-stun'),
+    swapButton: document.querySelector('#mobile-swap'),
   })
 
   function triggerJumpscare() {
@@ -1021,6 +1347,24 @@ export async function bootGame(reportProgress = () => {}) {
     nearMissCooldownUntil = 0
     hasIntroducedWidowsRoom = false
     pressedKeys.clear()
+    scoreSystem.bankRun()
+    scoreSystem.resetRun()
+    health = maxHealth
+    paintHealth()
+    for (const entry of house.ceilingLights) {
+      entry.shotOut = false
+      entry.light.intensity = entry.baseIntensity
+      entry.fixture.visible = true
+    }
+    breakables.reset()
+    horde.reset()
+    waveNumber = 0
+    nextWaveAt = Infinity
+    brutesDropped = 0
+    missions.reset(performance.now())
+    killFeed.replaceChildren()
+    levelBanner.hidden = true
+    hitMarker.hidden = true
     caughtScreen.hidden = true
     escapeScreen.hidden = true
     startScreen.hidden = false
@@ -1062,16 +1406,73 @@ export async function bootGame(reportProgress = () => {}) {
     portalSystem.update(camera.position, time, isGameplayActive())
     scareDirector.update(time)
     runTimer.update(time)
+    scoreSystem.tick(time)
+    updateJuice(time)
+    updateWaves(time)
+    missions.update({
+      brutes: brutesDropped,
+      delta,
+      kills: scoreSystem.kills,
+      now: time,
+      playing: isGameplayActive(),
+      room: (getHauntedPlaceAt(camera.position) ?? getRoomAt(camera.position)).id,
+    })
+    const bites = horde.update(delta, time, camera.position, isGameplayActive() && !hiding.isHidden)
+    for (const bite of bites) {
+      audio.bite()
+      hurtPlayer(bite.damage)
+    }
     updateNearMiss(time)
     finishReload(time)
     const gainedAmmo = ammoPickups.update(camera.position, time, isGameplayActive())
     if (gainedAmmo > 0) {
-      ammoReserve += gainedAmmo
+      arsenal.addBullets(arsenal.currentId === 'grenade' ? 'revolver' : arsenal.currentId, gainedAmmo)
       audio.pickup()
       showReward(`+${gainedAmmo} bullets`)
       updateStunHud()
     }
-    gunKick = weapon.update(time, delta)
+    for (const found of weaponPickups.update(camera.position, time, isGameplayActive())) {
+      arsenal.grant(found)
+      audio.pickup()
+      showReward(found === 'grenade' ? 'Grenades' : found === 'smg' ? 'SMG' : 'Shotgun')
+      updateStunHud()
+    }
+    if (isGameplayActive()) {
+      const autoShot = arsenal.holdFire(time)
+      if (autoShot?.pellets) {
+        audio.gunshot()
+        camera.getWorldDirection(shotDirection)
+        const base = shotDirection.clone()
+        for (const pellet of autoShot.pellets) {
+          const direction = base.clone()
+          direction.x += pellet.spread
+          direction.y += pellet.spreadY
+          direction.normalize()
+          resolveShot(direction, pellet)
+        }
+        motherHeardShot(time)
+        updateStunHud()
+      }
+    }
+    const blasts = thrownGrenades.update(delta, time)
+    if (isGameplayActive()) {
+      for (const blast of blasts) {
+        audio.boom()
+        cameraShakeEndsAt = time + 320
+        for (const zombie of horde.blast(blast, 4.4)) {
+          if (zombie.type === 'brute') brutesDropped += 1
+          scoreSystem.addKill({
+            payout: zombie.stats.cash,
+            points: zombie.stats.points,
+          })
+          arsenal.addBullets('revolver', zombie.type === 'brute' ? 8 : 4)
+        }
+        const motherDistance = Math.hypot(blast.x - ghost.position.x, blast.z - ghost.position.z)
+        if (motherDistance < 4.4 && ghost.visible) damageMother(time)
+        showReward('Boom')
+      }
+    }
+    gunKick = arsenal.update(time, delta)
     updateHunterEffects(time)
     updateHunterStun(time)
 
@@ -1097,7 +1498,7 @@ export async function bootGame(reportProgress = () => {}) {
       !hiding.isHidden
     updateStamina(delta, isSprinting)
     if (movement.lengthSq() > 0 && !hiding.isHidden) {
-      movement.normalize().multiplyScalar((isSprinting ? sprintSpeed : movementSpeed) * delta)
+      movement.normalize().multiplyScalar((isSprinting ? sprintSpeed : movementSpeed) * moveScale * delta)
       movePlayerWithinWorld(camera.position, movement)
     }
     if (!hasIntroducedWidowsRoom && camera.position.y > 3.8) {
@@ -1117,7 +1518,10 @@ export async function bootGame(reportProgress = () => {}) {
           hunterState = 'search'
         }
         updateGhost(delta, time)
-        if (ghostReachedPlayer()) catchPlayer()
+        if (ghostReachedPlayer()) {
+          document.querySelector('#caught-title').textContent = 'Mother found you'
+          catchPlayer()
+        }
       }
     }
     motherDrips.update(time, delta, mother, isGameplayActive())
@@ -1139,10 +1543,29 @@ export async function bootGame(reportProgress = () => {}) {
     performInteraction()
   }
   if (event.code === 'KeyR' && !event.repeat) startReload()
-    if (event.code === 'Digit1' && !event.repeat && !playerCaught) whisper('behind you')
-    if (event.code === 'Digit2' && !event.repeat) flickerLights()
-    if (event.code === 'Digit3' && !event.repeat && !playerCaught) slamDoor()
-    if (event.code === 'Digit4' && !event.repeat && !playerCaught) rushGhost()
+    if (event.code === 'Digit1' && !event.repeat) {
+      if (isGameplayActive()) arsenal.switchTo('revolver')
+      else whisper('behind you')
+      updateStunHud()
+    }
+    if (event.code === 'Digit2' && !event.repeat) {
+      if (isGameplayActive()) arsenal.switchTo('shotgun')
+      else flickerLights()
+      updateStunHud()
+    }
+    if (event.code === 'Digit3' && !event.repeat) {
+      if (isGameplayActive()) arsenal.switchTo('smg')
+      else if (!playerCaught) slamDoor()
+      updateStunHud()
+    }
+    if (event.code === 'Digit4' && !event.repeat) {
+      if (isGameplayActive()) arsenal.switchTo('grenade')
+      else if (!playerCaught) rushGhost()
+      updateStunHud()
+    }
+    if (event.code === 'KeyG' && !event.repeat && isGameplayActive()) {
+      if (arsenal.switchTo('grenade')) fireStunBlaster()
+    }
     if (isGameplayActive()) pressedKeys.add(event.code)
   })
   window.addEventListener('keyup', (event) => pressedKeys.delete(event.code))
@@ -1150,13 +1573,22 @@ export async function bootGame(reportProgress = () => {}) {
     pressedKeys.clear()
     mobileControls.reset()
   })
+  let lastStreamerMode = false
+
+  function replayRun() {
+    restartGame()
+    startGame(lastStreamerMode)
+  }
+
   function startGame(streamerMode = false) {
+    lastStreamerMode = streamerMode
     if (streamerMode) {
       connectStreamerMode()
     } else {
       disconnectStreamerMode()
     }
     audio.start()
+    applySurvivor()
     document.body.classList.add('is-playing')
     gameRunning = true
     startScreen.hidden = true
@@ -1166,6 +1598,10 @@ export async function bootGame(reportProgress = () => {}) {
     mobileControls.setActive(usesTouchControls)
     scareDirector.reset()
     runTimer.start()
+    waveNumber = 0
+    nextWaveAt = performance.now() + 2200
+    brutesDropped = 0
+    missions.reset(performance.now())
     if (usesTouchControls) {
       syncMobileOrientation()
       void requestMobileLandscape()
@@ -1234,15 +1670,23 @@ export async function bootGame(reportProgress = () => {}) {
   window.visualViewport?.addEventListener('resize', queueMobileOrientationSync)
   window.matchMedia('(orientation: portrait)').addEventListener?.('change', queueMobileOrientationSync)
 
-  playButton.addEventListener('click', () => startGame(false))
-  streamerButton.addEventListener('click', () => startGame(true))
+  playButton.addEventListener('click', () => openLoadout(false))
+  streamerButton.addEventListener('click', () => openLoadout(true))
+  document.querySelector('#deploy-button').addEventListener('click', () => startGame(pendingStreamer))
   howToButton.addEventListener('click', () => {
     const isOpening = howToPanel.hidden
     howToPanel.hidden = !isOpening
     howToButton.setAttribute('aria-expanded', String(isOpening))
   })
-  restartButton.addEventListener('click', restartGame)
-  playAgainButton.addEventListener('click', restartGame)
+  function backToSurvivors() {
+    restartGame()
+    openLoadout(lastStreamerMode)
+  }
+
+  restartButton.addEventListener('click', replayRun)
+  playAgainButton.addEventListener('click', replayRun)
+  document.querySelector('#change-survivor').addEventListener('click', backToSurvivors)
+  document.querySelector('#escape-change-survivor').addEventListener('click', backToSurvivors)
 
   document.addEventListener('pointerlockchange', () => {
     if (usesTouchControls) return
@@ -1273,7 +1717,12 @@ export async function bootGame(reportProgress = () => {}) {
   })
 
   document.addEventListener('mousedown', (event) => {
-    if (event.button === 0 && !usesTouchControls) fireStunBlaster()
+    if (event.button !== 0 || usesTouchControls) return
+    arsenal.setTrigger(true)
+    fireStunBlaster()
+  })
+  document.addEventListener('mouseup', (event) => {
+    if (event.button === 0) arsenal.setTrigger(false)
   })
 
   window.addEventListener('resize', () => {
@@ -1307,6 +1756,27 @@ export async function bootGame(reportProgress = () => {}) {
     ['s', { name: 'SLAM', action: slamDoor }],
     ['!hunt', { name: 'HUNT', action: rushGhost }],
     ['c', { name: 'HUNT', action: rushGhost }],
+    ['!horde', {
+      name: 'HORDE',
+      action: () => {
+        waveNumber += 1
+        horde.spawnWave(waveNumber + 1, camera.position)
+        showReward('Chat called a horde')
+      },
+    }],
+    ['!zombie', {
+      name: 'ZOMBIE',
+      action: () => {
+        horde.spawn('runner', camera.position.x + 6, camera.position.z - 4)
+        horde.spawn('walker', camera.position.x - 6, camera.position.z - 3)
+      },
+    }],
+    ['z', {
+      name: 'ZOMBIE',
+      action: () => {
+        horde.spawn('walker', camera.position.x + 5, camera.position.z + 4)
+      },
+    }],
   ])
   let twitchClient = null
   let streamerConnectionRequested = false
@@ -1353,6 +1823,8 @@ export async function bootGame(reportProgress = () => {}) {
   }
 
   updateStunHud()
+  const menuBest = document.querySelector('#menu-best')
+  if (menuBest) menuBest.textContent = `Best score ${scoreSystem.best}`
 
   report(1, 'The front door is unlatched')
 }

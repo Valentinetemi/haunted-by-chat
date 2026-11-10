@@ -6,12 +6,17 @@ export function createMobileControls({
   lookZone,
   onInteract,
   onLook,
+  onFireHold,
+  onGrenade,
   onReload,
   onStun,
+  onSwap,
+  grenadeButton,
   reloadButton,
   root,
   runButton,
   stunButton,
+  swapButton,
 }) {
   const movement = { x: 0, y: 0 }
   const targetMovement = { x: 0, y: 0 }
@@ -137,12 +142,29 @@ export function createMobileControls({
   stunButton.addEventListener('pointerdown', (event) => {
     if (!active) return
     event.preventDefault()
+    onFireHold?.(true)
     onStun()
+    stunButton.setPointerCapture(event.pointerId)
   })
+  for (const eventName of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+    stunButton.addEventListener(eventName, () => {
+      onFireHold?.(false)
+    })
+  }
   reloadButton.addEventListener('pointerdown', (event) => {
     if (!active) return
     event.preventDefault()
     onReload()
+  })
+  swapButton?.addEventListener('pointerdown', (event) => {
+    if (!active) return
+    event.preventDefault()
+    onSwap()
+  })
+  grenadeButton?.addEventListener('pointerdown', (event) => {
+    if (!active) return
+    event.preventDefault()
+    onGrenade()
   })
   interactButton.addEventListener('pointerdown', (event) => {
     if (!active) return

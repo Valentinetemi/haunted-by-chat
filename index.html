@@ -43,7 +43,8 @@
       <div class="menu-card">
         <p class="eyebrow">A house that remembers</p>
         <h1 id="game-title" data-text="Haunted by Chat">Haunted by Chat</h1>
-        <p class="menu-copy">Find five keys through the house and the rooms beyond it. The revolver staggers Mother. It does not keep her away.</p>
+        <p class="menu-copy">Hordes are already in the halls. Pick a survivor, grab a gun, clear short jobs, and get out with the keys.</p>
+        <p id="menu-best">Best score 0</p>
         <ul class="menu-features" aria-label="Game features">
           <li>Random scares</li>
           <li>Mobile ready</li>
@@ -54,6 +55,15 @@
           <button id="streamer-button" type="button">Streamer mode</button>
           <button id="how-to-button" type="button" aria-expanded="false">How to play</button>
         </div>
+        <div id="loadout-panel" hidden>
+          <p class="eyebrow">Choose who goes in</p>
+          <div id="survivor-list"></div>
+          <p class="eyebrow">Spend cash</p>
+          <div id="shop-list"></div>
+          <p id="bank-readout">Cash 0</p>
+          <button id="deploy-button" class="primary-action" type="button">Deploy</button>
+          <p class="eyebrow">In the house: 1 revolver, 2 shotgun, 3 SMG, 4 grenade</p>
+        </div>
         <p id="streamer-note">Streamer mode uses anonymous, read-only Twitch chat. No OAuth.</p>
         <label class="brightness-control" for="brightness-slider">
           <span>Brightness</span>
@@ -62,11 +72,12 @@
         </label>
         <div id="how-to-panel" hidden>
           <p><kbd>WASD</kbd> move · <kbd>Shift</kbd> sprint · <kbd>Mouse</kbd> look</p>
-          <p><kbd>Click</kbd> fire · <kbd>R</kbd> reload · <kbd>E</kbd> hide, leave, or unlock</p>
-          <p>Shots stagger Mother and she hears them. You start with 30 bullets. She still comes back angrier. Hiding breaks her sight.</p>
-          <p>A compass arrow points at the active key. Follow the glow and the ping.</p>
-          <p class="mobile-help">Use the left stick to move, drag the right side to look, and tap RUN, FIRE, RELOAD, or USE.</p>
-          <p>The house now includes a study, pantry, nursery, guest bathroom, and cellar washroom. Keys name the room. Follow NEXT, then return to the front door.</p>
+          <p><kbd>Click</kbd> fire · <kbd>R</kbd> reload · <kbd>1</kbd>-<kbd>4</kbd> weapons · <kbd>G</kbd> grenade · <kbd>E</kbd> use</p>
+          <p>You start with the revolver and 30 bullets. Shotgun, SMG, and grenades are in the house or bought with cash.</p>
+          <p>Zombie waves start in seconds. Headshots pay more. Short missions pay cash, bullets, and health on the spot.</p>
+          <p>Pick a survivor before the run. Rook reloads faster, June has more health. Ash and Nico unlock with cash.</p>
+          <p class="mobile-help">Use the left stick to move, drag the right side to look, and tap RUN, FIRE, GUN, NADE, RELOAD, or USE.</p>
+          <p>Keys are still the way out. The compass points at the active key. Mother is the boss.</p>
         </div>
       </div>
     </section>
@@ -86,6 +97,30 @@
     </div>
     <div id="portal-transition" aria-hidden="true" hidden></div>
     <aside id="twitch-feed" aria-live="polite" aria-label="Twitch scare feed" hidden></aside>
+    <div id="hit-marker" hidden></div>
+    <aside id="kill-feed" aria-live="polite"></aside>
+    <div id="level-banner" hidden>Level up</div>
+    <div id="mission-banner" hidden>
+      <span>Mission</span>
+      <strong id="mission-label">Drop 4 zombies</strong>
+      <b id="mission-clock">30s</b>
+    </div>
+    <aside id="wave-hud" aria-label="Wave">
+      <span>Wave</span>
+      <strong id="wave-value">1</strong>
+    </aside>
+    <aside id="score-hud" aria-label="Score">
+      <span>Score</span>
+      <strong id="score-value">0</strong>
+      <b id="streak-value" hidden>x2</b>
+    </aside>
+    <aside id="cash-hud" aria-label="Cash">
+      <span>Cash</span>
+      <strong id="cash-value">0</strong>
+    </aside>
+    <aside id="health-hud" aria-label="Health">
+      <i id="health-fill"></i>
+    </aside>
     <aside id="stun-hud" aria-label="Revolver bullets">
       <span>Bullets</span>
       <strong id="shots-remaining">6</strong>
@@ -125,6 +160,8 @@
         </div>
       </div>
       <div id="mobile-actions">
+        <button id="mobile-swap" type="button">Gun</button>
+        <button id="mobile-nade" type="button">Nade</button>
         <button id="mobile-reload" type="button">Reload</button>
         <button id="mobile-run" type="button">Run</button>
         <button id="mobile-use" type="button">Use</button>
@@ -137,13 +174,23 @@
       <small>Haunted by Chat plays in landscape</small>
     </div>
     <section id="caught-screen" role="dialog" aria-modal="true" aria-labelledby="caught-title" hidden>
-      <h1 id="caught-title">Mother found you</h1>
-      <button id="restart-button" type="button">Restart</button>
+      <h1 id="caught-title">The horde got you</h1>
+      <p class="score-line">Score <strong id="caught-score">0</strong></p>
+      <p class="score-line">Cash <strong id="caught-cash">0</strong></p>
+      <p class="score-line">Kills <strong id="caught-kills">0</strong></p>
+      <p class="score-line">Best <strong id="caught-best">0</strong></p>
+      <button id="change-survivor" type="button">Change survivor</button>
+      <button id="restart-button" type="button">Play again</button>
     </section>
     <section id="escape-screen" role="dialog" aria-modal="true" aria-labelledby="escape-title" hidden>
       <h1 id="escape-title">Escaped</h1>
       <p class="score-line">Time <strong id="final-time">--:--.---</strong></p>
-      <p class="score-line">Best <strong id="best-time">No escape yet</strong></p>
+      <p class="score-line">Score <strong id="escape-score">0</strong></p>
+      <p class="score-line">Cash <strong id="escape-cash">0</strong></p>
+      <p class="score-line">Kills <strong id="escape-kills">0</strong></p>
+      <p class="score-line">Best time <strong id="best-time">No escape yet</strong></p>
+      <p class="score-line">Best score <strong id="escape-best">0</strong></p>
+      <button id="escape-change-survivor" type="button">Change survivor</button>
       <button id="play-again-button" type="button">Play again</button>
     </section>
     <script type="module" src="/src/main.js"></script>
