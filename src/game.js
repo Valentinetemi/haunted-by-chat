@@ -1201,8 +1201,7 @@ export async function bootGame(reportProgress = () => {}) {
     onInteract: performInteraction,
     onLook: (deltaX, deltaY) => applyLookDelta(deltaX, deltaY, 0.0042),
     onGrenade: () => {
-      arsenal.switchTo('grenade')
-      fireStunBlaster()
+      if (arsenal.switchTo('grenade')) fireStunBlaster()
     },
     onReload: startReload,
     onStun: fireStunBlaster,
@@ -1554,8 +1553,7 @@ export async function bootGame(reportProgress = () => {}) {
       updateStunHud()
     }
     if (event.code === 'KeyG' && !event.repeat && isGameplayActive()) {
-      arsenal.switchTo('grenade')
-      fireStunBlaster()
+      if (arsenal.switchTo('grenade')) fireStunBlaster()
     }
     if (isGameplayActive()) pressedKeys.add(event.code)
   })
