@@ -103,7 +103,7 @@ export async function bootGame(reportProgress = () => {}) {
   furnishBasement(house.group)
   furnishAttic(house.group)
   mergeStaticMeshes(house.group)
-  report(0.68, 'Opening the other rooms…')
+  report(0.92, 'She is moving through the house…')
   await nextFrame()
   const pressedKeys = new Set()
   const movement = new THREE.Vector3()
@@ -328,7 +328,7 @@ export async function bootGame(reportProgress = () => {}) {
   let playerWasHidden = false
   let hasIntroducedWidowsRoom = false
   const mother = createMother()
-  report(0.86, 'She is already inside…')
+  report(0.96, 'She is already inside…')
   await nextFrame()
   const motherDrips = createMotherDrips(scene)
   const hunterVisual = mother.group
