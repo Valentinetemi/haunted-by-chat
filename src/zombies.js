@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 
 import { FLOOR_Y } from './house.js'
+import { canReachOnFoot, movePlayerWithinWorld } from './haunted-places.js'
 
 const TYPES = {
   walker: { cash: 8, damage: 12, head: 1.35, height: 1.7, hp: 3, points: 100, radius: 0.42, scale: 1, speed: 1.75 },
@@ -134,6 +135,15 @@ export function createZombieHorde(parent) {
   }
 
   const aim = new THREE.Vector3()
+  const step = new THREE.Vector3()
+  const probe = new THREE.Vector3()
+
+  const slide = (x, z, dx, dz) => {
+    probe.set(x, 0, z)
+    step.set(dx, 0, dz)
+    movePlayerWithinWorld(probe, step)
+    return probe
+  }
   const center = new THREE.Vector3()
   const size = new THREE.Vector3()
   const hitPoint = new THREE.Vector3()
@@ -184,7 +194,14 @@ export function createZombieHorde(parent) {
       }
       if (zombie.hp <= 0) {
         zombie.mesh.rotation.x = THREE.MathUtils.lerp(zombie.mesh.rotation.x, 1.45, 0.15)
-        zombie.mesh.position.addScaledVector(zombie.knock, delta)
+        slide(
+          zombie.mesh.position.x,
+          zombie.mesh.position.z,
+          zombie.knock.x * delta,
+          zombie.knock.z * delta,
+        )
+        zombie.mesh.position.x = probe.x
+        zombie.mesh.position.z = probe.z
         zombie.knock.multiplyScalar(0.9)
         if (time >= zombie.removeAt) {
           zombie.mesh.visible = false
@@ -196,20 +213,29 @@ export function createZombieHorde(parent) {
       const direction = aim
       direction.set(player.x - zombie.mesh.position.x, 0, player.z - zombie.mesh.position.z)
       const distance = direction.length()
-      if (distance > 0.001) {
-        direction.multiplyScalar(1 / distance)
-        const speed = zombie.stats.speed * (zombie.fall > 0.2 ? 0.35 : 1)
-        zombie.mesh.position.addScaledVector(direction, speed * delta)
-        zombie.mesh.position.addScaledVector(zombie.knock, delta)
-        zombie.knock.multiplyScalar(0.86)
-        zombie.mesh.lookAt(player.x, zombie.mesh.position.y, player.z)
-      }
+      if (distance > 0.001) direction.multiplyScalar(1 / distance)
+      const speed = zombie.stats.speed * (zombie.fall > 0.2 ? 0.35 : 1)
+      const moveX = (distance > 0.001 ? direction.x * speed : 0) + zombie.knock.x
+      const moveZ = (distance > 0.001 ? direction.z * speed : 0) + zombie.knock.z
+      slide(zombie.mesh.position.x, zombie.mesh.position.z, moveX * delta, moveZ * delta)
+      zombie.mesh.position.x = probe.x
+      zombie.mesh.position.z = probe.z
+      zombie.knock.multiplyScalar(0.86)
+      if (distance > 0.001) zombie.mesh.lookAt(player.x, zombie.mesh.position.y, player.z)
       const bob = Math.sin(time * 0.008 * zombie.stats.speed + zombie.phase) * 0.04
       zombie.mesh.position.y = FLOOR_Y + bob
       const upright = zombie.type === 'crawler' ? 1.15 : 0
       zombie.mesh.rotation.x = THREE.MathUtils.lerp(zombie.mesh.rotation.x, upright + zombie.fall, 0.2)
       zombie.fall = Math.max(0, zombie.fall - delta * 0.8)
-      if (distance < zombie.stats.radius + 0.7 && time >= zombie.attackAt) {
+      const sameFloor = Math.abs(player.y) < 2.6
+      const inReach = distance < zombie.stats.radius + 0.75
+      const openPath = inReach && canReachOnFoot(
+        zombie.mesh.position.x,
+        zombie.mesh.position.z,
+        player.x,
+        player.z,
+      )
+      if (sameFloor && inReach && openPath && time >= zombie.attackAt) {
         zombie.attackAt = time + 900
         bites.push({ damage: zombie.stats.damage, zombie })
       }

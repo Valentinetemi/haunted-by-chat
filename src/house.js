@@ -584,6 +584,10 @@ function segmentWalkable(x0, z0, x1, z1) {
   return true
 }
 
+export function isHouseSegmentOpen(x0, z0, x1, z1) {
+  return segmentWalkable(x0, z0, x1, z1)
+}
+
 function crossesBoundary(start, end, boundary) {
   return (start < boundary && end >= boundary) || (start > boundary && end <= boundary)
 }

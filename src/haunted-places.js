@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 
-import { FLOOR_Y, movePlayerWithinHouse } from './house.js'
+import { FLOOR_Y, isHouseSegmentOpen, movePlayerWithinHouse } from './house.js'
 
 export const HAUNTED_PLACE_BOUNDS = {
   courtyard: { minX: 28, maxX: 48, minZ: -9, maxZ: 9 },
@@ -26,6 +26,13 @@ export function getHauntedPlaceAt(position) {
     }
   }
   return null
+}
+
+export function canReachOnFoot(x0, z0, x1, z1) {
+  const start = getHauntedPlaceAt({ x: x0, y: 0, z: z0 })
+  const end = getHauntedPlaceAt({ x: x1, y: 0, z: z1 })
+  if (start || end) return Boolean(start && end && start.id === end.id)
+  return isHouseSegmentOpen(x0, z0, x1, z1)
 }
 
 export function movePlayerWithinWorld(position, displacement) {
