@@ -116,6 +116,7 @@ export async function bootGame(reportProgress = () => {}) {
   furnishPantry(house.group)
   const nurseryProps = furnishNursery(house.group)
   mergeStaticMeshes(house.group)
+  const horde = createZombieHorde(scene)
   report(0.92, 'She is moving through the house…')
   await nextFrame()
   const pressedKeys = new Set()
@@ -1070,6 +1071,7 @@ export async function bootGame(reportProgress = () => {}) {
     scoreSystem.resetRun()
     health = maxHealth
     paintHealth()
+    horde.reset()
     caughtScreen.hidden = true
     escapeScreen.hidden = true
     startScreen.hidden = false
@@ -1112,6 +1114,11 @@ export async function bootGame(reportProgress = () => {}) {
     scareDirector.update(time)
     runTimer.update(time)
     scoreSystem.tick(time)
+    const bites = horde.update(delta, time, camera.position, isGameplayActive() && !hiding.isHidden)
+    for (const bite of bites) {
+      audio.hit()
+      hurtPlayer(bite.damage)
+    }
     updateNearMiss(time)
     finishReload(time)
     const gainedAmmo = ammoPickups.update(camera.position, time, isGameplayActive())
