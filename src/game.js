@@ -1771,6 +1771,8 @@ export async function bootGame(reportProgress = () => {}) {
   }
 
   updateStunHud()
+  const menuBest = document.querySelector('#menu-best')
+  if (menuBest) menuBest.textContent = `Best score ${scoreSystem.best}`
 
   report(1, 'The front door is unlatched')
 }
