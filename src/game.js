@@ -201,6 +201,7 @@ export async function bootGame(reportProgress = () => {}) {
       health = Math.min(maxHealth, health + 25)
       paintHealth()
       showReward(`Paid $${mission.cash}`)
+      shoutLevel('Paid')
       updateStunHud()
     },
     onFail: () => showReward('Mission failed'),
@@ -726,6 +727,8 @@ export async function bootGame(reportProgress = () => {}) {
     rushAfterStagger = false
     hunterFrozenUntil = 0
     audio.motherDeath()
+    scoreSystem.addScore(500)
+    scoreSystem.addCash(80)
     showReward('Mother retreats')
   }
 
@@ -1152,12 +1155,22 @@ export async function bootGame(reportProgress = () => {}) {
     lookZone: document.querySelector('#touch-look-zone'),
     onInteract: performInteraction,
     onLook: (deltaX, deltaY) => applyLookDelta(deltaX, deltaY, 0.0042),
+    onGrenade: () => {
+      arsenal.switchTo('grenade')
+      fireStunBlaster()
+    },
     onReload: startReload,
     onStun: fireStunBlaster,
+    onSwap: () => {
+      arsenal.cycle()
+      updateStunHud()
+    },
+    grenadeButton: document.querySelector('#mobile-nade'),
     reloadButton: document.querySelector('#mobile-reload'),
     root: document.querySelector('#mobile-controls'),
     runButton: document.querySelector('#mobile-run'),
     stunButton: document.querySelector('#mobile-stun'),
+    swapButton: document.querySelector('#mobile-swap'),
   })
 
   function triggerJumpscare() {
@@ -1355,7 +1368,7 @@ export async function bootGame(reportProgress = () => {}) {
     })
     const bites = horde.update(delta, time, camera.position, isGameplayActive() && !hiding.isHidden)
     for (const bite of bites) {
-      audio.hit()
+      audio.bite()
       hurtPlayer(bite.damage)
     }
     updateNearMiss(time)
@@ -1528,7 +1541,7 @@ export async function bootGame(reportProgress = () => {}) {
     scareDirector.reset()
     runTimer.start()
     waveNumber = 0
-    nextWaveAt = performance.now() + 3500
+    nextWaveAt = performance.now() + 2200
     brutesDropped = 0
     missions.reset(performance.now())
     if (usesTouchControls) {
@@ -1607,8 +1620,15 @@ export async function bootGame(reportProgress = () => {}) {
     howToPanel.hidden = !isOpening
     howToButton.setAttribute('aria-expanded', String(isOpening))
   })
+  function backToSurvivors() {
+    restartGame()
+    openLoadout(lastStreamerMode)
+  }
+
   restartButton.addEventListener('click', replayRun)
   playAgainButton.addEventListener('click', replayRun)
+  document.querySelector('#change-survivor').addEventListener('click', backToSurvivors)
+  document.querySelector('#escape-change-survivor').addEventListener('click', backToSurvivors)
 
   document.addEventListener('pointerlockchange', () => {
     if (usesTouchControls) return

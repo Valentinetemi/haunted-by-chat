@@ -144,6 +144,10 @@ export function createAudioSystem() {
       tone(70, 48, 0.4, 0.03, 'triangle', 0.05)
       noise(0.3, 0.05, 300, 0.35)
     },
+    bite() {
+      noise(0.08, 0.16, 700)
+      tone(180, 70, 0.1, 0.1, 'square')
+    },
     boom() {
       noise(0.28, 0.34, 500)
       tone(90, 32, 0.4, 0.28, 'triangle')
