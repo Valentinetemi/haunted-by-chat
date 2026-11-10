@@ -218,6 +218,7 @@ export async function bootGame(reportProgress = () => {}) {
     const spawned = horde.spawnWave(waveNumber, camera.position)
     if (spawned > 0) {
       showReward(`Wave ${waveNumber}`)
+      audio.groan()
       const waveValue = document.querySelector('#wave-value')
       if (waveValue) waveValue.textContent = String(waveNumber)
     }

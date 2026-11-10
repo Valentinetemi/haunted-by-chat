@@ -125,6 +125,10 @@ export function createAudioSystem() {
       noise(0.04, 0.1, 1800)
       tone(1400, 420, 0.05, 0.06, 'square')
     },
+    groan() {
+      tone(90, 54, 0.35, 0.08, 'sawtooth')
+      noise(0.2, 0.05, 400, 0.05)
+    },
     gunshot() {
       noise(0.09, 0.32, 2400)
       tone(210, 55, 0.16, 0.26, 'sawtooth')
