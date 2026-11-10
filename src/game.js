@@ -291,6 +291,8 @@ export async function bootGame(reportProgress = () => {}) {
       shop.append(button)
     }
     document.querySelector('#bank-readout').textContent = `Cash ${scoreSystem.bank}`
+    const bestLine = document.querySelector('#menu-best')
+    if (bestLine) bestLine.textContent = `Best score ${scoreSystem.best}`
   }
 
   function openLoadout(streamer) {
