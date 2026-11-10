@@ -955,6 +955,11 @@ export async function bootGame(reportProgress = () => {}) {
     return xDistance ** 2 + zDistance ** 2 <= ghostCatchDistance ** 2
   }
 
+  function stopLiveCombat() {
+    arsenal.setTrigger(false)
+    thrownGrenades.reset()
+  }
+
   function showRunSummary() {
     scoreSystem.bankRun()
     const score = String(scoreSystem.score)
@@ -972,6 +977,7 @@ export async function bootGame(reportProgress = () => {}) {
   }
 
   function catchPlayer() {
+    stopLiveCombat()
     playerCaught = true
     gameRunning = false
     mobileOrientationPaused = false
@@ -1015,6 +1021,7 @@ export async function bootGame(reportProgress = () => {}) {
   }
 
   function escapeHouse() {
+    stopLiveCombat()
     playerEscaped = true
     gameRunning = false
     mobileOrientationPaused = false
@@ -1424,35 +1431,39 @@ export async function bootGame(reportProgress = () => {}) {
       showReward(found === 'grenade' ? 'Grenades' : found === 'smg' ? 'SMG' : 'Shotgun')
       updateStunHud()
     }
-    const autoShot = arsenal.holdFire(time)
-    if (autoShot?.pellets) {
-      audio.gunshot()
-      camera.getWorldDirection(shotDirection)
-      const base = shotDirection.clone()
-      for (const pellet of autoShot.pellets) {
-        const direction = base.clone()
-        direction.x += pellet.spread
-        direction.y += pellet.spreadY
-        direction.normalize()
-        resolveShot(direction, pellet)
+    if (isGameplayActive()) {
+      const autoShot = arsenal.holdFire(time)
+      if (autoShot?.pellets) {
+        audio.gunshot()
+        camera.getWorldDirection(shotDirection)
+        const base = shotDirection.clone()
+        for (const pellet of autoShot.pellets) {
+          const direction = base.clone()
+          direction.x += pellet.spread
+          direction.y += pellet.spreadY
+          direction.normalize()
+          resolveShot(direction, pellet)
+        }
+        motherHeardShot(time)
+        updateStunHud()
       }
-      motherHeardShot(time)
-      updateStunHud()
     }
     const blasts = thrownGrenades.update(delta, time)
-    for (const blast of blasts) {
-      audio.boom()
-      cameraShakeEndsAt = time + 320
-      for (const zombie of horde.blast(blast, 4.4)) {
-        if (zombie.type === 'brute') brutesDropped += 1
-        scoreSystem.addKill({
-          payout: zombie.stats.cash,
-          points: zombie.stats.points,
-        })
+    if (isGameplayActive()) {
+      for (const blast of blasts) {
+        audio.boom()
+        cameraShakeEndsAt = time + 320
+        for (const zombie of horde.blast(blast, 4.4)) {
+          if (zombie.type === 'brute') brutesDropped += 1
+          scoreSystem.addKill({
+            payout: zombie.stats.cash,
+            points: zombie.stats.points,
+          })
+        }
+        const motherDistance = Math.hypot(blast.x - ghost.position.x, blast.z - ghost.position.z)
+        if (motherDistance < 4.4 && ghost.visible) damageMother(time)
+        showReward('Boom')
       }
-      const motherDistance = Math.hypot(blast.x - ghost.position.x, blast.z - ghost.position.z)
-      if (motherDistance < 4.4 && ghost.visible) damageMother(time)
-      showReward('Boom')
     }
     gunKick = arsenal.update(time, delta)
     updateHunterEffects(time)
