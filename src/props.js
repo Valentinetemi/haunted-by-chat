@@ -534,14 +534,54 @@ export function furnishBathroom(parent) {
   const group = new THREE.Group()
   group.name = 'bathroom-props'
   const porcelain = new THREE.MeshStandardMaterial({ color: 0x9aa5a2, roughness: 0.42 })
+  const tile = new THREE.MeshStandardMaterial({ color: 0xc5d0cc, roughness: 0.48 })
   const tarnishedMetal = new THREE.MeshStandardMaterial({
     color: 0x566365,
     metalness: 0.72,
     roughness: 0.45,
   })
+  const curtainMaterial = new THREE.MeshStandardMaterial({
+    color: 0xd5ddd8,
+    roughness: 0.9,
+    transparent: true,
+    opacity: 0.74,
+    side: THREE.DoubleSide,
+  })
+
+  for (const z of [-10.6, -8.4, -6.2]) {
+    addBox(group, [0.06, 2.3, 1.55], [-11.82, FLOOR_Y + 1.35, z], tile)
+  }
+  for (const x of [-10.4, -8.2, -6.2]) {
+    addBox(group, [1.4, 0.04, 1.4], [x, FLOOR_Y + 0.03, -8], tile)
+  }
 
   addBox(group, [3.2, 0.9, 1.55], [-9.7, FLOOR_Y + 0.46, -10.85], porcelain, 'bathtub')
   addBox(group, [2.75, 0.6, 1.12], [-9.7, FLOOR_Y + 0.78, -10.55], new THREE.MeshStandardMaterial({ color: 0x172326, roughness: 0.3 }))
+  const showerHead = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.08, 8), tarnishedMetal)
+  showerHead.position.set(-11.2, FLOOR_Y + 2.65, -10.8)
+  group.add(showerHead)
+  const curtain = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 2.2), curtainMaterial)
+  curtain.position.set(-8.3, FLOOR_Y + 1.4, -10.2)
+  curtain.userData.keepSeparate = true
+  group.add(curtain)
+  const figure = new THREE.Group()
+  figure.userData.keepSeparate = true
+  figure.visible = false
+  const silhouette = new THREE.MeshBasicMaterial({ color: 0x120808, transparent: true, opacity: 0.88 })
+  const hiddenHead = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), silhouette)
+  hiddenHead.position.y = 0.52
+  figure.add(hiddenHead)
+  addBox(figure, [0.4, 1.1, 0.06], [0, -0.12, 0], silhouette)
+  figure.position.set(-10.4, FLOOR_Y + 1.3, -10.9)
+  group.add(figure)
+  const water = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.02, 0.035, 0.4, 6),
+    new THREE.MeshStandardMaterial({ color: 0xb7e4ef, transparent: true, opacity: 0.5 }),
+  )
+  water.position.set(-11.45, FLOOR_Y + 1.05, -5.4)
+  water.visible = false
+  water.userData.keepSeparate = true
+  group.add(water)
 
   const toiletBowl = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.3, 0.55, 14), porcelain)
   toiletBowl.position.set(-5.4, FLOOR_Y + 0.32, -9.8)
@@ -585,6 +625,8 @@ export function furnishBathroom(parent) {
 
   let scareStartedAt = 0
   let hasTriggered = false
+  let curtainUntil = 0
+  let waterUntil = 0
   const update = (playerPosition, time, active) => {
     const isNearMirror =
       active &&
@@ -592,26 +634,44 @@ export function furnishBathroom(parent) {
       playerPosition.z > -7.8 &&
       playerPosition.z < -3.5
 
+    let triggered = false
     if (isNearMirror && !hasTriggered) {
       hasTriggered = true
       scareStartedAt = time
-      return true
+      triggered = true
     }
     reflection.visible = scareStartedAt > 0 && time - scareStartedAt < 1250
     if (reflection.visible) {
       reflection.scale.setScalar(1 + Math.sin(time * 0.035) * 0.025)
     }
-    return false
+    figure.visible = curtainUntil > time
+    curtain.rotation.y = curtainUntil > time ? Math.sin(time * 0.018) * 0.2 : 0
+    water.visible = waterUntil > time
+    return triggered
   }
 
   const reset = () => {
     scareStartedAt = 0
     hasTriggered = false
+    curtainUntil = 0
+    waterUntil = 0
     reflection.visible = false
+    figure.visible = false
+    water.visible = false
   }
 
   parent.add(group)
-  return { group, reset, update }
+  return {
+    group,
+    reset,
+    triggerCurtain: (time) => {
+      curtainUntil = time + 1600
+    },
+    triggerWater: (time) => {
+      waterUntil = time + 2200
+    },
+    update,
+  }
 }
 
 export function furnishKidsBedroom(parent) {
