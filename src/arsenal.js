@@ -296,11 +296,12 @@ export function createArsenal(camera) {
       return { grenade: false, pellets }
     },
     tap(time) {
+      const wasHeld = triggerHeld
       if (currentId !== 'grenade' && current().auto) {
         current().forcedAt = time
         triggerHeld = true
         const shot = this.pull(time)
-        triggerHeld = false
+        triggerHeld = wasHeld
         return shot
       }
       return this.pull(time)

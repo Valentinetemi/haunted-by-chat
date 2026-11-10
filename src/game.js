@@ -26,7 +26,8 @@ import {
 import { createScoreSystem } from './score.js'
 import { createScareDirector } from './scares.js'
 import { createRunTimer } from './timer.js'
-import { createAmmoPickups, createWeapon } from './weapon.js'
+import { createArsenal, createGrenades, createWeaponPickups } from './arsenal.js'
+import { createAmmoPickups } from './weapon.js'
 import { createZombieHorde } from './zombies.js'
 import {
   furnishBathroom,
@@ -419,11 +420,9 @@ export async function bootGame(reportProgress = () => {}) {
   await nextFrame()
   const motherDrips = createMotherDrips(scene)
   const hunterVisual = mother.group
-  const magazineSize = 6
-  const startingAmmo = 6
-  const startingReserve = 24
-  const reloadDuration = 1400
-  const weapon = createWeapon(camera)
+  const arsenal = createArsenal(camera)
+  const thrownGrenades = createGrenades(scene)
+  const weaponPickups = createWeaponPickups(house.group)
   const ammoPickups = createAmmoPickups(house.group)
   const shotDirection = new THREE.Vector3()
   const hunterHitBox = new THREE.Box3()
@@ -431,9 +430,6 @@ export async function bootGame(reportProgress = () => {}) {
   const hunterHitSize = new THREE.Vector3(0.95, 2.6, 0.9)
   const shotRay = new THREE.Ray()
   const shotHitPoint = new THREE.Vector3()
-  let ammoInGun = startingAmmo
-  let ammoReserve = startingReserve
-  let reloadingUntil = 0
   let gunKick = 0
   let hunterFrozenUntil = 0
   let motherHealth = 18
@@ -457,71 +453,91 @@ export async function bootGame(reportProgress = () => {}) {
     mother.skinMaterial.emissiveIntensity = 0.2 + Math.sin(time * 0.002) * 0.05
   }
 
+  const weaponNameDisplay = document.querySelector('#stun-hud span')
+
   function updateStunHud() {
-    const reloading = performance.now() < reloadingUntil
-    shotsRemainingDisplay.textContent = reloading ? '…' : String(ammoInGun)
-    ammoReserveDisplay.textContent = reloading ? 'loading' : String(ammoReserve)
-    stunHud.classList.toggle('is-empty', ammoInGun === 0 && ammoReserve === 0 && !reloading)
+    const reloading = arsenal.reloading()
+    shotsRemainingDisplay.textContent = reloading ? '…' : String(arsenal.loaded)
+    ammoReserveDisplay.textContent = arsenal.currentId === 'grenade'
+      ? 'throw'
+      : reloading
+        ? 'loading'
+        : String(arsenal.reserve)
+    weaponNameDisplay.textContent = arsenal.name
+    stunHud.classList.toggle('is-empty', arsenal.loaded === 0 && arsenal.reserve === 0 && !reloading)
   }
 
   function startReload() {
-    if (performance.now() < reloadingUntil) return
-    if (ammoInGun >= magazineSize || ammoReserve <= 0 || hiding.isHidden) return
-    reloadingUntil = performance.now() + reloadDuration
-    audio.reload()
-    updateStunHud()
+    if (!isGameplayActive() || hiding.isHidden) return
+    if (arsenal.reload(performance.now())) {
+      audio.reload()
+      updateStunHud()
+    }
   }
 
   function finishReload(time) {
-    if (reloadingUntil === 0 || time < reloadingUntil) return
-    const needed = magazineSize - ammoInGun
-    const taken = Math.min(needed, ammoReserve)
-    ammoInGun += taken
-    ammoReserve -= taken
-    reloadingUntil = 0
-    updateStunHud()
+    if (arsenal.finishReload(time)) updateStunHud()
   }
 
-  function fireStunBlaster() {
-    if (playerCaught || hiding.isHidden || !isGameplayActive()) return
-    if (performance.now() < reloadingUntil) return
-    if (ammoInGun <= 0) {
-      audio.dryFire()
-      if (ammoReserve > 0) startReload()
-      return
-    }
-    ammoInGun -= 1
-    weapon.kick(performance.now())
-    gunKick = 1
-    audio.gunshot()
-    camera.getWorldDirection(shotDirection)
-    shotRay.set(camera.position, shotDirection)
+  function resolveShot(direction, pellet) {
+    shotRay.set(camera.position, direction)
     hunterHitCenter.set(ghost.position.x, ghost.position.y + 1.2, ghost.position.z)
     hunterHitBox.setFromCenterAndSize(hunterHitCenter, hunterHitSize)
     const motherHit = shotRay.intersectBox(hunterHitBox, shotHitPoint)
     const motherDistance = motherHit && ghost.visible ? motherHit.distanceTo(camera.position) : Infinity
     const zombieHit = horde.rayHit(shotRay)
     if (zombieHit && zombieHit.distance < 30 && zombieHit.distance <= motherDistance) {
+      const amount = zombieHit.headshot ? pellet.headDamage : pellet.damage
       const killed = horde.damage(zombieHit.zombie, {
-        amount: zombieHit.headshot ? 6 : 2,
-        direction: shotDirection,
-        force: zombieHit.headshot ? 4.2 : 2.8,
+        amount,
+        direction,
+        force: pellet.headDamage > 3 ? 4.4 : 2.4,
       })
       audio.hit()
-      cameraShakeEndsAt = performance.now() + (zombieHit.headshot ? 160 : 90)
+      cameraShakeEndsAt = performance.now() + (zombieHit.headshot ? 140 : 70)
       if (killed) {
         const payout = scoreSystem.addKill({
           headshot: zombieHit.headshot,
           payout: zombieHit.zombie.stats.cash,
           points: zombieHit.zombie.stats.points,
         })
-        ammoReserve += zombieHit.zombie.type === 'brute' ? 8 : 4
+        arsenal.addBullets(arsenal.currentId === 'grenade' ? 'revolver' : arsenal.currentId, zombieHit.zombie.type === 'brute' ? 8 : 4)
         showReward(`${zombieHit.headshot ? 'HEADSHOT' : 'Kill'} +${payout.gained}`)
-        updateStunHud()
       }
-    } else if (motherHit && motherDistance < 30) {
+      return
+    }
+    if (motherHit && motherDistance < 30) {
       damageMother(performance.now())
-      cameraShakeEndsAt = performance.now() + 180
+      cameraShakeEndsAt = performance.now() + 160
+    }
+  }
+
+  function fireStunBlaster() {
+    if (playerCaught || hiding.isHidden || !isGameplayActive()) return
+    const shot = arsenal.tap(performance.now())
+    if (!shot) return
+    if (shot.empty) {
+      audio.dryFire()
+      if (arsenal.reserve > 0) startReload()
+      return
+    }
+    if (shot.grenade) {
+      camera.getWorldDirection(shotDirection)
+      thrownGrenades.throw(camera.position, shotDirection)
+      audio.slam()
+      updateStunHud()
+      return
+    }
+    gunKick = 1
+    audio.gunshot()
+    camera.getWorldDirection(shotDirection)
+    const base = shotDirection.clone()
+    for (const pellet of shot.pellets) {
+      const direction = base.clone()
+      direction.x += pellet.spread
+      direction.y += pellet.spreadY
+      direction.normalize()
+      resolveShot(direction, pellet)
     }
     motherHeardShot(performance.now())
     updateStunHud()
@@ -592,9 +608,6 @@ export async function bootGame(reportProgress = () => {}) {
   }
 
   function resetStunBlaster() {
-    ammoInGun = startingAmmo
-    ammoReserve = startingReserve
-    reloadingUntil = 0
     gunKick = 0
     hunterFrozenUntil = 0
     mother.stunLight.intensity = 0
@@ -606,6 +619,9 @@ export async function bootGame(reportProgress = () => {}) {
     rushAfterStagger = false
     ghost.visible = true
     ammoPickups.reset()
+    weaponPickups.reset()
+    thrownGrenades.reset()
+    arsenal.reset()
     updateStunHud()
   }
 
@@ -1161,12 +1177,47 @@ export async function bootGame(reportProgress = () => {}) {
     finishReload(time)
     const gainedAmmo = ammoPickups.update(camera.position, time, isGameplayActive())
     if (gainedAmmo > 0) {
-      ammoReserve += gainedAmmo
+      arsenal.addBullets(arsenal.currentId === 'grenade' ? 'revolver' : arsenal.currentId, gainedAmmo)
       audio.pickup()
       showReward(`+${gainedAmmo} bullets`)
       updateStunHud()
     }
-    gunKick = weapon.update(time, delta)
+    for (const found of weaponPickups.update(camera.position, time, isGameplayActive())) {
+      arsenal.grant(found)
+      audio.pickup()
+      showReward(found === 'grenade' ? 'Grenades' : found === 'smg' ? 'SMG' : 'Shotgun')
+      updateStunHud()
+    }
+    const autoShot = arsenal.holdFire(time)
+    if (autoShot?.pellets) {
+      audio.gunshot()
+      camera.getWorldDirection(shotDirection)
+      const base = shotDirection.clone()
+      for (const pellet of autoShot.pellets) {
+        const direction = base.clone()
+        direction.x += pellet.spread
+        direction.y += pellet.spreadY
+        direction.normalize()
+        resolveShot(direction, pellet)
+      }
+      motherHeardShot(time)
+      updateStunHud()
+    }
+    const blast = thrownGrenades.update(delta, time)
+    if (blast) {
+      audio.slam()
+      cameraShakeEndsAt = time + 320
+      for (const zombie of horde.blast(blast, 4.4)) {
+        scoreSystem.addKill({
+          payout: zombie.stats.cash,
+          points: zombie.stats.points,
+        })
+      }
+      const motherDistance = Math.hypot(blast.x - ghost.position.x, blast.z - ghost.position.z)
+      if (motherDistance < 4.4 && ghost.visible) damageMother(time)
+      showReward('Boom')
+    }
+    gunKick = arsenal.update(time, delta)
     updateHunterEffects(time)
     updateHunterStun(time)
 
@@ -1234,10 +1285,30 @@ export async function bootGame(reportProgress = () => {}) {
     performInteraction()
   }
   if (event.code === 'KeyR' && !event.repeat) startReload()
-    if (event.code === 'Digit1' && !event.repeat && !playerCaught) whisper('behind you')
-    if (event.code === 'Digit2' && !event.repeat) flickerLights()
-    if (event.code === 'Digit3' && !event.repeat && !playerCaught) slamDoor()
-    if (event.code === 'Digit4' && !event.repeat && !playerCaught) rushGhost()
+    if (event.code === 'Digit1' && !event.repeat) {
+      if (isGameplayActive()) arsenal.switchTo('revolver')
+      else whisper('behind you')
+      updateStunHud()
+    }
+    if (event.code === 'Digit2' && !event.repeat) {
+      if (isGameplayActive()) arsenal.switchTo('shotgun')
+      else flickerLights()
+      updateStunHud()
+    }
+    if (event.code === 'Digit3' && !event.repeat) {
+      if (isGameplayActive()) arsenal.switchTo('smg')
+      else if (!playerCaught) slamDoor()
+      updateStunHud()
+    }
+    if (event.code === 'Digit4' && !event.repeat) {
+      if (isGameplayActive()) arsenal.switchTo('grenade')
+      else if (!playerCaught) rushGhost()
+      updateStunHud()
+    }
+    if (event.code === 'KeyG' && !event.repeat && isGameplayActive()) {
+      arsenal.switchTo('grenade')
+      fireStunBlaster()
+    }
     if (isGameplayActive()) pressedKeys.add(event.code)
   })
   window.addEventListener('keyup', (event) => pressedKeys.delete(event.code))
@@ -1378,7 +1449,12 @@ export async function bootGame(reportProgress = () => {}) {
   })
 
   document.addEventListener('mousedown', (event) => {
-    if (event.button === 0 && !usesTouchControls) fireStunBlaster()
+    if (event.button !== 0 || usesTouchControls) return
+    arsenal.setTrigger(true)
+    fireStunBlaster()
+  })
+  document.addEventListener('mouseup', (event) => {
+    if (event.button === 0) arsenal.setTrigger(false)
   })
 
   window.addEventListener('resize', () => {
