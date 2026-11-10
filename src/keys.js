@@ -43,39 +43,91 @@ function pick(values) {
   return values[Math.floor(Math.random() * values.length)]
 }
 
-function createKeyMesh(material) {
-  const group = new THREE.Group()
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.055, 8, 16), material)
-  ring.rotation.y = Math.PI / 2
-  ring.position.y = 0.26
-  group.add(ring)
+const KEY_DESIGNS = [
+  { color: 0xd7a441, emissive: 0x6a3a08, gem: 0xffe1a3, name: 'brass' },
+  { color: 0x8d9298, emissive: 0x1c242c, gem: 0xd5dde6, name: 'iron' },
+  { color: 0xe6d7c4, emissive: 0x4a3a2c, gem: 0xfff4e4, name: 'bone' },
+  { color: 0x8fd6e8, emissive: 0x14607a, gem: 0xe9fbff, name: 'glass' },
+  { color: 0x2a2e36, emissive: 0x3a1018, gem: 0xff3b3b, name: 'blackened' },
+]
 
-  const shaft = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.52, 0.08), material)
-  shaft.position.y = -0.05
-  group.add(shaft)
-  for (const [x, y] of [[0.1, -0.22], [-0.08, -0.33]]) {
-    const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.07, 0.08), material)
-    tooth.position.set(x, y, 0)
-    group.add(tooth)
+function createKeyMesh(design) {
+  const group = new THREE.Group()
+  const metal = new THREE.MeshStandardMaterial({
+    color: design.color,
+    emissive: design.emissive,
+    emissiveIntensity: 0.9,
+    metalness: design.name === 'bone' ? 0.05 : 0.82,
+    roughness: design.name === 'bone' ? 0.72 : 0.28,
+  })
+  const gemMaterial = new THREE.MeshStandardMaterial({
+    color: design.gem,
+    emissive: design.gem,
+    emissiveIntensity: 1.6,
+    roughness: 0.2,
+  })
+
+  if (design.name === 'iron') {
+    const bow = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.36, 0.06), metal)
+    bow.position.y = 0.32
+    group.add(bow)
+    const hole = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.16, 0.07), new THREE.MeshBasicMaterial({ color: 0x050505 }))
+    hole.position.y = 0.32
+    group.add(hole)
+  } else if (design.name === 'bone') {
+    const bow = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), metal)
+    bow.scale.set(1, 1.35, 0.55)
+    bow.position.y = 0.3
+    group.add(bow)
+  } else if (design.name === 'glass') {
+    const bow = new THREE.Mesh(new THREE.OctahedronGeometry(0.18, 0), metal)
+    bow.position.y = 0.32
+    group.add(bow)
+  } else {
+    const bow = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.045, 8, 14), metal)
+    bow.position.y = 0.3
+    group.add(bow)
   }
 
-  const glow = new THREE.PointLight(0xffcb62, 3.5, 3, 2)
+  const shaft = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.5, 0.07), metal)
+  shaft.position.y = -0.02
+  group.add(shaft)
+  const toothCount = design.name === 'blackened' ? 3 : 2
+  for (let index = 0; index < toothCount; index += 1) {
+    const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.05, 0.06), metal)
+    tooth.position.set(index % 2 === 0 ? 0.08 : -0.07, -0.18 - index * 0.08, 0)
+    group.add(tooth)
+  }
+  const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.06, 0), gemMaterial)
+  gem.position.y = 0.3
+  group.add(gem)
+
+  const moteMaterial = new THREE.MeshBasicMaterial({ color: design.gem, transparent: true, opacity: 0.85 })
+  const motes = []
+  for (let index = 0; index < 5; index += 1) {
+    const mote = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 4), moteMaterial)
+    group.add(mote)
+    motes.push(mote)
+  }
+  const glow = new THREE.PointLight(design.gem, 0, 2.4, 2)
   group.add(glow)
+  group.userData.glow = glow
+  group.userData.motes = motes
   return group
 }
 
 export function createKeySystem({ audio, hudCount, hudPips, onEscape, onPickup, parent, prompt }) {
-  const material = new THREE.MeshStandardMaterial({
-    color: 0xc99c45,
-    emissive: 0x5a3210,
-    emissiveIntensity: 1.2,
-    metalness: 0.8,
-    roughness: 0.28,
-  })
-  const keys = Array.from({ length: 5 }, () => {
-    const mesh = createKeyMesh(material)
+  const keys = KEY_DESIGNS.map((design) => {
+    const mesh = createKeyMesh(design)
     parent.add(mesh)
-    return { baseY: FLOOR_Y + 0.7, collected: false, mesh, phase: Math.random() * Math.PI * 2 }
+    return {
+      baseY: FLOOR_Y + 0.7,
+      collected: false,
+      collecting: false,
+      collectStarted: 0,
+      mesh,
+      phase: Math.random() * Math.PI * 2,
+    }
   })
   let collectedCount = 0
   let canEscape = false
@@ -97,8 +149,11 @@ export function createKeySystem({ audio, hudCount, hudPips, onEscape, onPickup, 
       key.baseY = y
       key.mesh.position.set(x, key.baseY, z)
       key.mesh.visible = index === 0
+      key.mesh.scale.setScalar(1)
       key.collected = false
+      key.collecting = false
       key.phase = Math.random() * Math.PI * 2
+      key.mesh.userData.glow.intensity = index === 0 ? 2.2 : 0
     })
     updateHud()
   }
@@ -108,10 +163,29 @@ export function createKeySystem({ audio, hudCount, hudPips, onEscape, onPickup, 
     if (!active) return
 
     for (const key of keys) {
-      if (key.collected || !key.mesh.visible) continue
+      if (key.collected && !key.collecting) continue
+      if (!key.mesh.visible && !key.collecting) continue
       key.mesh.rotation.y = time * 0.0014 + key.phase
-      key.mesh.position.y = key.baseY + Math.sin(time * 0.0025 + key.phase) * 0.12
+      key.mesh.userData.motes.forEach((mote, index) => {
+        const angle = time * 0.003 + key.phase + index * 1.25
+        const radius = 0.28 + (index % 2) * 0.08
+        mote.position.set(Math.cos(angle) * radius, 0.15 + Math.sin(angle * 1.3) * 0.12, Math.sin(angle) * radius)
+      })
 
+      if (key.collecting) {
+        const progress = Math.min((time - key.collectStarted) / 420, 1)
+        key.mesh.position.y = key.baseY + progress * 1.1
+        key.mesh.scale.setScalar(1 + progress * 0.8)
+        key.mesh.userData.glow.intensity = 2.2 * (1 - progress)
+        if (progress >= 1) {
+          key.collecting = false
+          key.mesh.visible = false
+          key.mesh.userData.glow.intensity = 0
+        }
+        continue
+      }
+
+      key.mesh.position.y = key.baseY + Math.sin(time * 0.0025 + key.phase) * 0.12
       const distanceToKey = Math.hypot(
         key.mesh.position.x - playerPosition.x,
         key.mesh.position.y - playerPosition.y,
@@ -119,9 +193,14 @@ export function createKeySystem({ audio, hudCount, hudPips, onEscape, onPickup, 
       )
       if (distanceToKey <= 1.55) {
         key.collected = true
-        key.mesh.visible = false
+        key.collecting = true
+        key.collectStarted = time
         collectedCount += 1
-        if (collectedCount < keys.length) keys[collectedCount].mesh.visible = true
+        if (collectedCount < keys.length) {
+          const nextKey = keys[collectedCount]
+          nextKey.mesh.visible = true
+          nextKey.mesh.userData.glow.intensity = 2.2
+        }
         audio.pickup()
         updateHud()
         onPickup(collectedCount, keys.length)
