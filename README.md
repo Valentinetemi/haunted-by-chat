@@ -2,7 +2,7 @@
 
 ![Haunted by Chat cover artwork](public/assets/haunted-by-chat-cover.jpg)
 
-A replayable first-person browser horror game spanning a haunted house, moonlit graveyard courtyard, underground crypt, and fractured mirror realm. The house now includes a study, pantry, nursery, guest bathroom, and a cellar washroom. Follow a randomized trail of five keys while Mother hunts you. A revolver can stagger her, and enough hits drive her off — she always comes back angrier.
+A replayable first-person browser horror game spanning a haunted house, moonlit graveyard courtyard, underground crypt, and fractured mirror realm. Zombie waves hit within seconds. Short missions pay cash on the spot. Mother is still the boss, and five keys are still the way out.
 
 The game is single-player by default. Twitch chat controls are available only when you explicitly choose **Streamer mode**.
 
@@ -13,7 +13,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173/` and choose **Play**.
+Open `http://localhost:5173/` and choose **Play**, pick a survivor, then **Deploy**.
 
 For Streamer mode, add a Twitch channel to the URL and choose **Streamer mode** on the title screen:
 
@@ -25,19 +25,18 @@ The Twitch connection is anonymous and read-only. It does not use OAuth or requi
 
 ## Goal and controls
 
-- Find five keys, then return to the front door and press `E` to escape.
-- Keys progressively unseal the courtyard, crypt, and mirror realm. Each key is large, brightly lit, and floats in the open. The NEXT display names the room, a compass arrow at the top of the screen points toward the key, and a ping grows louder as you get close.
-- Use `WASD` to move and the mouse to look.
-- Hold `Shift` to sprint while stamina lasts.
-- Left-click to fire the revolver. `R` reloads. A run starts with six bullets loaded and 24 bullets in reserve (30 bullets). Eight ammo boxes, each with four more bullets, are scattered through the house and the other realms.
-- A hit staggers Mother briefly and she investigates the shot. She takes 18 hits to drive off the first time, and the breather is short. She returns faster, with 8 more health each time, so the extra ammunition does not make her trivial.
-- Press `E` near a hiding spot to hide or leave. New spots include the study desk, the pantry, the crib, the guest-bath curtain, and the cellar tub. Mother searches her last sighting, then patrols away while you remain concealed. A gunshot in a hiding spot can still give you away if she is close.
-- Climb the staircase inside the living room to explore the upstairs Widow's Room. The study opens off the living room, the pantry off the kitchen, the nursery off the child's room, the guest bathroom off the main bath, and the cellar washroom off the basement.
-- Press `Esc` to release the pointer and pause the timer.
+- Find five keys, then return to the front door and press `E` to escape. Keys stay large and lit. A compass points at the active one.
+- Waves of zombies (walkers, runners, crawlers, and a brute) hunt you. Headshots pay more. Kills build a streak.
+- You have health. Zombies bite it down. Mother still ends the run if she reaches you.
+- `1` revolver, `2` shotgun, `3` SMG, `4` or `G` grenade. Click fires. `R` reloads. The revolver starts with six bullets loaded and 24 in reserve. Kills and boxes add more bullets. Shotgun, SMG, and grenades can be found in the house.
+- Cash from kills and missions is banked at the end of the run. Spend it on the menu to unlock the shotgun, the SMG, and the survivors Ash and Nico.
+- Survivors: Vale is balanced, Rook reloads faster, June has more health, Ash carries more grenades, Nico moves faster. The choice is saved in `localStorage`.
+- Missions pop up during the run (drop zombies, reach a room, survive the cellar) and pay cash, score, bullets, and health immediately.
+- Press `E` near a hiding spot to hide or leave. Hiding still breaks Mother's sight. A close gunshot can give you away.
+- Press `Esc` to release the pointer and pause. **Play again** restarts immediately. **Change survivor** returns to the picker.
+- The best score and best escape time are saved in `localStorage`.
 
-On a phone, rotate to landscape. Drag anywhere in the lower-left movement zone to place the dynamic joystick, swipe the right side to look, and use the on-screen RUN, USE, FIRE, and RELOAD controls.
-
-Each run randomizes key locations, ammo caches, Mother's spawn, and scare timing. Bathrooms can run water or hide a shape behind the curtain. The nursery mobile can spin. Lights in the current room can die. Collecting keys raises the tension: Mother becomes faster and dangerous scares become more frequent. The best escape time is saved in `localStorage`.
+On a phone, rotate to landscape. Drag the left side to move, the right side to look, and use RUN, FIRE, GUN, NADE, RELOAD, and USE.
 
 ## Streamer commands
 
@@ -47,8 +46,10 @@ Each run randomizes key locations, ammo caches, Mother's spawn, and scare timing
 | `w` or `!whisper` | Whisper “behind you” |
 | `s` or `!slam` | Slam a nearby door |
 | `c` or `!hunt` | Make Mother rush the player |
+| `z` or `!zombie` | Spawn zombies near the player |
+| `!horde` | Call an extra wave |
 
-Autonomous scares remain active in Streamer mode, so the game never depends on chat activity.
+Autonomous scares and zombie waves remain active in Streamer mode, so the game never depends on chat activity.
 
 ## Production build
 
