@@ -29,6 +29,14 @@
   </head>
   <body>
     <div id="app"></div>
+    <div id="loading-screen" role="status" aria-live="polite">
+      <div class="menu-card">
+        <p class="eyebrow">A house that remembers</p>
+        <h1 data-text="Haunted by Chat">Haunted by Chat</h1>
+        <p id="load-status">The lock is turning…</p>
+        <div id="load-bar" aria-hidden="true"><i id="load-bar-fill"></i></div>
+      </div>
+    </div>
     <div id="film-grain" aria-hidden="true"></div>
     <div id="aim-reticle" aria-hidden="true"><i></i></div>
     <section id="start-screen" aria-labelledby="game-title">
