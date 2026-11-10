@@ -342,6 +342,7 @@ export function createArsenal(camera) {
       carried.smg = owned.smg
       currentId = 'revolver'
       grenades = owned.grenade ? grenadeStock : 0
+      nextShotAt = 0
       for (const [id, definition] of Object.entries(DEFINITIONS)) {
         state[id].loaded = owned[id] ? definition.magSize : 0
         state[id].reserve = owned[id] ? definition.reserve : 0
