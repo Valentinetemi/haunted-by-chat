@@ -30,6 +30,7 @@ import {
   furnishAttic,
   furnishBasement,
   furnishEntrance,
+  furnishGuestBathroom,
   furnishKitchen,
   furnishKidsBedroom,
   furnishLivingRoom,
@@ -102,6 +103,7 @@ export async function bootGame(reportProgress = () => {}) {
   furnishLivingRoom(house.group)
   furnishKitchen(house.group)
   const bathroomProps = furnishBathroom(house.group)
+  const guestBath = furnishGuestBathroom(house.group)
   furnishKidsBedroom(house.group)
   furnishBasement(house.group)
   furnishAttic(house.group)
@@ -853,6 +855,7 @@ export async function bootGame(reportProgress = () => {}) {
     whisperMessage.classList.remove('is-visible')
     for (const door of house.doors) door.hinge.rotation.y = door.openRotation
     bathroomProps.reset()
+    guestBath.reset()
     hiding.reset()
     keySystem.reset()
     updateObjective(0)
@@ -894,6 +897,7 @@ export async function bootGame(reportProgress = () => {}) {
     blackPuddles.update(time)
     updateDoorSlam(time)
     if (bathroomProps.update(camera.position, time, isGameplayActive())) audio.mirror()
+    if (guestBath.update(camera.position, time, isGameplayActive())) audio.mirror()
     hiding.update(
       isGameplayActive(),
     )

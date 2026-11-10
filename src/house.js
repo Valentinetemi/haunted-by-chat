@@ -83,6 +83,16 @@ export const ROOM_DEFINITIONS = [
     intensity: 17,
   },
   {
+    id: 'guest-bath',
+    name: 'Guest Bathroom',
+    bounds: { minX: -22, maxX: -12, minZ: -8, maxZ: 2 },
+    center: [-17, -3],
+    size: [10, 10],
+    floor: 0x314248,
+    light: 0x9ec4d2,
+    intensity: 18,
+  },
+  {
     id: 'nursery',
     name: 'Nursery',
     bounds: { minX: 12, maxX: 22, minZ: -12, maxZ: -2 },
@@ -122,6 +132,7 @@ export const HUNTER_SPAWNS = [
   new THREE.Vector3(-17, FLOOR_Y + 0.08, 6.4),
   new THREE.Vector3(15.2, FLOOR_Y + 0.08, 8.1),
   new THREE.Vector3(17.4, FLOOR_Y + 0.08, -7.2),
+  new THREE.Vector3(-17.2, FLOOR_Y + 0.08, -4.6),
 ]
 
 const doorFrameMaterial = new THREE.MeshStandardMaterial({ color: 0x17110e, roughness: 0.92 })
@@ -253,6 +264,14 @@ function addPantry(group, doors, wallMaterial) {
   doors.push(createRoomDoor(group, 'pantry', 12, 8, 1))
   addWalkableRegion({ minX: 12.38, maxX: 17.62, minZ: 6.38, maxZ: 9.62 })
   addWalkableRegion({ minX: 11.5, maxX: 12.7, minZ: 7.15, maxZ: 8.85 })
+}
+
+function addGuestBath(group, doors, wallMaterial) {
+  addSegmentedWallX(group, -22, -8, 2, [], wallMaterial)
+  addSegmentedWallZ(group, -8, -22, -12, [], wallMaterial)
+  doors.push(createRoomDoor(group, 'guest-bath', -12, -4.5, -1))
+  addWalkableRegion({ minX: -21.62, maxX: -12.38, minZ: -7.62, maxZ: 1.62 })
+  addWalkableRegion({ minX: -12.7, maxX: -11.5, minZ: -5.35, maxZ: -3.65 })
 }
 
 function addStudy(group, doors, wallMaterial) {
@@ -441,8 +460,9 @@ export function createHauntedHouse(scene) {
 
   addSegmentedWallZ(group, 10, -12, 12, [[-1.3, 1.3]], wallMaterial)
   addSegmentedWallZ(group, -23, -12, 12, [], wallMaterial)
-  addSegmentedWallX(group, -12, -23, 10, [[5.65, 7.35]], wallMaterial)
+  addSegmentedWallX(group, -12, -23, 10, [[-5.35, -3.65], [5.65, 7.35]], wallMaterial)
   addStudy(group, doors, wallMaterial)
+  addGuestBath(group, doors, wallMaterial)
   addSegmentedWallX(group, 12, -23, 10, [[-7.85, -6.15], [7.15, 8.85]], wallMaterial)
   addPantry(group, doors, wallMaterial)
   addNursery(group, doors, wallMaterial)
