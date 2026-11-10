@@ -648,7 +648,10 @@ export async function bootGame(reportProgress = () => {}) {
         arsenal.addBullets(arsenal.currentId === 'grenade' ? 'revolver' : arsenal.currentId, zombieHit.zombie.type === 'brute' ? 8 : 4)
         if (zombieHit.zombie.type === 'brute') brutesDropped += 1
         pushKillFeed(`${zombieHit.headshot ? 'Headshot' : 'Dropped'} ${zombieHit.zombie.type}`)
-        if (payout.streak === 5 || payout.streak === 10) shoutLevel(`Streak x${payout.streak}`)
+        if (payout.streak === 5 || payout.streak === 10) {
+          scoreSystem.addCash(payout.streak * 4)
+          shoutLevel(`Streak x${payout.streak}`)
+        }
         showReward(`${zombieHit.headshot ? 'HEADSHOT' : 'Kill'} +${payout.gained}`)
       }
       return
