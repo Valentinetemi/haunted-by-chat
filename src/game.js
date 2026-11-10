@@ -324,9 +324,9 @@ export async function bootGame(reportProgress = () => {}) {
     arsenal.setHand(active.hand)
     arsenal.setReloadScale(active.reload)
     arsenal.setGrenadeStock(active.grenades)
+    if (unlocks.shotgun) arsenal.unlock('shotgun')
+    if (unlocks.smg) arsenal.unlock('smg')
     arsenal.reset()
-    if (unlocks.shotgun) arsenal.grant('shotgun')
-    if (unlocks.smg) arsenal.grant('smg')
     updateStunHud()
   }
 
