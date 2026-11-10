@@ -29,7 +29,7 @@ The Twitch connection is anonymous and read-only. It does not use OAuth or requi
 - Keys progressively unseal the courtyard, crypt, and mirror realm. Each key is large, brightly lit, and floats in the open. The NEXT display names the room, a compass arrow at the top of the screen points toward the key, and a ping grows louder as you get close.
 - Use `WASD` to move and the mouse to look.
 - Hold `Shift` to sprint while stamina lasts.
-- Left-click to fire the revolver. `R` reloads. A run starts with a full six-round cylinder and 24 rounds in reserve (30 shots). Eight ammo boxes, each with four more rounds, are scattered through the house and the other realms.
+- Left-click to fire the revolver. `R` reloads. A run starts with six bullets loaded and 24 bullets in reserve (30 bullets). Eight ammo boxes, each with four more bullets, are scattered through the house and the other realms.
 - A hit staggers Mother briefly and she investigates the shot. She takes 18 hits to drive off the first time, and the breather is short. She returns faster, with 8 more health each time, so the extra ammunition does not make her trivial.
 - Press `E` near a hiding spot to hide or leave. New spots include the study desk, the pantry, the crib, the guest-bath curtain, and the cellar tub. Mother searches her last sighting, then patrols away while you remain concealed. A gunshot in a hiding spot can still give you away if she is close.
 - Climb the staircase inside the living room to explore the upstairs Widow's Room. The study opens off the living room, the pantry off the kitchen, the nursery off the child's room, the guest bathroom off the main bath, and the cellar washroom off the basement.
