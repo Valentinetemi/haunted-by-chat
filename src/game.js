@@ -378,7 +378,8 @@ export async function bootGame(reportProgress = () => {}) {
   const motherDrips = createMotherDrips(scene)
   const hunterVisual = mother.group
   const magazineSize = 6
-  const startingAmmo = 5
+  const startingAmmo = 6
+  const startingReserve = 24
   const reloadDuration = 1400
   const weapon = createWeapon(camera)
   const ammoPickups = createAmmoPickups(house.group)
@@ -389,7 +390,7 @@ export async function bootGame(reportProgress = () => {}) {
   const shotRay = new THREE.Ray()
   const shotHitPoint = new THREE.Vector3()
   let ammoInGun = startingAmmo
-  let ammoReserve = 0
+  let ammoReserve = startingReserve
   let reloadingUntil = 0
   let gunKick = 0
   let hunterFrozenUntil = 0
@@ -530,7 +531,7 @@ export async function bootGame(reportProgress = () => {}) {
 
   function resetStunBlaster() {
     ammoInGun = startingAmmo
-    ammoReserve = 0
+    ammoReserve = startingReserve
     reloadingUntil = 0
     gunKick = 0
     hunterFrozenUntil = 0

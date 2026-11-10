@@ -121,7 +121,7 @@ export function createAmmoPickups(parent) {
     metalness: 0.4,
     roughness: 0.45,
   })
-  const pickups = Array.from({ length: 6 }, () => {
+  const pickups = Array.from({ length: 8 }, () => {
     const mesh = new THREE.Group()
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.1, 0.14), boxMaterial)
     const band = new THREE.Mesh(new THREE.BoxGeometry(0.23, 0.03, 0.15), stripe)
@@ -157,7 +157,7 @@ export function createAmmoPickups(parent) {
       if (distance < 1.25 && Math.abs(pickup.mesh.position.y - playerPosition.y) < 2.2) {
         pickup.taken = true
         pickup.mesh.visible = false
-        gained += 2
+        gained += 4
       }
     }
     return gained
