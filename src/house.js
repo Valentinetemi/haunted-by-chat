@@ -444,15 +444,34 @@ export function getRoomAt(position) {
   )
 }
 
-const DOORWAY_Z_CENTERS = [4, -7, -17.5]
-const PLAYER_WALL_CLEARANCE = 0.32
+const WALKABLE_REGIONS = [
+  { minX: -3.68, maxX: 3.68, minZ: -22.62, maxZ: 9.58 },
+  { minX: -11.62, maxX: -4.32, minZ: -1.68, maxZ: 9.58 },
+  { minX: -11.62, maxX: -4.32, minZ: -11.68, maxZ: -2.32 },
+  { minX: -11.62, maxX: -4.32, minZ: -22.62, maxZ: -12.32 },
+  { minX: 4.32, maxX: 11.62, minZ: -1.68, maxZ: 9.58 },
+  { minX: 4.32, maxX: 11.62, minZ: -11.68, maxZ: -2.32 },
+  { minX: 4.32, maxX: 11.62, minZ: -22.62, maxZ: -12.32 },
+  { minX: -4.55, maxX: -3.45, minZ: 2.98, maxZ: 5.02 },
+  { minX: 3.45, maxX: 4.55, minZ: 2.98, maxZ: 5.02 },
+  { minX: -4.55, maxX: -3.45, minZ: -8.02, maxZ: -5.98 },
+  { minX: 3.45, maxX: 4.55, minZ: -8.02, maxZ: -5.98 },
+  { minX: -4.55, maxX: -3.45, minZ: -18.52, maxZ: -16.48 },
+  { minX: 3.45, maxX: 4.55, minZ: -18.52, maxZ: -16.48 },
+]
+
+export function addWalkableRegion(region) {
+  WALKABLE_REGIONS.push(region)
+}
+
+function isWalkable(x, z) {
+  return WALKABLE_REGIONS.some(
+    (region) => x >= region.minX && x <= region.maxX && z >= region.minZ && z <= region.maxZ,
+  )
+}
 
 function crossesBoundary(start, end, boundary) {
   return (start < boundary && end >= boundary) || (start > boundary && end <= boundary)
-}
-
-function isInsideDoorway(z) {
-  return DOORWAY_Z_CENTERS.some((center) => Math.abs(z - center) < 1.02)
 }
 
 export function movePlayerWithinHouse(position, displacement) {
@@ -496,29 +515,9 @@ export function movePlayerWithinHouse(position, displacement) {
     return
   }
 
-  let nextX = THREE.MathUtils.clamp(position.x + displacement.x, -11.62, 11.62)
-  let nextZ = THREE.MathUtils.clamp(position.z + displacement.z, -22.62, 9.58)
-
-  for (const wallX of [-4, 4]) {
-    if (crossesBoundary(position.x, nextX, wallX) && !isInsideDoorway(nextZ)) {
-      nextX =
-        position.x < wallX
-          ? wallX - PLAYER_WALL_CLEARANCE
-          : wallX + PLAYER_WALL_CLEARANCE
-    }
-  }
-
-  for (const wallZ of [-12, -2]) {
-    const isInsideSideRooms = Math.abs(nextX) > 4 + PLAYER_WALL_CLEARANCE
-    if (isInsideSideRooms && crossesBoundary(position.z, nextZ, wallZ)) {
-      nextZ =
-        position.z < wallZ
-          ? wallZ - PLAYER_WALL_CLEARANCE
-          : wallZ + PLAYER_WALL_CLEARANCE
-    }
-  }
-
-  position.x = nextX
-  position.z = nextZ
+  const nextX = position.x + displacement.x
+  if (isWalkable(nextX, position.z)) position.x = nextX
+  const nextZ = position.z + displacement.z
+  if (isWalkable(position.x, nextZ)) position.z = nextZ
   position.y = 0
 }
