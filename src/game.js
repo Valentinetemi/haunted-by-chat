@@ -627,14 +627,33 @@ export async function bootGame(reportProgress = () => {}) {
     if (arsenal.finishReload(time)) updateStunHud()
   }
 
+  const coverRaycaster = new THREE.Raycaster()
+
+  function coverDistance(direction) {
+    coverRaycaster.set(camera.position, direction)
+    coverRaycaster.far = 32
+    let nearest = Infinity
+    for (const root of [house.group, hauntedPlaces.group]) {
+      const hits = coverRaycaster.intersectObject(root, true)
+      for (const hit of hits) {
+        if (!hit.object.visible || hit.object.name === 'breakable') continue
+        if (hit.point.y <= -1.25 || hit.distance < 0.35) continue
+        nearest = Math.min(nearest, hit.distance)
+        break
+      }
+    }
+    return nearest
+  }
+
   function resolveShot(direction, pellet) {
     shotRay.set(camera.position, direction)
     hunterHitCenter.set(ghost.position.x, ghost.position.y + 1.2, ghost.position.z)
     hunterHitBox.setFromCenterAndSize(hunterHitCenter, hunterHitSize)
+    const cover = coverDistance(direction)
     const motherHit = shotRay.intersectBox(hunterHitBox, shotHitPoint)
     const motherDistance = motherHit && ghost.visible ? motherHit.distanceTo(camera.position) : Infinity
     const zombieHit = horde.rayHit(shotRay)
-    if (zombieHit && zombieHit.distance < 30 && zombieHit.distance <= motherDistance) {
+    if (zombieHit && zombieHit.distance < 30 && zombieHit.distance < cover && zombieHit.distance <= motherDistance) {
       const amount = zombieHit.headshot ? pellet.headDamage : pellet.damage
       const killed = horde.damage(zombieHit.zombie, {
         amount,
@@ -661,7 +680,7 @@ export async function bootGame(reportProgress = () => {}) {
       }
       return
     }
-    if (motherHit && motherDistance < 30) {
+    if (motherHit && motherDistance < 30 && motherDistance < cover) {
       damageMother(performance.now())
       cameraShakeEndsAt = performance.now() + 160
     }
