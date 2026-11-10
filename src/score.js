@@ -33,7 +33,7 @@ export function createScoreSystem({ cashDisplay, scoreDisplay, streakDisplay }) 
 
   const paint = () => {
     if (scoreDisplay) scoreDisplay.textContent = String(score)
-    if (cashDisplay) cashDisplay.textContent = String(bank)
+    if (cashDisplay) cashDisplay.textContent = String(bank + runCash)
     if (streakDisplay) {
       streakDisplay.hidden = streak < 2
       streakDisplay.textContent = `x${streak}`
