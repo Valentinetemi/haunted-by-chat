@@ -1429,8 +1429,8 @@ export async function bootGame(reportProgress = () => {}) {
       motherHeardShot(time)
       updateStunHud()
     }
-    const blast = thrownGrenades.update(delta, time)
-    if (blast) {
+    const blasts = thrownGrenades.update(delta, time)
+    for (const blast of blasts) {
       audio.boom()
       cameraShakeEndsAt = time + 320
       for (const zombie of horde.blast(blast, 4.4)) {

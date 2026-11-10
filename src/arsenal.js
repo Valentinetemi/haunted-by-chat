@@ -406,44 +406,52 @@ export function createWeaponPickups(parent) {
 }
 
 export function createGrenades(scene) {
-  const mesh = new THREE.Mesh(
-    new THREE.SphereGeometry(0.12, 8, 6),
-    new THREE.MeshStandardMaterial({ color: 0x3d6a32, roughness: 0.5 }),
-  )
-  mesh.visible = false
-  mesh.castShadow = false
-  scene.add(mesh)
-  const velocity = new THREE.Vector3()
-  let live = false
-  let explodeAt = 0
+  const material = new THREE.MeshStandardMaterial({ color: 0x3d6a32, roughness: 0.5 })
+  const geometry = new THREE.SphereGeometry(0.12, 8, 6)
+  const grenades = Array.from({ length: 5 }, () => {
+    const mesh = new THREE.Mesh(geometry, material)
+    mesh.visible = false
+    mesh.castShadow = false
+    scene.add(mesh)
+    return { active: false, explodeAt: 0, mesh, velocity: new THREE.Vector3() }
+  })
 
   return {
     throw(origin, direction) {
-      mesh.visible = true
-      mesh.position.copy(origin)
-      velocity.copy(direction).multiplyScalar(11)
-      velocity.y += 3.2
-      live = true
-      explodeAt = performance.now() + 1100
+      const grenade = grenades.find((entry) => !entry.active)
+      if (!grenade) return false
+      grenade.mesh.visible = true
+      grenade.mesh.position.copy(origin)
+      grenade.velocity.copy(direction).multiplyScalar(11)
+      grenade.velocity.y += 3.2
+      grenade.active = true
+      grenade.explodeAt = performance.now() + 1100
+      return true
     },
     update(delta, time) {
-      if (!live) return null
-      velocity.y -= 12 * delta
-      mesh.position.addScaledVector(velocity, delta)
-      if (mesh.position.y < FLOOR_Y + 0.12) {
-        mesh.position.y = FLOOR_Y + 0.12
-        velocity.y *= -0.35
-        velocity.x *= 0.7
-        velocity.z *= 0.7
+      const blasts = []
+      for (const grenade of grenades) {
+        if (!grenade.active) continue
+        grenade.velocity.y -= 12 * delta
+        grenade.mesh.position.addScaledVector(grenade.velocity, delta)
+        if (grenade.mesh.position.y < FLOOR_Y + 0.12) {
+          grenade.mesh.position.y = FLOOR_Y + 0.12
+          grenade.velocity.y *= -0.35
+          grenade.velocity.x *= 0.7
+          grenade.velocity.z *= 0.7
+        }
+        if (time < grenade.explodeAt) continue
+        grenade.active = false
+        grenade.mesh.visible = false
+        blasts.push(grenade.mesh.position.clone())
       }
-      if (time < explodeAt) return null
-      live = false
-      mesh.visible = false
-      return mesh.position.clone()
+      return blasts
     },
     reset() {
-      live = false
-      mesh.visible = false
+      for (const grenade of grenades) {
+        grenade.active = false
+        grenade.mesh.visible = false
+      }
     },
   }
 }
