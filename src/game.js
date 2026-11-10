@@ -679,6 +679,7 @@ export async function bootGame(reportProgress = () => {}) {
       camera.getWorldDirection(shotDirection)
       thrownGrenades.throw(camera.position, shotDirection)
       audio.slam()
+      if (arsenal.grenades <= 0) showReward('Last grenade')
       updateStunHud()
       return
     }
