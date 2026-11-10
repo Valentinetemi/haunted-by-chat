@@ -1068,7 +1068,7 @@ export async function bootGame(reportProgress = () => {}) {
     if (gainedAmmo > 0) {
       ammoReserve += gainedAmmo
       audio.pickup()
-      showReward(`+${gainedAmmo} rounds`)
+      showReward(`+${gainedAmmo} bullets`)
       updateStunHud()
     }
     gunKick = weapon.update(time, delta)
