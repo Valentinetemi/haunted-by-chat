@@ -483,8 +483,28 @@ export async function bootGame(reportProgress = () => {}) {
     shotRay.set(camera.position, shotDirection)
     hunterHitCenter.set(ghost.position.x, ghost.position.y + 1.2, ghost.position.z)
     hunterHitBox.setFromCenterAndSize(hunterHitCenter, hunterHitSize)
-    const hit = shotRay.intersectBox(hunterHitBox, shotHitPoint)
-    if (hit && hit.distanceTo(camera.position) < 30 && ghost.visible) {
+    const motherHit = shotRay.intersectBox(hunterHitBox, shotHitPoint)
+    const motherDistance = motherHit && ghost.visible ? motherHit.distanceTo(camera.position) : Infinity
+    const zombieHit = horde.rayHit(shotRay)
+    if (zombieHit && zombieHit.distance < 30 && zombieHit.distance <= motherDistance) {
+      const killed = horde.damage(zombieHit.zombie, {
+        amount: zombieHit.headshot ? 6 : 2,
+        direction: shotDirection,
+        force: zombieHit.headshot ? 4.2 : 2.8,
+      })
+      audio.hit()
+      cameraShakeEndsAt = performance.now() + (zombieHit.headshot ? 160 : 90)
+      if (killed) {
+        const payout = scoreSystem.addKill({
+          headshot: zombieHit.headshot,
+          payout: zombieHit.zombie.stats.cash,
+          points: zombieHit.zombie.stats.points,
+        })
+        ammoReserve += zombieHit.zombie.type === 'brute' ? 8 : 4
+        showReward(`${zombieHit.headshot ? 'HEADSHOT' : 'Kill'} +${payout.gained}`)
+        updateStunHud()
+      }
+    } else if (motherHit && motherDistance < 30) {
       damageMother(performance.now())
       cameraShakeEndsAt = performance.now() + 180
     }
