@@ -11,6 +11,120 @@ const brass = new THREE.MeshStandardMaterial({
 })
 const cloth = new THREE.MeshStandardMaterial({ color: 0x3d1117, roughness: 1 })
 
+export function furnishCellarWashroom(parent) {
+  const group = new THREE.Group()
+  group.name = 'cellar-washroom-props'
+  const stained = new THREE.MeshStandardMaterial({ color: 0x6e675e, roughness: 0.92 })
+  const rust = new THREE.MeshStandardMaterial({ color: 0x6a3a28, metalness: 0.45, roughness: 0.72 })
+  const porcelain = new THREE.MeshStandardMaterial({ color: 0x8d8a82, roughness: 0.7 })
+  const curtainMaterial = new THREE.MeshStandardMaterial({
+    color: 0x8a8474,
+    roughness: 1,
+    transparent: true,
+    opacity: 0.72,
+    side: THREE.DoubleSide,
+  })
+
+  for (const z of [-21.2, -18.4, -15.2, -13.2]) {
+    addBox(group, [0.06, 1.8, 1.5], [-21.75, FLOOR_Y + 1.15, z], stained)
+  }
+  addBox(group, [2.8, 0.7, 1.3], [-19.8, FLOOR_Y + 0.4, -20.6], rust, 'cellar-tub')
+  const curtain = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2), curtainMaterial)
+  curtain.position.set(-18.6, FLOOR_Y + 1.3, -20.2)
+  curtain.userData.keepSeparate = true
+  group.add(curtain)
+  const figure = new THREE.Group()
+  figure.userData.keepSeparate = true
+  figure.visible = false
+  const silhouette = new THREE.MeshBasicMaterial({ color: 0x100806 })
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 6), silhouette)
+  head.position.y = 0.5
+  figure.add(head)
+  addBox(figure, [0.4, 1.05, 0.08], [0, -0.1, 0], silhouette)
+  figure.position.set(-20.4, FLOOR_Y + 1.25, -20.7)
+  group.add(figure)
+
+  const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.18, 0.36, 8), porcelain)
+  bowl.position.set(-14.4, FLOOR_Y + 0.24, -14.2)
+  group.add(bowl)
+  addBox(group, [1.1, 0.14, 0.5], [-16.6, FLOOR_Y + 0.95, -13.3], porcelain, 'cellar-sink')
+  const drip = new THREE.Mesh(
+    new THREE.SphereGeometry(0.035, 6, 5),
+    new THREE.MeshStandardMaterial({ color: 0x6e8e96, roughness: 0.2 }),
+  )
+  drip.position.set(-16.6, FLOOR_Y + 1.15, -13.3)
+  drip.visible = false
+  drip.userData.keepSeparate = true
+  group.add(drip)
+
+  const mirror = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.9, 1.35),
+    new THREE.MeshStandardMaterial({
+      color: 0x5c6a66,
+      emissive: 0x1a100e,
+      emissiveIntensity: 0.25,
+      metalness: 0.55,
+      roughness: 0.45,
+    }),
+  )
+  mirror.position.set(-16.6, FLOOR_Y + 2.05, -12.28)
+  mirror.rotation.y = Math.PI
+  group.add(mirror)
+  const reflection = new THREE.Group()
+  reflection.userData.keepSeparate = true
+  reflection.visible = false
+  const shadow = new THREE.MeshBasicMaterial({ color: 0x090606 })
+  const reflectedHead = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 6), shadow)
+  reflectedHead.position.y = 0.35
+  reflection.add(reflectedHead)
+  addBox(reflection, [0.46, 0.9, 0.04], [0, -0.2, 0], shadow)
+  reflection.position.set(-16.6, FLOOR_Y + 1.95, -12.4)
+  reflection.rotation.y = Math.PI
+  group.add(reflection)
+
+  let scareStartedAt = 0
+  let hasTriggered = false
+  let curtainUntil = 0
+  let waterUntil = 0
+  const update = (playerPosition, time, active) => {
+    const seesMirror = active && playerPosition.x < -14.2 && playerPosition.z > -14.2 && playerPosition.z < -12.5
+    let triggered = false
+    if (seesMirror && !hasTriggered) {
+      hasTriggered = true
+      scareStartedAt = time
+      triggered = true
+    }
+    reflection.visible = scareStartedAt > 0 && time - scareStartedAt < 1100
+    figure.visible = curtainUntil > time
+    curtain.position.x = -18.6 + (curtainUntil > time ? Math.sin(time * 0.03) * 0.06 : 0)
+    drip.visible = waterUntil > time
+    if (drip.visible) drip.position.y = FLOOR_Y + 1.2 - ((time * 0.0015) % 0.4)
+    return triggered
+  }
+  const reset = () => {
+    scareStartedAt = 0
+    hasTriggered = false
+    curtainUntil = 0
+    waterUntil = 0
+    reflection.visible = false
+    figure.visible = false
+    drip.visible = false
+  }
+
+  parent.add(group)
+  return {
+    group,
+    reset,
+    triggerCurtain: (time) => {
+      curtainUntil = time + 1500
+    },
+    triggerWater: (time) => {
+      waterUntil = time + 2400
+    },
+    update,
+  }
+}
+
 export function furnishGuestBathroom(parent) {
   const group = new THREE.Group()
   group.name = 'guest-bathroom-props'

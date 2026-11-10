@@ -83,6 +83,16 @@ export const ROOM_DEFINITIONS = [
     intensity: 17,
   },
   {
+    id: 'cellar-bath',
+    name: 'Cellar Washroom',
+    bounds: { minX: -22, maxX: -12, minZ: -23, maxZ: -12 },
+    center: [-17, -17.5],
+    size: [10, 11],
+    floor: 0x2a2826,
+    light: 0x8f5a42,
+    intensity: 10,
+  },
+  {
     id: 'guest-bath',
     name: 'Guest Bathroom',
     bounds: { minX: -22, maxX: -12, minZ: -8, maxZ: 2 },
@@ -133,6 +143,7 @@ export const HUNTER_SPAWNS = [
   new THREE.Vector3(15.2, FLOOR_Y + 0.08, 8.1),
   new THREE.Vector3(17.4, FLOOR_Y + 0.08, -7.2),
   new THREE.Vector3(-17.2, FLOOR_Y + 0.08, -4.6),
+  new THREE.Vector3(-16.8, FLOOR_Y + 0.08, -18.4),
 ]
 
 const doorFrameMaterial = new THREE.MeshStandardMaterial({ color: 0x17110e, roughness: 0.92 })
@@ -264,6 +275,15 @@ function addPantry(group, doors, wallMaterial) {
   doors.push(createRoomDoor(group, 'pantry', 12, 8, 1))
   addWalkableRegion({ minX: 12.38, maxX: 17.62, minZ: 6.38, maxZ: 9.62 })
   addWalkableRegion({ minX: 11.5, maxX: 12.7, minZ: 7.15, maxZ: 8.85 })
+}
+
+function addCellarBath(group, doors, wallMaterial) {
+  addSegmentedWallX(group, -22, -23, -12, [], wallMaterial)
+  addSegmentedWallZ(group, -23, -22, -12, [], wallMaterial)
+  addSegmentedWallZ(group, -12, -22, -12, [], wallMaterial)
+  doors.push(createRoomDoor(group, 'cellar-bath', -12, -20.5, -1))
+  addWalkableRegion({ minX: -21.62, maxX: -12.38, minZ: -22.62, maxZ: -12.38 })
+  addWalkableRegion({ minX: -12.7, maxX: -11.5, minZ: -21.35, maxZ: -19.65 })
 }
 
 function addGuestBath(group, doors, wallMaterial) {
@@ -460,9 +480,10 @@ export function createHauntedHouse(scene) {
 
   addSegmentedWallZ(group, 10, -12, 12, [[-1.3, 1.3]], wallMaterial)
   addSegmentedWallZ(group, -23, -12, 12, [], wallMaterial)
-  addSegmentedWallX(group, -12, -23, 10, [[-5.35, -3.65], [5.65, 7.35]], wallMaterial)
+  addSegmentedWallX(group, -12, -23, 10, [[-21.35, -19.65], [-5.35, -3.65], [5.65, 7.35]], wallMaterial)
   addStudy(group, doors, wallMaterial)
   addGuestBath(group, doors, wallMaterial)
+  addCellarBath(group, doors, wallMaterial)
   addSegmentedWallX(group, 12, -23, 10, [[-7.85, -6.15], [7.15, 8.85]], wallMaterial)
   addPantry(group, doors, wallMaterial)
   addNursery(group, doors, wallMaterial)

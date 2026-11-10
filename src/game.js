@@ -29,6 +29,7 @@ import {
   furnishBathroom,
   furnishAttic,
   furnishBasement,
+  furnishCellarWashroom,
   furnishEntrance,
   furnishGuestBathroom,
   furnishKitchen,
@@ -104,6 +105,7 @@ export async function bootGame(reportProgress = () => {}) {
   furnishKitchen(house.group)
   const bathroomProps = furnishBathroom(house.group)
   const guestBath = furnishGuestBathroom(house.group)
+  const cellarBath = furnishCellarWashroom(house.group)
   furnishKidsBedroom(house.group)
   furnishBasement(house.group)
   furnishAttic(house.group)
@@ -856,6 +858,7 @@ export async function bootGame(reportProgress = () => {}) {
     for (const door of house.doors) door.hinge.rotation.y = door.openRotation
     bathroomProps.reset()
     guestBath.reset()
+    cellarBath.reset()
     hiding.reset()
     keySystem.reset()
     updateObjective(0)
@@ -898,6 +901,7 @@ export async function bootGame(reportProgress = () => {}) {
     updateDoorSlam(time)
     if (bathroomProps.update(camera.position, time, isGameplayActive())) audio.mirror()
     if (guestBath.update(camera.position, time, isGameplayActive())) audio.mirror()
+    if (cellarBath.update(camera.position, time, isGameplayActive())) audio.mirror()
     hiding.update(
       isGameplayActive(),
     )
