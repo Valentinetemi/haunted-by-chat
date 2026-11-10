@@ -394,7 +394,7 @@ export async function bootGame(reportProgress = () => {}) {
   let reloadingUntil = 0
   let gunKick = 0
   let hunterFrozenUntil = 0
-  let motherHealth = 6
+  let motherHealth = 18
   let motherRage = 0
   let motherBanishedUntil = 0
   let hurtFlashUntil = 0
@@ -476,10 +476,10 @@ export async function bootGame(reportProgress = () => {}) {
   }
 
   function banishMother(time) {
-    motherBanishedUntil = time + 16000
+    motherBanishedUntil = time + 8000
     ghost.visible = false
     motherRage = Math.min(3, motherRage + 1)
-    motherHealth = 6 + motherRage * 2
+    motherHealth = 18 + motherRage * 8
     rushAfterStagger = false
     hunterFrozenUntil = 0
     audio.motherDeath()
@@ -513,7 +513,7 @@ export async function bootGame(reportProgress = () => {}) {
       banishMother(time)
       return
     }
-    hunterFrozenUntil = time + (motherRage > 0 ? 560 : 1000)
+    hunterFrozenUntil = time + (motherRage > 0 ? 340 : 620)
     hunterVisual.position.set(0, 0, 0)
     rushAfterStagger = true
     audio.stun()
@@ -537,7 +537,7 @@ export async function bootGame(reportProgress = () => {}) {
     hunterFrozenUntil = 0
     mother.stunLight.intensity = 0
     mother.skinMaterial.emissive.setHex(0x1a0c10)
-    motherHealth = 6
+    motherHealth = 18
     motherRage = 0
     motherBanishedUntil = 0
     hurtFlashUntil = 0
@@ -623,7 +623,7 @@ export async function bootGame(reportProgress = () => {}) {
         : hunterPatrolTarget
     ghostDirection.set(target.x - ghost.position.x, 0, target.z - ghost.position.z)
     if (ghostDirection.lengthSq() > 0.0001) {
-      const difficultyMultiplier = (1 + keySystem.count * 0.16) * (1 + motherRage * 0.24)
+      const difficultyMultiplier = (1 + keySystem.count * 0.16) * (1 + motherRage * 0.34)
       const awarenessMultiplier = hunterState === 'chase' ? 1 : hunterState === 'search' ? 0.82 : 1.05
       const speedMultiplier =
         difficultyMultiplier *
