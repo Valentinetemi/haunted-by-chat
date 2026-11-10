@@ -9,6 +9,7 @@ export function createAudioSystem() {
   let nextLullabyNoteAt = 0
   let nextMotherClickAt = 0
   let nextWetDripAt = 0
+  let nextKeyPingAt = 0
   const lullabyNotes = [196, 220, 174.61, 146.83, 164.81, 130.81, 146.83, 98]
 
   const ensureContext = () => {
@@ -151,6 +152,13 @@ export function createAudioSystem() {
     hint() {
       tone(520, 640, 0.12, 0.04, 'sine')
       tone(680, 760, 0.16, 0.03, 'sine', 0.08)
+    },
+    trackKey(time, distance) {
+      if (!context) return
+      const proximity = Number.isFinite(distance) ? Math.max(0, Math.min(1, (26 - distance) / 24)) : 0
+      if (proximity < 0.05 || time < nextKeyPingAt) return
+      tone(400 + proximity * 320, 460 + proximity * 360, 0.1, 0.012 + proximity ** 1.35 * 0.1, 'sine')
+      nextKeyPingAt = time + (1100 - proximity * 780)
     },
     flicker() {
       noise(0.12, 0.08, 2800)

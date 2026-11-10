@@ -149,6 +149,9 @@ export async function bootGame(reportProgress = () => {}) {
   const goalPrompt = document.querySelector('#goal-prompt')
   const objectiveHud = document.querySelector('#objective-hud')
   const currentObjective = document.querySelector('#current-objective')
+  const keyCompass = document.querySelector('#key-compass')
+  const keyCompassArrow = document.querySelector('#key-compass-arrow')
+  const keyCompassDistance = document.querySelector('#key-compass-distance')
   const keyHud = document.querySelector('#key-hud')
   const jumpscare = document.querySelector('#jumpscare')
   const dangerVignette = document.querySelector('#danger-vignette')
@@ -786,6 +789,22 @@ export async function bootGame(reportProgress = () => {}) {
     objectiveHud.classList.add('is-updating')
   }
 
+  function updateKeyCompass() {
+    const target = keySystem.activePosition
+    if (!target || !isGameplayActive()) {
+      keyCompass.hidden = true
+      return
+    }
+    keyCompass.hidden = false
+    camera.getWorldDirection(forward)
+    const dx = target.x - camera.position.x
+    const dy = target.y - camera.position.y
+    const dz = target.z - camera.position.z
+    const turn = Math.atan2(forward.x, forward.z) - Math.atan2(dx, dz)
+    keyCompassArrow.style.transform = `rotate(${turn}rad)`
+    keyCompassDistance.textContent = `${Math.max(1, Math.round(Math.hypot(dx, dy, dz)))}m`
+  }
+
   function updateNearMiss(time) {
     if (!isGameplayActive() || hiding.isHidden) {
       dangerVignette.style.opacity = '0'
@@ -1038,6 +1057,7 @@ export async function bootGame(reportProgress = () => {}) {
       time,
       isGameplayActive(),
     )
+    updateKeyCompass()
     portalSystem.update(camera.position, time, isGameplayActive())
     scareDirector.update(time)
     runTimer.update(time)

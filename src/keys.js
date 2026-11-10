@@ -225,7 +225,13 @@ export function createKeySystem({
 
   const update = (playerPosition, time, active) => {
     prompt.hidden = true
-    if (!active) return
+    if (!active) {
+      audio.trackKey(time, Infinity)
+      return
+    }
+
+    const activeKey = keys[collectedCount]
+    if (!activeKey || activeKey.collected) audio.trackKey(time, Infinity)
 
     for (const key of keys) {
       if (key.collected && !key.collecting) continue
@@ -262,6 +268,7 @@ export function createKeySystem({
         key.mesh.position.y - playerPosition.y,
         key.mesh.position.z - playerPosition.z,
       )
+      if (key === activeKey) audio.trackKey(time, distanceToKey)
       if (
         getAreaId &&
         !key.roomChimed &&
@@ -312,6 +319,11 @@ export function createKeySystem({
     },
     get nextLabel() {
       return keys[collectedCount]?.roomLabel ?? ''
+    },
+    get activePosition() {
+      const key = keys[collectedCount]
+      if (!key || key.collected) return null
+      return key.mesh.position
     },
     get total() {
       return keys.length
