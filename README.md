@@ -1,6 +1,6 @@
 # Haunted by Chat 👁️
 
-![Haunted by Chat cover artwork](public/assets/haunted-by-chat-cover.png)
+![Haunted by Chat cover artwork](public/assets/haunted-by-chat-cover.jpg)
 
 A replayable first-person browser horror game spanning a haunted house, moonlit graveyard courtyard, underground crypt, and fractured mirror realm. Follow a randomized trail of five keys through the cursed locations while Mother hunts you.
 
