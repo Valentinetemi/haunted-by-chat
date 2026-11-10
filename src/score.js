@@ -13,8 +13,9 @@ function loadNumber(key) {
 function saveNumber(key, value) {
   try {
     localStorage.setItem(key, String(value))
+    return true
   } catch {
-    // Private browsing can block storage. The current run still counts.
+    return false
   }
 }
 
@@ -22,6 +23,7 @@ export function createScoreSystem({ cashDisplay, scoreDisplay, streakDisplay }) 
   let score = 0
   let runCash = 0
   let bank = loadNumber(BANK_KEY)
+  let bankSeen = bank
   let kills = 0
   let streak = 0
   let bestStreak = 0
@@ -38,11 +40,21 @@ export function createScoreSystem({ cashDisplay, scoreDisplay, streakDisplay }) 
     }
   }
 
-  const noteBest = () => {
-    if (score <= best) return false
-    best = score
-    saveNumber(BEST_SCORE_KEY, best)
+  const persistBank = (next) => {
+    const stored = loadNumber(BANK_KEY)
+    const merged = Math.max(0, stored + (next - bankSeen))
+    if (!saveNumber(BANK_KEY, merged)) return false
+    bank = merged
+    bankSeen = merged
     return true
+  }
+
+  const noteBest = () => {
+    const stored = loadNumber(BEST_SCORE_KEY)
+    const merged = Math.max(stored, score)
+    best = Math.max(best, merged)
+    if (best > stored) saveNumber(BEST_SCORE_KEY, best)
+    return score > 0 && score >= best
   }
 
   paint()
@@ -103,15 +115,17 @@ export function createScoreSystem({ cashDisplay, scoreDisplay, streakDisplay }) 
     },
     spend(amount) {
       if (bank < amount) return false
-      bank -= amount
-      saveNumber(BANK_KEY, bank)
+      if (!persistBank(bank - amount)) return false
       paint()
       return true
     },
+    refund(amount) {
+      persistBank(bank + amount)
+      paint()
+    },
     bankRun() {
-      bank += runCash
+      if (!persistBank(bank + runCash)) return
       runCash = 0
-      saveNumber(BANK_KEY, bank)
       noteBest()
       paint()
     },

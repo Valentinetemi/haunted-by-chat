@@ -81,8 +81,9 @@ function readJson(key, fallback) {
 function writeJson(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value))
+    return true
   } catch {
-    // Keep the choice for this session even if storage is blocked.
+    return false
   }
 }
 
@@ -117,7 +118,12 @@ export function loadUnlocks() {
 }
 
 export function saveUnlocks(unlocks) {
-  writeJson(UNLOCK_KEY, unlocks)
+  const latest = loadUnlocks()
+  const merged = { ...latest }
+  for (const [key, value] of Object.entries(unlocks)) {
+    merged[key] = Boolean(latest[key]) || Boolean(value)
+  }
+  return writeJson(UNLOCK_KEY, merged)
 }
 
 export function weaponPrice(id) {
