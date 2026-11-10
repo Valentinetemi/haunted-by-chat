@@ -146,6 +146,7 @@ export function createArsenal(camera) {
   }
 
   const owned = { grenade: true, revolver: true, shotgun: false, smg: false }
+  const carried = { grenade: true, revolver: true, shotgun: false, smg: false }
   const state = {}
   for (const [id, definition] of Object.entries(DEFINITIONS)) {
     state[id] = {
@@ -202,20 +203,25 @@ export function createArsenal(camera) {
       }
     },
     grant(id) {
-      owned[id] = true
       if (id === 'grenade') {
         grenades += 2
         return
       }
       if (!state[id]) return
-      state[id].reserve += state[id].reserve === 0 ? DEFINITIONS[id].reserve : 10
-      if (state[id].loaded === 0) {
-        const taken = Math.min(state[id].magSize, state[id].reserve)
-        state[id].loaded = taken
-        state[id].reserve -= taken
+      const alreadyCarried = Boolean(owned[id] || carried[id])
+      carried[id] = true
+      if (!alreadyCarried) {
+        state[id].loaded = DEFINITIONS[id].magSize
+        state[id].reserve = DEFINITIONS[id].reserve
+        return
       }
+      state[id].reserve += 8
     },
-    owns: (id) => Boolean(owned[id]),
+    unlock(id) {
+      if (!owned[id] && state[id]) owned[id] = true
+      carried[id] = true
+    },
+    owns: (id) => Boolean(owned[id] || carried[id]),
     setGrenadeStock(amount) {
       grenadeStock = amount
     },
@@ -235,7 +241,7 @@ export function createArsenal(camera) {
         for (const model of Object.values(models)) model.group.visible = false
         return true
       }
-      if (!owned[id] || !state[id]) return false
+      if (!owned[id] && !carried[id]) return false
       currentId = id
       show()
       return true
@@ -245,7 +251,7 @@ export function createArsenal(camera) {
       const start = order.indexOf(currentId)
       for (let step = 1; step <= order.length; step += 1) {
         const id = order[(start + step) % order.length]
-        if (id === 'grenade' ? grenades > 0 : owned[id]) {
+        if (id === 'grenade' ? grenades > 0 : owned[id] || carried[id]) {
           this.switchTo(id)
           return id
         }
@@ -331,20 +337,14 @@ export function createArsenal(camera) {
       return kick
     },
     reset() {
+      carried.shotgun = owned.shotgun
+      carried.smg = owned.smg
       currentId = 'revolver'
       grenades = owned.grenade ? grenadeStock : 0
       for (const [id, definition] of Object.entries(DEFINITIONS)) {
         state[id].loaded = owned[id] ? definition.magSize : 0
         state[id].reserve = owned[id] ? definition.reserve : 0
         state[id].reloadReadyAt = 0
-      }
-      if (owned.shotgun) {
-        state.shotgun.loaded = DEFINITIONS.shotgun.magSize
-        state.shotgun.reserve = DEFINITIONS.shotgun.reserve
-      }
-      if (owned.smg) {
-        state.smg.loaded = DEFINITIONS.smg.magSize
-        state.smg.reserve = DEFINITIONS.smg.reserve
       }
       kick = 0
       triggerHeld = false
