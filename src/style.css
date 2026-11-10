@@ -1137,6 +1137,45 @@ body.is-playing.is-mobile-portrait #mobile-controls {
   animation: objective-update 720ms ease-out;
 }
 
+#key-compass {
+  position: fixed;
+  top: 4.5rem;
+  left: 50%;
+  z-index: 15;
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
+  color: #f0d7a2;
+  font: 700 0.68rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+#key-compass[hidden] {
+  display: none;
+}
+
+#key-compass-arrow {
+  width: 0;
+  height: 0;
+  border-right: 0.48rem solid transparent;
+  border-bottom: 0.95rem solid #f2c56a;
+  border-left: 0.48rem solid transparent;
+  filter: drop-shadow(0 0 0.45rem rgb(242 197 106 / 85%));
+  transform-origin: 50% 65%;
+  animation: key-compass-pulse 1.1s ease-in-out infinite;
+}
+
+#key-compass small {
+  color: #f6e7c4;
+  text-shadow: 0 0 0.4rem rgb(0 0 0 / 80%);
+}
+
+@keyframes key-compass-pulse {
+  50% { filter: drop-shadow(0 0 0.75rem rgb(255 214 130 / 95%)); }
+}
+
 @keyframes objective-update {
   0% {
     border-left-color: #dcecff;

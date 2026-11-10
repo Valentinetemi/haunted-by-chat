@@ -149,6 +149,9 @@ export async function bootGame(reportProgress = () => {}) {
   const goalPrompt = document.querySelector('#goal-prompt')
   const objectiveHud = document.querySelector('#objective-hud')
   const currentObjective = document.querySelector('#current-objective')
+  const keyCompass = document.querySelector('#key-compass')
+  const keyCompassArrow = document.querySelector('#key-compass-arrow')
+  const keyCompassDistance = document.querySelector('#key-compass-distance')
   const keyHud = document.querySelector('#key-hud')
   const jumpscare = document.querySelector('#jumpscare')
   const dangerVignette = document.querySelector('#danger-vignette')
@@ -375,7 +378,8 @@ export async function bootGame(reportProgress = () => {}) {
   const motherDrips = createMotherDrips(scene)
   const hunterVisual = mother.group
   const magazineSize = 6
-  const startingAmmo = 5
+  const startingAmmo = 6
+  const startingReserve = 24
   const reloadDuration = 1400
   const weapon = createWeapon(camera)
   const ammoPickups = createAmmoPickups(house.group)
@@ -386,11 +390,11 @@ export async function bootGame(reportProgress = () => {}) {
   const shotRay = new THREE.Ray()
   const shotHitPoint = new THREE.Vector3()
   let ammoInGun = startingAmmo
-  let ammoReserve = 0
+  let ammoReserve = startingReserve
   let reloadingUntil = 0
   let gunKick = 0
   let hunterFrozenUntil = 0
-  let motherHealth = 6
+  let motherHealth = 18
   let motherRage = 0
   let motherBanishedUntil = 0
   let hurtFlashUntil = 0
@@ -472,10 +476,10 @@ export async function bootGame(reportProgress = () => {}) {
   }
 
   function banishMother(time) {
-    motherBanishedUntil = time + 16000
+    motherBanishedUntil = time + 8000
     ghost.visible = false
     motherRage = Math.min(3, motherRage + 1)
-    motherHealth = 6 + motherRage * 2
+    motherHealth = 18 + motherRage * 8
     rushAfterStagger = false
     hunterFrozenUntil = 0
     audio.motherDeath()
@@ -509,7 +513,7 @@ export async function bootGame(reportProgress = () => {}) {
       banishMother(time)
       return
     }
-    hunterFrozenUntil = time + (motherRage > 0 ? 560 : 1000)
+    hunterFrozenUntil = time + (motherRage > 0 ? 340 : 620)
     hunterVisual.position.set(0, 0, 0)
     rushAfterStagger = true
     audio.stun()
@@ -527,13 +531,13 @@ export async function bootGame(reportProgress = () => {}) {
 
   function resetStunBlaster() {
     ammoInGun = startingAmmo
-    ammoReserve = 0
+    ammoReserve = startingReserve
     reloadingUntil = 0
     gunKick = 0
     hunterFrozenUntil = 0
     mother.stunLight.intensity = 0
     mother.skinMaterial.emissive.setHex(0x1a0c10)
-    motherHealth = 6
+    motherHealth = 18
     motherRage = 0
     motherBanishedUntil = 0
     hurtFlashUntil = 0
@@ -619,7 +623,7 @@ export async function bootGame(reportProgress = () => {}) {
         : hunterPatrolTarget
     ghostDirection.set(target.x - ghost.position.x, 0, target.z - ghost.position.z)
     if (ghostDirection.lengthSq() > 0.0001) {
-      const difficultyMultiplier = (1 + keySystem.count * 0.16) * (1 + motherRage * 0.24)
+      const difficultyMultiplier = (1 + keySystem.count * 0.16) * (1 + motherRage * 0.34)
       const awarenessMultiplier = hunterState === 'chase' ? 1 : hunterState === 'search' ? 0.82 : 1.05
       const speedMultiplier =
         difficultyMultiplier *
@@ -784,6 +788,22 @@ export async function bootGame(reportProgress = () => {}) {
     objectiveHud.classList.remove('is-updating')
     void objectiveHud.offsetWidth
     objectiveHud.classList.add('is-updating')
+  }
+
+  function updateKeyCompass() {
+    const target = keySystem.activePosition
+    if (!target || !isGameplayActive()) {
+      keyCompass.hidden = true
+      return
+    }
+    keyCompass.hidden = false
+    camera.getWorldDirection(forward)
+    const dx = target.x - camera.position.x
+    const dy = target.y - camera.position.y
+    const dz = target.z - camera.position.z
+    const turn = Math.atan2(forward.x, forward.z) - Math.atan2(dx, dz)
+    keyCompassArrow.style.transform = `rotate(${turn}rad)`
+    keyCompassDistance.textContent = `${Math.max(1, Math.round(Math.hypot(dx, dy, dz)))}m`
   }
 
   function updateNearMiss(time) {
@@ -1038,6 +1058,7 @@ export async function bootGame(reportProgress = () => {}) {
       time,
       isGameplayActive(),
     )
+    updateKeyCompass()
     portalSystem.update(camera.position, time, isGameplayActive())
     scareDirector.update(time)
     runTimer.update(time)

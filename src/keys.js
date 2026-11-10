@@ -3,26 +3,25 @@ import * as THREE from 'three'
 import { FLOOR_Y, UPPER_PLAYER_Y } from './house.js'
 
 const KEY_SPOTS_BY_ROOM = {
-  living: [[-10.6, 6.6], [-6.2, 2.8], [-9.1, 4.8]],
-  kitchen: [[5.4, 1.1], [8.2, 5.2], [10.4, 8.7]],
-  bathroom: [[-10.2, -10.1], [-5.5, -8.8], [-9, -4.2]],
-  bedroom: [[5.6, -5.2], [8.8, -9.5], [10.5, -3.5]],
-  basement: [[-10.4, -14.4], [-6.2, -18.6], [-9.2, -21.2]],
-  attic: [[5.4, -14.8], [8.1, -18.5], [10.5, -21]],
-  study: [[-18.8, 4.4], [-15.6, 8.35], [-20.6, 7.2]],
-  pantry: [[16.6, 7.3], [13.8, 9.15], [15.4, 6.85]],
-  nursery: [[18.6, -4.8], [14.6, -8.2], [20.4, -9.4]],
-  'guest-bath': [[-19.6, -1.4], [-15.4, 0.6], [-14.8, -6.8]],
-  'cellar-bath': [[-19.4, -15.6], [-15.4, -18.6], [-18.2, -13.8]],
+  living: [[-9.2, 4.6], [-7.6, 6.4]],
+  kitchen: [[6.6, 2.8], [9.4, 6.2]],
+  bathroom: [[-7.4, -6.4], [-6.8, -8.2]],
+  bedroom: [[6.8, -6.2], [7.8, -8]],
+  basement: [[-7.2, -16.6], [-6.8, -18.8]],
+  attic: [[8.2, -16.8], [7.4, -18.2]],
+  study: [[-17.2, 5.4], [-16.2, 6.6]],
+  pantry: [[14.8, 8], [15.8, 7.5]],
+  nursery: [[16.4, -6.2], [17.6, -5.4]],
+  'guest-bath': [[-16.4, -3.4], [-17.4, -2.4]],
+  'cellar-bath': [[-16.2, -17], [-15.6, -15.8]],
 }
 
-const COURTYARD_KEY_SPOTS = [[31.8, -6.2], [44.5, -5.4], [45.2, 5.2], [34.2, 4.6]]
-const CRYPT_KEY_SPOTS = [[-4.3, -61], [4.1, -59.6], [-5.2, -51.1], [4.5, -49.2]]
-const MIRROR_KEY_SPOTS = [[-45.1, -5.2], [-31.2, -4.4], [-44.2, 4.1], [-33.7, 5.3]]
+const COURTYARD_KEY_SPOTS = [[38, 0.4], [40.5, 2.2], [35.2, -1.2]]
+const CRYPT_KEY_SPOTS = [[0.2, -55], [2.2, -52.4], [-1.6, -57.2]]
+const MIRROR_KEY_SPOTS = [[-38, 0.2], [-35.6, 2.4], [-40.2, -1.6]]
 const WIDOWS_ROOM_KEY_SPOTS = [
-  [-8.1, 7.5, UPPER_PLAYER_Y - 1],
-  [-10.7, 6.6, UPPER_PLAYER_Y - 1],
-  [-6.3, 8.7, UPPER_PLAYER_Y - 1],
+  [-8.4, 7.2, UPPER_PLAYER_Y - 0.35],
+  [-7.2, 6.2, UPPER_PLAYER_Y - 0.35],
 ]
 const ROOM_LABELS = {
   attic: 'attic',
@@ -71,6 +70,9 @@ function pick(values) {
   return values[Math.floor(Math.random() * values.length)]
 }
 
+const KEY_SCALE = 1.85
+const KEY_GLOW = 11
+
 const KEY_DESIGNS = [
   { color: 0xd7a441, emissive: 0x6a3a08, gem: 0xffe1a3, name: 'brass' },
   { color: 0x8d9298, emissive: 0x1c242c, gem: 0xd5dde6, name: 'iron' },
@@ -84,14 +86,14 @@ function createKeyMesh(design) {
   const metal = new THREE.MeshStandardMaterial({
     color: design.color,
     emissive: design.emissive,
-    emissiveIntensity: 0.9,
+    emissiveIntensity: 1.8,
     metalness: design.name === 'bone' ? 0.05 : 0.82,
     roughness: design.name === 'bone' ? 0.72 : 0.28,
   })
   const gemMaterial = new THREE.MeshStandardMaterial({
     color: design.gem,
     emissive: design.gem,
-    emissiveIntensity: 1.6,
+    emissiveIntensity: 2.8,
     roughness: 0.2,
   })
 
@@ -130,16 +132,37 @@ function createKeyMesh(design) {
   gem.position.y = 0.3
   group.add(gem)
 
-  const moteMaterial = new THREE.MeshBasicMaterial({ color: design.gem, transparent: true, opacity: 0.85 })
+  const moteMaterial = new THREE.MeshBasicMaterial({
+    color: design.gem,
+    transparent: true,
+    opacity: 0.92,
+    depthWrite: false,
+  })
   const motes = []
-  for (let index = 0; index < 5; index += 1) {
-    const mote = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 4), moteMaterial)
+  for (let index = 0; index < 10; index += 1) {
+    const mote = new THREE.Mesh(new THREE.SphereGeometry(0.045, 6, 4), moteMaterial)
     group.add(mote)
     motes.push(mote)
   }
-  const glow = new THREE.PointLight(design.gem, 0, 2.4, 2)
+  const beam = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.05, 0.42, 4.4, 8, 1, true),
+    new THREE.MeshBasicMaterial({
+      color: design.gem,
+      transparent: true,
+      opacity: 0.28,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+    }),
+  )
+  beam.position.y = 2.05
+  group.add(beam)
+  const glow = new THREE.PointLight(design.gem, 0, 18, 1.35)
+  glow.position.y = 0.4
   group.add(glow)
+  group.scale.setScalar(KEY_SCALE)
   group.userData.glow = glow
+  group.userData.beam = beam
   group.userData.motes = motes
   return group
 }
@@ -190,34 +213,47 @@ export function createKeySystem({
       key.roomChimed = false
       key.mesh.position.set(spot.x, key.baseY, spot.z)
       key.mesh.visible = index === 0
-      key.mesh.scale.setScalar(1)
+      key.mesh.scale.setScalar(KEY_SCALE)
       key.collected = false
       key.collecting = false
       key.phase = Math.random() * Math.PI * 2
-      key.mesh.userData.glow.intensity = index === 0 ? 2.2 : 0
+      key.mesh.userData.glow.intensity = index === 0 ? KEY_GLOW : 0
+      key.mesh.userData.beam.visible = index === 0
     })
     updateHud()
   }
 
   const update = (playerPosition, time, active) => {
     prompt.hidden = true
-    if (!active) return
+    if (!active) {
+      audio.trackKey(time, Infinity)
+      return
+    }
+
+    const activeKey = keys[collectedCount]
+    if (!activeKey || activeKey.collected) audio.trackKey(time, Infinity)
 
     for (const key of keys) {
       if (key.collected && !key.collecting) continue
       if (!key.mesh.visible && !key.collecting) continue
       key.mesh.rotation.y = time * 0.0014 + key.phase
       key.mesh.userData.motes.forEach((mote, index) => {
-        const angle = time * 0.003 + key.phase + index * 1.25
-        const radius = 0.28 + (index % 2) * 0.08
-        mote.position.set(Math.cos(angle) * radius, 0.15 + Math.sin(angle * 1.3) * 0.12, Math.sin(angle) * radius)
+        const angle = time * 0.0022 + key.phase + index * 0.62
+        const radius = 0.55 + (index % 3) * 0.16
+        mote.position.set(
+          Math.cos(angle) * radius,
+          0.35 + Math.sin(angle * 1.4) * 0.85,
+          Math.sin(angle) * radius,
+        )
       })
+      const beam = key.mesh.userData.beam
+      beam.material.opacity = 0.16 + Math.sin(time * 0.004 + key.phase) * 0.1
 
       if (key.collecting) {
         const progress = Math.min((time - key.collectStarted) / 420, 1)
         key.mesh.position.y = key.baseY + progress * 1.1
-        key.mesh.scale.setScalar(1 + progress * 0.8)
-        key.mesh.userData.glow.intensity = 2.2 * (1 - progress)
+        key.mesh.scale.setScalar(KEY_SCALE * (1 + progress * 0.45))
+        key.mesh.userData.glow.intensity = KEY_GLOW * (1 - progress)
         if (progress >= 1) {
           key.collecting = false
           key.mesh.visible = false
@@ -232,6 +268,7 @@ export function createKeySystem({
         key.mesh.position.y - playerPosition.y,
         key.mesh.position.z - playerPosition.z,
       )
+      if (key === activeKey) audio.trackKey(time, distanceToKey)
       if (
         getAreaId &&
         !key.roomChimed &&
@@ -241,7 +278,7 @@ export function createKeySystem({
         audio.hint()
       }
 
-      if (distanceToKey <= 1.55) {
+      if (distanceToKey <= 2.15) {
         key.collected = true
         key.collecting = true
         key.collectStarted = time
@@ -249,7 +286,8 @@ export function createKeySystem({
         if (collectedCount < keys.length) {
           const nextKey = keys[collectedCount]
           nextKey.mesh.visible = true
-          nextKey.mesh.userData.glow.intensity = 2.2
+          nextKey.mesh.userData.glow.intensity = KEY_GLOW
+          nextKey.mesh.userData.beam.visible = true
         }
         audio.pickup()
         updateHud()
@@ -281,6 +319,11 @@ export function createKeySystem({
     },
     get nextLabel() {
       return keys[collectedCount]?.roomLabel ?? ''
+    },
+    get activePosition() {
+      const key = keys[collectedCount]
+      if (!key || key.collected) return null
+      return key.mesh.position
     },
     get total() {
       return keys.length
