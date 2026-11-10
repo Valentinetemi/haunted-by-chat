@@ -470,6 +470,16 @@ function isWalkable(x, z) {
   )
 }
 
+function segmentWalkable(x0, z0, x1, z1) {
+  const distance = Math.hypot(x1 - x0, z1 - z0)
+  const steps = Math.max(1, Math.ceil(distance / 0.18))
+  for (let step = 1; step <= steps; step += 1) {
+    const t = step / steps
+    if (!isWalkable(x0 + (x1 - x0) * t, z0 + (z1 - z0) * t)) return false
+  }
+  return true
+}
+
 function crossesBoundary(start, end, boundary) {
   return (start < boundary && end >= boundary) || (start > boundary && end <= boundary)
 }
@@ -515,9 +525,21 @@ export function movePlayerWithinHouse(position, displacement) {
     return
   }
 
-  const nextX = position.x + displacement.x
-  if (isWalkable(nextX, position.z)) position.x = nextX
-  const nextZ = position.z + displacement.z
-  if (isWalkable(position.x, nextZ)) position.z = nextZ
+  const slide = (axis, amount) => {
+    let scale = 1
+    const start = position[axis]
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const next = start + amount * scale
+      const x = axis === 'x' ? next : position.x
+      const z = axis === 'z' ? next : position.z
+      if (segmentWalkable(position.x, position.z, x, z)) {
+        position[axis] = next
+        return
+      }
+      scale *= 0.5
+    }
+  }
+  slide('x', displacement.x)
+  slide('z', displacement.z)
   position.y = 0
 }
