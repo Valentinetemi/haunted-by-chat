@@ -207,6 +207,7 @@ export function furnishBathroom(parent) {
   reflection.position.set(-11.63, FLOOR_Y + 2.15, -5.4)
   reflection.rotation.y = Math.PI / 2
   reflection.visible = false
+  reflection.userData.keepSeparate = true
   group.add(reflection)
   mirrorFrame.userData.mirrorScare = true
 

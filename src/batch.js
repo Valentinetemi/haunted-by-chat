@@ -48,3 +48,47 @@ export function createStaticBatch() {
     },
   }
 }
+
+function hasSeparateAncestor(object) {
+  let current = object
+  while (current) {
+    if (current.userData?.keepSeparate) return true
+    current = current.parent
+  }
+  return false
+}
+
+export function mergeStaticMeshes(root) {
+  root.updateWorldMatrix(true, true)
+  const groups = new Map()
+  const remove = []
+
+  root.traverse((object) => {
+    if (!object.isMesh || hasSeparateAncestor(object)) return
+    const geometry = object.geometry.clone()
+    geometry.applyMatrix4(object.matrixWorld)
+    const list = groups.get(object.material) ?? []
+    list.push(geometry)
+    groups.set(object.material, list)
+    remove.push(object)
+  })
+
+  for (const mesh of remove) {
+    mesh.parent?.remove(mesh)
+    mesh.geometry.dispose()
+  }
+
+  const meshes = []
+  for (const [material, geometries] of groups) {
+    const merged = mergeGeometries(geometries, false)
+    for (const geometry of geometries) geometry.dispose()
+    if (!merged) continue
+    const mesh = new THREE.Mesh(merged, material)
+    mesh.castShadow = true
+    mesh.receiveShadow = true
+    mesh.name = 'merged-static'
+    root.add(mesh)
+    meshes.push(mesh)
+  }
+  return meshes
+}

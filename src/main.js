@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 
 import { createAudioSystem } from './audio.js'
+import { mergeStaticMeshes } from './batch.js'
 import {
   HUNTER_SPAWNS,
   PLAYER_START,
@@ -93,6 +94,7 @@ const bathroomProps = furnishBathroom(house.group)
 furnishKidsBedroom(house.group)
 furnishBasement(house.group)
 furnishAttic(house.group)
+mergeStaticMeshes(house.group)
 const pressedKeys = new Set()
 const movement = new THREE.Vector3()
 const forward = new THREE.Vector3()

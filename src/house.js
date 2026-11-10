@@ -304,6 +304,7 @@ function createStaircaseAndUpperRoom(group, ceilingLights) {
     [-8, UPPER_CEILING_Y - 0.12, 7.2],
     moonWindow,
   )
+  fixture.userData.keepSeparate = true
   ceilingLights.push({
     baseEmissive: 1.25,
     baseIntensity: 17,
@@ -342,6 +343,7 @@ export function createHauntedHouse(scene) {
       roughness: 0.45,
     })
     const fixture = addBox(group, [0.75, 0.08, 0.75], [x, CEILING_Y - 0.05, z], fixtureMaterial)
+    fixture.userData.keepSeparate = true
     const light = new THREE.PointLight(room.light, room.intensity, 14, 2)
     light.position.set(x, CEILING_Y - 0.35, z)
     group.add(light)
@@ -360,6 +362,7 @@ export function createHauntedHouse(scene) {
       emissiveIntensity: 0.8,
     })
     const fixture = addBox(group, [0.55, 0.08, 0.55], [0, CEILING_Y - 0.05, z], fixtureMaterial)
+    fixture.userData.keepSeparate = true
     const light = new THREE.PointLight(0xd5a36f, 15, 9, 2)
     light.position.set(0, CEILING_Y - 0.35, z)
     group.add(light)
