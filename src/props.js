@@ -11,6 +11,61 @@ const brass = new THREE.MeshStandardMaterial({
 })
 const cloth = new THREE.MeshStandardMaterial({ color: 0x3d1117, roughness: 1 })
 
+export function furnishNursery(parent) {
+  const group = new THREE.Group()
+  group.name = 'nursery-props'
+  const painted = new THREE.MeshStandardMaterial({ color: 0x6a5568, roughness: 0.9 })
+  const linen = new THREE.MeshStandardMaterial({ color: 0xd7d0c4, roughness: 1 })
+  const plush = new THREE.MeshStandardMaterial({ color: 0x6e2e32, roughness: 1 })
+
+  addBox(group, [2.1, 0.9, 1.15], [19.6, FLOOR_Y + 0.5, -9.8], painted, 'crib')
+  addBox(group, [1.85, 0.16, 0.9], [19.6, FLOOR_Y + 0.95, -9.8], linen)
+  for (const x of [18.65, 20.55]) {
+    for (const z of [-10.25, -9.35]) {
+      addBox(group, [0.08, 1.35, 0.08], [x, FLOOR_Y + 0.7, z], painted)
+    }
+  }
+  addBox(group, [2.15, 0.08, 0.08], [19.6, FLOOR_Y + 1.35, -10.25], painted)
+  addBox(group, [2.15, 0.08, 0.08], [19.6, FLOOR_Y + 1.35, -9.35], painted)
+
+  const mobile = new THREE.Group()
+  mobile.name = 'nursery-mobile'
+  mobile.userData.keepSeparate = true
+  mobile.position.set(19.6, FLOOR_Y + 2.15, -9.8)
+  addBox(mobile, [0.04, 0.7, 0.04], [0, 0.35, 0], darkWood)
+  for (const [x, z, color] of [[-0.35, 0, 0x8d3d3a], [0.35, 0, 0x345c68], [0, 0.28, 0x857241], [0, -0.28, 0x4b4038]]) {
+    const charm = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.08, 0),
+      new THREE.MeshStandardMaterial({ color, roughness: 0.7 }),
+    )
+    charm.position.set(x, -0.05, z)
+    mobile.add(charm)
+  }
+  group.add(mobile)
+  group.userData.mobile = mobile
+
+  addBox(group, [0.7, 0.85, 0.7], [14.2, FLOOR_Y + 0.45, -3.4], painted, 'rocking-chair')
+  const rocker = new THREE.Mesh(new THREE.TorusGeometry(0.38, 0.04, 6, 12, Math.PI), darkWood)
+  rocker.position.set(14.2, FLOOR_Y + 0.38, -3.4)
+  rocker.rotation.y = Math.PI / 2
+  group.add(rocker)
+
+  const bear = new THREE.Group()
+  bear.userData.keepSeparate = true
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), plush)
+  head.position.y = 0.34
+  bear.add(head)
+  addBox(bear, [0.28, 0.32, 0.18], [0, 0.12, 0], plush)
+  bear.position.set(15.4, FLOOR_Y + 0.05, -6.2)
+  bear.rotation.z = 0.4
+  group.add(bear)
+
+  addBox(group, [1.3, 2.1, 0.55], [21.2, FLOOR_Y + 1.05, -4.2], painted, 'nursery-wardrobe')
+
+  parent.add(group)
+  return group
+}
+
 export function furnishPantry(parent) {
   const group = new THREE.Group()
   group.name = 'pantry-props'

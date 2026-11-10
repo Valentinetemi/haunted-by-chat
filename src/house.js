@@ -83,6 +83,16 @@ export const ROOM_DEFINITIONS = [
     intensity: 17,
   },
   {
+    id: 'nursery',
+    name: 'Nursery',
+    bounds: { minX: 12, maxX: 22, minZ: -12, maxZ: -2 },
+    center: [17, -7],
+    size: [10, 10],
+    floor: 0x3a3340,
+    light: 0xb7a0c4,
+    intensity: 12,
+  },
+  {
     id: 'pantry',
     name: 'Pantry',
     bounds: { minX: 12, maxX: 18, minZ: 6, maxZ: 10 },
@@ -111,6 +121,7 @@ export const HUNTER_SPAWNS = [
   new THREE.Vector3(8, FLOOR_Y + 0.08, -7),
   new THREE.Vector3(-17, FLOOR_Y + 0.08, 6.4),
   new THREE.Vector3(15.2, FLOOR_Y + 0.08, 8.1),
+  new THREE.Vector3(17.4, FLOOR_Y + 0.08, -7.2),
 ]
 
 const doorFrameMaterial = new THREE.MeshStandardMaterial({ color: 0x17110e, roughness: 0.92 })
@@ -224,6 +235,15 @@ function createRoomDoor(group, roomId, x, z, opensToward) {
     roomId,
     position: new THREE.Vector3(x, FLOOR_Y, z),
   }
+}
+
+function addNursery(group, doors, wallMaterial) {
+  addSegmentedWallX(group, 22, -12, -2, [], wallMaterial)
+  addSegmentedWallZ(group, -2, 12, 22, [], wallMaterial)
+  addSegmentedWallZ(group, -12, 12, 22, [], wallMaterial)
+  doors.push(createRoomDoor(group, 'nursery', 12, -7, 1))
+  addWalkableRegion({ minX: 12.38, maxX: 21.62, minZ: -11.62, maxZ: -2.38 })
+  addWalkableRegion({ minX: 11.5, maxX: 12.7, minZ: -7.85, maxZ: -6.15 })
 }
 
 function addPantry(group, doors, wallMaterial) {
@@ -423,8 +443,9 @@ export function createHauntedHouse(scene) {
   addSegmentedWallZ(group, -23, -12, 12, [], wallMaterial)
   addSegmentedWallX(group, -12, -23, 10, [[5.65, 7.35]], wallMaterial)
   addStudy(group, doors, wallMaterial)
-  addSegmentedWallX(group, 12, -23, 10, [[7.15, 8.85]], wallMaterial)
+  addSegmentedWallX(group, 12, -23, 10, [[-7.85, -6.15], [7.15, 8.85]], wallMaterial)
   addPantry(group, doors, wallMaterial)
+  addNursery(group, doors, wallMaterial)
   addSegmentedWallX(group, -4, -23, 10, [[-18.35, -16.65], [-7.85, -6.15], [3.15, 4.85]], wallMaterial)
   addSegmentedWallX(group, 4, -23, 10, [[-18.35, -16.65], [-7.85, -6.15], [3.15, 4.85]], wallMaterial)
   addSegmentedWallZ(group, -2, -12, -4, [], wallMaterial)
