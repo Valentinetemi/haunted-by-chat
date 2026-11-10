@@ -1199,6 +1199,7 @@ export async function bootGame(reportProgress = () => {}) {
     lookZone: document.querySelector('#touch-look-zone'),
     onInteract: performInteraction,
     onLook: (deltaX, deltaY) => applyLookDelta(deltaX, deltaY, 0.0042),
+    onFireHold: (held) => arsenal.setTrigger(held),
     onGrenade: () => {
       if (arsenal.switchTo('grenade')) fireStunBlaster()
     },

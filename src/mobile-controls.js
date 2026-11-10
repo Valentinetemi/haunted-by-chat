@@ -6,6 +6,7 @@ export function createMobileControls({
   lookZone,
   onInteract,
   onLook,
+  onFireHold,
   onGrenade,
   onReload,
   onStun,
@@ -141,8 +142,15 @@ export function createMobileControls({
   stunButton.addEventListener('pointerdown', (event) => {
     if (!active) return
     event.preventDefault()
+    onFireHold?.(true)
     onStun()
+    stunButton.setPointerCapture(event.pointerId)
   })
+  for (const eventName of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+    stunButton.addEventListener(eventName, () => {
+      onFireHold?.(false)
+    })
+  }
   reloadButton.addEventListener('pointerdown', (event) => {
     if (!active) return
     event.preventDefault()
