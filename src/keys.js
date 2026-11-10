@@ -24,19 +24,47 @@ const WIDOWS_ROOM_KEY_SPOTS = [
   [-10.7, 6.6, UPPER_PLAYER_Y - 1],
   [-6.3, 8.7, UPPER_PLAYER_Y - 1],
 ]
-const HOUSE_KEY_SPOTS = Object.values(KEY_SPOTS_BY_ROOM).flat()
+const ROOM_LABELS = {
+  attic: 'attic',
+  basement: 'basement',
+  bathroom: 'bathroom',
+  bedroom: "child's room",
+  'cellar-bath': 'cellar washroom',
+  courtyard: 'courtyard',
+  crypt: 'crypt',
+  'guest-bath': 'guest bathroom',
+  kitchen: 'kitchen',
+  living: 'living room',
+  mirror: 'mirror realm',
+  nursery: 'nursery',
+  pantry: 'pantry',
+  study: 'study',
+  'widows-room': "widow's room",
+}
+
+function labelSpots(room, spots) {
+  return spots.map(([x, z, y]) => ({
+    label: ROOM_LABELS[room],
+    room,
+    x,
+    y,
+    z,
+  }))
+}
+
+const HOUSE_KEY_SPOTS = Object.entries(KEY_SPOTS_BY_ROOM).flatMap(([room, spots]) => labelSpots(room, spots))
 const BACKTRACK_KEY_SPOTS = [
   ...HOUSE_KEY_SPOTS,
-  ...COURTYARD_KEY_SPOTS,
-  ...CRYPT_KEY_SPOTS,
-  ...WIDOWS_ROOM_KEY_SPOTS,
+  ...labelSpots('courtyard', COURTYARD_KEY_SPOTS),
+  ...labelSpots('crypt', CRYPT_KEY_SPOTS),
+  ...labelSpots('widows-room', WIDOWS_ROOM_KEY_SPOTS),
 ]
 const KEY_STAGES = [
   HOUSE_KEY_SPOTS,
-  COURTYARD_KEY_SPOTS,
-  CRYPT_KEY_SPOTS,
+  labelSpots('courtyard', COURTYARD_KEY_SPOTS),
+  labelSpots('crypt', CRYPT_KEY_SPOTS),
   BACKTRACK_KEY_SPOTS,
-  MIRROR_KEY_SPOTS,
+  labelSpots('mirror', MIRROR_KEY_SPOTS),
 ]
 
 function pick(values) {
@@ -116,7 +144,16 @@ function createKeyMesh(design) {
   return group
 }
 
-export function createKeySystem({ audio, hudCount, hudPips, onEscape, onPickup, parent, prompt }) {
+export function createKeySystem({
+  audio,
+  getAreaId,
+  hudCount,
+  hudPips,
+  onEscape,
+  onPickup,
+  parent,
+  prompt,
+}) {
   const keys = KEY_DESIGNS.map((design) => {
     const mesh = createKeyMesh(design)
     parent.add(mesh)
@@ -145,9 +182,13 @@ export function createKeySystem({ audio, hudCount, hudPips, onEscape, onPickup, 
     prompt.hidden = true
 
     keys.forEach((key, index) => {
-      const [x, z, y = FLOOR_Y + 0.7] = pick(KEY_STAGES[index])
+      const spot = pick(KEY_STAGES[index])
+      const y = spot.y ?? FLOOR_Y + 0.7
       key.baseY = y
-      key.mesh.position.set(x, key.baseY, z)
+      key.room = spot.room
+      key.roomLabel = spot.label
+      key.roomChimed = false
+      key.mesh.position.set(spot.x, key.baseY, spot.z)
       key.mesh.visible = index === 0
       key.mesh.scale.setScalar(1)
       key.collected = false
@@ -191,6 +232,15 @@ export function createKeySystem({ audio, hudCount, hudPips, onEscape, onPickup, 
         key.mesh.position.y - playerPosition.y,
         key.mesh.position.z - playerPosition.z,
       )
+      if (
+        getAreaId &&
+        !key.roomChimed &&
+        getAreaId() === key.room
+      ) {
+        key.roomChimed = true
+        audio.hint()
+      }
+
       if (distanceToKey <= 1.55) {
         key.collected = true
         key.collecting = true
@@ -228,6 +278,9 @@ export function createKeySystem({ audio, hudCount, hudPips, onEscape, onPickup, 
   return {
     get count() {
       return collectedCount
+    },
+    get nextLabel() {
+      return keys[collectedCount]?.roomLabel ?? ''
     },
     get total() {
       return keys.length

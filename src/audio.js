@@ -125,6 +125,10 @@ export function createAudioSystem() {
       tone(1380, 74, 0.54, 0.42, 'sawtooth')
       tone(170, 24, 1.15, 0.32, 'square', 0.04)
     },
+    hint() {
+      tone(520, 640, 0.12, 0.04, 'sine')
+      tone(680, 760, 0.16, 0.03, 'sine', 0.08)
+    },
     flicker() {
       noise(0.12, 0.08, 2800)
       tone(95, 78, 0.2, 0.04, 'square')

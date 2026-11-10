@@ -671,13 +671,14 @@ export async function bootGame(reportProgress = () => {}) {
     }, 760)
   }
 
-  function updateObjective(keyCount) {
+  function updateObjective(keyCount, hint = '') {
+    const place = hint ? `Search the ${hint}` : ''
     currentObjective.textContent = [
-      'Search the house',
-      'Enter the moonlit courtyard',
-      'Descend into the crypt',
-      'Search every unlocked room',
-      'Enter the fractured mirror realm',
+      place || 'Search the house',
+      place || 'Enter the moonlit courtyard',
+      place || 'Descend into the crypt',
+      place || 'Search every unlocked room',
+      place || 'Enter the fractured mirror realm',
       'Return to the front door',
     ][keyCount]
     objectiveHud.classList.remove('is-updating')
@@ -720,9 +721,10 @@ export async function bootGame(reportProgress = () => {}) {
     hudCount: document.querySelector('#keys-collected'),
     hudPips: document.querySelector('#key-pips'),
     onEscape: escapeHouse,
+    getAreaId: () => (getHauntedPlaceAt(camera.position) ?? getRoomAt(camera.position)).id,
     onPickup: (count, total) => {
       pulseKeyHud()
-      updateObjective(count)
+      updateObjective(count, keySystem.nextLabel)
       const unlockMessage = {
         1: 'Courtyard unsealed',
         2: 'Crypt unsealed',
@@ -861,7 +863,7 @@ export async function bootGame(reportProgress = () => {}) {
     cellarBath.reset()
     hiding.reset()
     keySystem.reset()
-    updateObjective(0)
+    updateObjective(0, keySystem.nextLabel)
     objectiveHud.hidden = true
     locationCard.hidden = true
     locationCard.classList.remove('is-visible')
@@ -989,8 +991,9 @@ export async function bootGame(reportProgress = () => {}) {
     document.body.classList.add('is-playing')
     gameRunning = true
     startScreen.hidden = true
-    objectiveHud.hidden = false
-    showLocationCard('house', 'The House')
+  objectiveHud.hidden = false
+  updateObjective(keySystem.count, keySystem.nextLabel)
+  showLocationCard('house', 'The House')
     mobileControls.setActive(usesTouchControls)
     scareDirector.reset()
     runTimer.start()
