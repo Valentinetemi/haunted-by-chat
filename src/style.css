@@ -243,15 +243,14 @@ body:not(.is-playing) #aim-reticle {
   position: relative;
   display: inline-block;
   margin: 0;
-  color: #a90812;
-  font: 700 clamp(2.8rem, 9vw, 5.8rem)/0.82 Georgia, 'Times New Roman', serif;
-  letter-spacing: -0.06em;
+  color: #ff3b2f;
+  font: 900 clamp(3rem, 9vw, 6rem)/0.82 Impact, Haettenschweiler, 'Arial Narrow', sans-serif;
+  letter-spacing: 0.02em;
   text-shadow:
-    0 0.025em 0 #3d0003,
-    0 0.055em 0 #510006,
-    0 0 0.18em rgb(203 0 13 / 75%),
-    0 0 1.1em rgb(107 0 7 / 85%);
-  transform: rotate(-1deg);
+    0 0.04em 0 #4a0508,
+    0 0 0.35em rgb(255 80 40 / 70%);
+  text-transform: uppercase;
+  transform: rotate(-2deg);
 }
 
 .menu-card h1::before {
