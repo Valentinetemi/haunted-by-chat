@@ -28,6 +28,7 @@ import { createScareDirector } from './scares.js'
 import { createRunTimer } from './timer.js'
 import { createArsenal, createGrenades, createWeaponPickups } from './arsenal.js'
 import { createAmmoPickups } from './weapon.js'
+import { createBreakables } from './breakables.js'
 import { createZombieHorde } from './zombies.js'
 import {
   furnishBathroom,
@@ -118,6 +119,8 @@ export async function bootGame(reportProgress = () => {}) {
   const nurseryProps = furnishNursery(house.group)
   mergeStaticMeshes(house.group)
   const horde = createZombieHorde(scene)
+  const breakables = createBreakables(house.group)
+  const shotRaycaster = new THREE.Raycaster()
   report(0.92, 'She is moving through the house…')
   await nextFrame()
   const pressedKeys = new Set()
@@ -580,6 +583,12 @@ export async function bootGame(reportProgress = () => {}) {
     gunKick = 1
     audio.gunshot()
     camera.getWorldDirection(shotDirection)
+    shotRaycaster.set(camera.position, shotDirection)
+    if (breakables.shatter(shotRaycaster)) {
+      audio.slam()
+      scoreSystem.addScore(15)
+      showReward('Smashed')
+    }
     const base = shotDirection.clone()
     for (const pellet of shot.pellets) {
       const direction = base.clone()
@@ -1171,6 +1180,7 @@ export async function bootGame(reportProgress = () => {}) {
     scoreSystem.resetRun()
     health = maxHealth
     paintHealth()
+    breakables.reset()
     horde.reset()
     waveNumber = 0
     nextWaveAt = Infinity
