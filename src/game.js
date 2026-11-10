@@ -27,6 +27,7 @@ import { createScoreSystem } from './score.js'
 import { createScareDirector } from './scares.js'
 import { createRunTimer } from './timer.js'
 import { createAmmoPickups, createWeapon } from './weapon.js'
+import { createZombieHorde } from './zombies.js'
 import {
   furnishBathroom,
   furnishAttic,
@@ -165,6 +166,25 @@ export async function bootGame(reportProgress = () => {}) {
   const motherWarning = document.querySelector('#mother-warning')
   const motherProximity = document.querySelector('#mother-proximity')
   const hiding = createHidingSystem(camera, interactionPrompt)
+  const healthFill = document.querySelector('#health-fill')
+  let health = 100
+  let maxHealth = 100
+
+  function paintHealth() {
+    healthFill.style.transform = `scaleX(${Math.max(0, health / maxHealth)})`
+  }
+
+  function hurtPlayer(amount, title = 'The horde got you') {
+    if (!isGameplayActive()) return
+    health = Math.max(0, health - amount)
+    paintHealth()
+    cameraShakeEndsAt = performance.now() + 220
+    if (health > 0) return
+    document.querySelector('#caught-title').textContent = title
+    catchPlayer()
+  }
+
+  paintHealth()
   const scoreSystem = createScoreSystem({
     cashDisplay: document.querySelector('#cash-value'),
     scoreDisplay: document.querySelector('#score-value'),
@@ -704,6 +724,7 @@ export async function bootGame(reportProgress = () => {}) {
     pressedKeys.clear()
     startScreen.hidden = true
     audio.caught()
+    document.querySelector('#caught-title').textContent = 'Mother found you'
     runTimer.pause()
     window.clearTimeout(jumpscareTimeoutId)
     window.clearTimeout(catchTimeoutId)
@@ -1047,6 +1068,8 @@ export async function bootGame(reportProgress = () => {}) {
     pressedKeys.clear()
     scoreSystem.bankRun()
     scoreSystem.resetRun()
+    health = maxHealth
+    paintHealth()
     caughtScreen.hidden = true
     escapeScreen.hidden = true
     startScreen.hidden = false
