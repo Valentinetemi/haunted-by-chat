@@ -988,7 +988,6 @@ export async function bootGame(reportProgress = () => {}) {
     pressedKeys.clear()
     startScreen.hidden = true
     audio.caught()
-    document.querySelector('#caught-title').textContent = 'Mother found you'
     runTimer.pause()
     window.clearTimeout(jumpscareTimeoutId)
     window.clearTimeout(catchTimeoutId)
@@ -1510,7 +1509,10 @@ export async function bootGame(reportProgress = () => {}) {
           hunterState = 'search'
         }
         updateGhost(delta, time)
-        if (ghostReachedPlayer()) catchPlayer()
+        if (ghostReachedPlayer()) {
+          document.querySelector('#caught-title').textContent = 'Mother found you'
+          catchPlayer()
+        }
       }
     }
     motherDrips.update(time, delta, mother, isGameplayActive())
