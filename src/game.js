@@ -29,8 +29,8 @@ import {
   SURVIVORS,
   loadSurvivorId,
   loadUnlocks,
+  replaceUnlocks,
   saveSurvivorId,
-  saveUnlocks,
   survivorById,
   weaponPrice,
 } from './survivors.js'
@@ -244,6 +244,26 @@ export async function bootGame(reportProgress = () => {}) {
   const loadoutPanel = document.querySelector('#loadout-panel')
   const menuActions = document.querySelector('.menu-actions')
 
+  function buyUnlock(key, price) {
+    if (scoreSystem.bank < price) {
+      showReward('Need more cash')
+      return false
+    }
+    const previous = loadUnlocks()
+    const next = { ...previous, ...unlocks, [key]: true }
+    if (!replaceUnlocks(next)) {
+      showReward('Could not save unlock')
+      return false
+    }
+    if (!scoreSystem.spend(price)) {
+      replaceUnlocks(previous)
+      showReward('Need more cash')
+      return false
+    }
+    unlocks = { ...unlocks, [key]: true }
+    return true
+  }
+
   function renderLoadout() {
     const list = document.querySelector('#survivor-list')
     list.replaceChildren()
@@ -256,12 +276,7 @@ export async function bootGame(reportProgress = () => {}) {
       button.innerHTML = `<i class="survivor-swatch" style="background:${survivor.hand}"></i><span><b>${survivor.name}</b><br>${locked ? `Unlock $${survivor.price}` : survivor.perk}</span>`
       button.addEventListener('click', () => {
         if (locked) {
-          if (!scoreSystem.spend(survivor.price)) {
-            showReward('Need more cash')
-            return
-          }
-          unlocks[survivor.id] = true
-          saveUnlocks(unlocks)
+          if (!buyUnlock(survivor.id, survivor.price)) return
         }
         selectedSurvivorId = survivor.id
         saveSurvivorId(selectedSurvivorId)
@@ -280,12 +295,7 @@ export async function bootGame(reportProgress = () => {}) {
       button.textContent = unlocks[id] ? `${label} owned` : `Unlock ${label} · $${price}`
       button.addEventListener('click', () => {
         if (unlocks[id]) return
-        if (!scoreSystem.spend(price)) {
-          showReward('Need more cash')
-          return
-        }
-        unlocks[id] = true
-        saveUnlocks(unlocks)
+        if (!buyUnlock(id, price)) return
         shoutLevel(`${label} unlocked`)
         renderLoadout()
       })

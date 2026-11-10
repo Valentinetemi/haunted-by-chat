@@ -117,6 +117,10 @@ export function loadUnlocks() {
   }
 }
 
+export function replaceUnlocks(unlocks) {
+  return writeJson(UNLOCK_KEY, unlocks)
+}
+
 export function saveUnlocks(unlocks) {
   const latest = loadUnlocks()
   const merged = { ...latest }
