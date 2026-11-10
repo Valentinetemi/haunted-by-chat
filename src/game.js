@@ -589,6 +589,19 @@ export async function bootGame(reportProgress = () => {}) {
       scoreSystem.addScore(15)
       showReward('Smashed')
     }
+    const lightHits = shotRaycaster.intersectObjects(house.ceilingLights.map((entry) => entry.fixture), false)
+    const lightHit = lightHits.find((entry) => entry.distance < 16)
+    if (lightHit) {
+      const fixture = house.ceilingLights.find((entry) => entry.fixture === lightHit.object)
+      if (fixture && fixture.light.intensity > 0.2) {
+        fixture.light.intensity = 0
+        fixture.shotOut = true
+        fixture.fixture.visible = false
+        audio.flicker()
+        scoreSystem.addScore(20)
+        showReward('Lights out')
+      }
+    }
     const base = shotDirection.clone()
     for (const pellet of shot.pellets) {
       const direction = base.clone()
@@ -1180,6 +1193,11 @@ export async function bootGame(reportProgress = () => {}) {
     scoreSystem.resetRun()
     health = maxHealth
     paintHealth()
+    for (const entry of house.ceilingLights) {
+      entry.shotOut = false
+      entry.light.intensity = entry.baseIntensity
+      entry.fixture.visible = true
+    }
     breakables.reset()
     horde.reset()
     waveNumber = 0
