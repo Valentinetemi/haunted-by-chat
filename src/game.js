@@ -1458,6 +1458,7 @@ export async function bootGame(reportProgress = () => {}) {
             payout: zombie.stats.cash,
             points: zombie.stats.points,
           })
+          arsenal.addBullets('revolver', zombie.type === 'brute' ? 8 : 4)
         }
         const motherDistance = Math.hypot(blast.x - ghost.position.x, blast.z - ghost.position.z)
         if (motherDistance < 4.4 && ghost.visible) damageMother(time)
