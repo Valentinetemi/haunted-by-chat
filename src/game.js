@@ -186,6 +186,7 @@ export async function bootGame(reportProgress = () => {}) {
 
   function paintHealth() {
     healthFill.style.transform = `scaleX(${Math.max(0, health / maxHealth)})`
+    healthFill.parentElement.classList.toggle('is-critical', health / maxHealth < 0.35)
   }
 
   let brutesDropped = 0
