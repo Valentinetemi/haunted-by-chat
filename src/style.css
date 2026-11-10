@@ -1158,6 +1158,17 @@ body.is-playing.is-mobile-portrait #mobile-controls {
   color: #ffb15a;
 }
 
+body:not(.is-playing) #score-hud,
+body:not(.is-playing) #cash-hud,
+body:not(.is-playing) #wave-hud,
+body:not(.is-playing) #health-hud,
+body:not(.is-playing) #stun-hud,
+body:not(.is-playing) #stamina-hud,
+body:not(.is-playing) #key-hud,
+body:not(.is-playing) #timer-hud {
+  display: none;
+}
+
 #score-hud,
 #cash-hud {
   position: fixed;
