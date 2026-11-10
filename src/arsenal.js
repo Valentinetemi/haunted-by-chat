@@ -261,6 +261,7 @@ export function createArsenal(camera) {
     reload(time) {
       if (currentId === 'grenade') return false
       const weapon = current()
+      if (weapon.reloadReadyAt && time < weapon.reloadReadyAt) return false
       if (weapon.loaded >= weapon.magSize || weapon.reserve <= 0) return false
       weapon.reloadReadyAt = time + (weapon.magSize > 8 ? 1100 : 1400) * reloadScale
       return true
