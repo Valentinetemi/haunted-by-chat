@@ -57,6 +57,21 @@ function addBox(parent, size, position, material) {
   return mesh
 }
 
+function addInstances(parent, geometry, material, positions) {
+  const mesh = new THREE.InstancedMesh(geometry, material, positions.length)
+  const matrix = new THREE.Matrix4()
+  const position = new THREE.Vector3()
+  positions.forEach((value, index) => {
+    position.set(value[0], value[1], value[2])
+    matrix.makeTranslation(position.x, position.y, position.z)
+    mesh.setMatrixAt(index, matrix)
+  })
+  mesh.castShadow = true
+  mesh.receiveShadow = true
+  parent.add(mesh)
+  return mesh
+}
+
 function createAmbientParticles(parent, {
   bounds,
   color,
@@ -173,19 +188,17 @@ function createCourtyard() {
     }
   }
 
+  const fencePosts = []
   for (const x of [28.25, 47.75]) {
-    for (let z = -8.4; z <= 8.4; z += 1.4) {
-      addBox(group, [0.08, 2.2, 0.08], [x, FLOOR_Y + 1.1, z], iron)
-    }
+    for (let z = -8.4; z <= 8.4; z += 1.4) fencePosts.push([x, FLOOR_Y + 1.1, z])
     addBox(group, [0.12, 0.12, 17], [x, FLOOR_Y + 0.5, 0], iron)
     addBox(group, [0.12, 0.12, 17], [x, FLOOR_Y + 1.65, 0], iron)
   }
   for (const z of [-8.75, 8.75]) {
-    for (let x = 29; x <= 47; x += 1.4) {
-      addBox(group, [0.08, 2.2, 0.08], [x, FLOOR_Y + 1.1, z], iron)
-    }
+    for (let x = 29; x <= 47; x += 1.4) fencePosts.push([x, FLOOR_Y + 1.1, z])
     addBox(group, [18, 0.12, 0.12], [38, FLOOR_Y + 1.65, z], iron)
   }
+  addInstances(group, new THREE.BoxGeometry(0.08, 2.2, 0.08), iron, fencePosts)
 
   for (const [x, z, height] of [
     [31.5, -5.7, 1.5],
@@ -236,17 +249,15 @@ function createCrypt() {
   addBox(group, [20, 6, 0.35], [0, FLOOR_Y + 2.3, -64.85], darkStone)
   addBox(group, [20, 6, 0.35], [0, FLOOR_Y + 2.3, -45.15], darkStone)
 
+  const columnPositions = []
   for (const x of [-7.1, 7.1]) {
     for (const z of [-61.5, -55, -48.5]) {
-      const column = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.72, 4.25, 8), stone)
-      column.position.set(x, FLOOR_Y + 2.12, z)
-      column.castShadow = true
-      column.receiveShadow = true
-      group.add(column)
+      columnPositions.push([x, FLOOR_Y + 2.12, z])
       addBox(group, [1.7, 0.28, 1.7], [x, FLOOR_Y + 0.14, z], stone)
       addBox(group, [1.45, 0.3, 1.45], [x, FLOOR_Y + 4.12, z], stone)
     }
   }
+  addInstances(group, new THREE.CylinderGeometry(0.55, 0.72, 4.25, 6), stone, columnPositions)
 
   for (const [x, z, rotation] of [
     [-4.3, -61.2, 0.05],
@@ -322,20 +333,28 @@ function createMirrorRealm() {
   }
 
   const shardGeometry = new THREE.ConeGeometry(0.26, 1.3, 3)
+  const shards = new THREE.InstancedMesh(shardGeometry, mirrorMaterial, 24)
+  const shardMatrix = new THREE.Matrix4()
+  const shardPosition = new THREE.Vector3()
+  const shardQuaternion = new THREE.Quaternion()
+  const shardScale = new THREE.Vector3()
+  const shardEuler = new THREE.Euler()
   for (let index = 0; index < 24; index += 1) {
     const angle = index * 2.399
     const radius = 2.2 + (index % 6) * 1.15
-    const shard = new THREE.Mesh(shardGeometry, mirrorMaterial)
-    shard.position.set(
+    shardPosition.set(
       -38 + Math.cos(angle) * radius,
       FLOOR_Y + 0.3 + (index % 4) * 0.48,
       Math.sin(angle) * radius,
     )
-    shard.rotation.set(angle * 0.3, angle, index * 0.42)
-    shard.scale.setScalar(0.6 + (index % 3) * 0.22)
-    shard.castShadow = true
-    group.add(shard)
+    shardEuler.set(angle * 0.3, angle, index * 0.42)
+    shardQuaternion.setFromEuler(shardEuler)
+    shardScale.setScalar(0.6 + (index % 3) * 0.22)
+    shardMatrix.compose(shardPosition, shardQuaternion, shardScale)
+    shards.setMatrixAt(index, shardMatrix)
   }
+  shards.castShadow = false
+  group.add(shards)
 
   for (const [x, z, color] of [
     [-44, -3, 0x7a68ba],
