@@ -138,6 +138,11 @@ export function createAudioSystem() {
       tone(240, 160, 0.07, 0.07, 'square', 0.1)
       tone(360, 220, 0.08, 0.06, 'square', 0.26)
     },
+    crawl() {
+      noise(0.55, 0.07, 420)
+      tone(70, 48, 0.4, 0.03, 'triangle', 0.05)
+      noise(0.3, 0.05, 300, 0.35)
+    },
     caught() {
       noise(0.72, 0.52, 2600)
       tone(1380, 74, 0.54, 0.42, 'sawtooth')
@@ -150,6 +155,15 @@ export function createAudioSystem() {
     flicker() {
       noise(0.12, 0.08, 2800)
       tone(95, 78, 0.2, 0.04, 'square')
+    },
+    motherDeath() {
+      noise(0.45, 0.28, 700)
+      tone(380, 62, 0.9, 0.22, 'sawtooth')
+      tone(150, 34, 1.15, 0.16, 'triangle', 0.06)
+    },
+    motherReturn() {
+      tone(540, 120, 0.5, 0.2, 'sawtooth')
+      noise(0.32, 0.16, 1500, 0.04)
     },
     mirror() {
       tone(980, 82, 0.72, 0.18, 'sawtooth')
@@ -172,6 +186,10 @@ export function createAudioSystem() {
       tone(1100, 180, 0.5, 0.2, 'square')
     },
     updateMother,
+    water() {
+      noise(0.7, 0.05, 900)
+      tone(620, 480, 0.35, 0.03, 'sine', 0.02)
+    },
     whisper() {
       noise(1.8, 0.055, 780)
       tone(94, 76, 1.6, 0.035, 'sine')

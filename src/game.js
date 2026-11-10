@@ -112,7 +112,7 @@ export async function bootGame(reportProgress = () => {}) {
   furnishAttic(house.group)
   furnishStudy(house.group)
   furnishPantry(house.group)
-  furnishNursery(house.group)
+  const nurseryProps = furnishNursery(house.group)
   mergeStaticMeshes(house.group)
   report(0.92, 'She is moving through the house…')
   await nextFrame()
@@ -219,6 +219,36 @@ export async function bootGame(reportProgress = () => {}) {
   const flickerDuration = 2000
   let flickerEndsAt = 0
   let nextFlickerPulseAt = 0
+  let nurseryMobileUntil = 0
+  let blackoutRoomId = ''
+  let blackoutEndsAt = 0
+
+  function blackoutLights() {
+    blackoutRoomId = (getHauntedPlaceAt(camera.position) ?? getRoomAt(camera.position)).id
+    blackoutEndsAt = performance.now() + 2600
+    audio.flicker()
+  }
+
+  function updateBlackout(now) {
+    if (blackoutEndsAt === 0) return
+    const active = now < blackoutEndsAt
+    for (const entry of house.ceilingLights) {
+      if (entry.roomId !== blackoutRoomId) continue
+      entry.light.intensity = active ? 0.02 : entry.baseIntensity
+      entry.fixture.material.emissiveIntensity = active ? 0.04 : entry.baseEmissive
+    }
+    if (!active) blackoutEndsAt = 0
+  }
+
+  function scareInBath(method) {
+    const roomId = getRoomAt(camera.position).id
+    const time = performance.now()
+    if (roomId === 'bathroom') bathroomProps[method](time)
+    else if (roomId === 'guest-bath') guestBath[method](time)
+    else if (roomId === 'cellar-bath') cellarBath[method](time)
+    else return false
+    return true
+  }
 
   function flickerLights() {
     const now = performance.now()
@@ -347,7 +377,6 @@ export async function bootGame(reportProgress = () => {}) {
   const magazineSize = 6
   const startingAmmo = 5
   const reloadDuration = 1400
-  const stunDuration = 900
   const weapon = createWeapon(camera)
   const ammoPickups = createAmmoPickups(house.group)
   const shotDirection = new THREE.Vector3()
@@ -361,6 +390,11 @@ export async function bootGame(reportProgress = () => {}) {
   let reloadingUntil = 0
   let gunKick = 0
   let hunterFrozenUntil = 0
+  let motherHealth = 6
+  let motherRage = 0
+  let motherBanishedUntil = 0
+  let hurtFlashUntil = 0
+  let rushAfterStagger = false
   ghost.add(hunterVisual)
   ghost.position.copy(ghostStartPosition)
   scene.add(ghost)
@@ -420,25 +454,75 @@ export async function bootGame(reportProgress = () => {}) {
     hunterHitBox.setFromCenterAndSize(hunterHitCenter, hunterHitSize)
     const hit = shotRay.intersectBox(hunterHitBox, shotHitPoint)
     if (hit && hit.distanceTo(camera.position) < 30 && ghost.visible) {
-      freezeHunter(performance.now())
-      audio.hit()
-      cameraShakeEndsAt = performance.now() + 160
+      damageMother(performance.now())
+      cameraShakeEndsAt = performance.now() + 180
     }
+    motherHeardShot(performance.now())
     updateStunHud()
   }
 
-  function freezeHunter(time) {
-    hunterFrozenUntil = time + stunDuration
+  function motherHeardShot(time) {
+    if (!ghost.visible) return
+    const distance = Math.hypot(camera.position.x - ghost.position.x, camera.position.z - ghost.position.z)
+    const range = hiding.isHidden ? 8 : 23
+    if (distance > range || motherCanSeePlayer()) return
+    hunterLastSeenPosition.copy(camera.position)
+    hunterState = 'search'
+    hunterSearchEndsAt = time + 4800
+  }
+
+  function banishMother(time) {
+    motherBanishedUntil = time + 16000
+    ghost.visible = false
+    motherRage = Math.min(3, motherRage + 1)
+    motherHealth = 6 + motherRage * 2
+    rushAfterStagger = false
+    hunterFrozenUntil = 0
+    audio.motherDeath()
+    showReward('Mother retreats')
+  }
+
+  function returnMother(time) {
+    const distantSpawns = HUNTER_SPAWNS.filter(
+      (spawn) => spawn.distanceToSquared(camera.position) > 14 ** 2,
+    )
+    const candidates = distantSpawns.length > 0 ? distantSpawns : HUNTER_SPAWNS
+    const spawn = candidates[Math.floor(Math.random() * candidates.length)]
+    ghost.position.set(spawn.x, ghostStartPosition.y, spawn.z)
+    ghost.visible = true
+    motherBanishedUntil = 0
+    hunterFrozenUntil = 0
+    ghostRushEndsAt = time + 2800
+    hunterLastSeenPosition.copy(camera.position)
+    hunterState = 'search'
+    hunterSearchEndsAt = time + 2800
+    audio.motherReturn()
+    showReward(motherRage > 1 ? 'She came back furious' : 'She came back angry')
+  }
+
+  function damageMother(time) {
+    if (!ghost.visible) return
+    motherHealth -= 1
+    hurtFlashUntil = time + 220
+    audio.hit()
+    if (motherHealth <= 0) {
+      banishMother(time)
+      return
+    }
+    hunterFrozenUntil = time + (motherRage > 0 ? 560 : 1000)
     hunterVisual.position.set(0, 0, 0)
-    hunterVisual.rotation.set(0, 0, 0)
+    rushAfterStagger = true
     audio.stun()
   }
 
   function updateHunterStun(time) {
-    const isFrozen = time < hunterFrozenUntil
-    mother.stunLight.intensity = isFrozen ? 9 + Math.sin(time * 0.035) * 2 : 0
-    mother.skinMaterial.emissive.setHex(isFrozen ? 0x195875 : 0x140c0d)
-    mother.skinMaterial.emissiveIntensity = isFrozen ? 1.4 : 0.22
+    const isFrozen = time < hunterFrozenUntil && ghost.visible
+    const isHurt = time < hurtFlashUntil
+    mother.stunLight.intensity = isFrozen ? 6 + Math.sin(time * 0.04) * 2 : motherRage * 0.8
+    mother.skinMaterial.emissive.setHex(isHurt ? 0x8a1820 : isFrozen ? 0x3a2418 : 0x1a0c10)
+    mother.skinMaterial.emissiveIntensity = isHurt ? 1.8 : isFrozen ? 1.1 : 0.28 + motherRage * 0.15
+    const eyeColor = motherRage > 0 ? 0xff5a32 : 0xffe7a2
+    for (const eye of mother.eyes) eye.material.emissive.setHex(eyeColor)
   }
 
   function resetStunBlaster() {
@@ -448,7 +532,13 @@ export async function bootGame(reportProgress = () => {}) {
     gunKick = 0
     hunterFrozenUntil = 0
     mother.stunLight.intensity = 0
-    mother.skinMaterial.emissive.setHex(0x140c0d)
+    mother.skinMaterial.emissive.setHex(0x1a0c10)
+    motherHealth = 6
+    motherRage = 0
+    motherBanishedUntil = 0
+    hurtFlashUntil = 0
+    rushAfterStagger = false
+    ghost.visible = true
     ammoPickups.reset()
     updateStunHud()
   }
@@ -529,7 +619,7 @@ export async function bootGame(reportProgress = () => {}) {
         : hunterPatrolTarget
     ghostDirection.set(target.x - ghost.position.x, 0, target.z - ghost.position.z)
     if (ghostDirection.lengthSq() > 0.0001) {
-      const difficultyMultiplier = 1 + keySystem.count * 0.16
+      const difficultyMultiplier = (1 + keySystem.count * 0.16) * (1 + motherRage * 0.24)
       const awarenessMultiplier = hunterState === 'chase' ? 1 : hunterState === 'search' ? 0.82 : 1.05
       const speedMultiplier =
         difficultyMultiplier *
@@ -831,8 +921,26 @@ export async function bootGame(reportProgress = () => {}) {
       jumpscare: triggerJumpscare,
       slam: slamDoor,
       teleport: teleportHunterNearby,
-      whisper: () => whisper(['behind you', 'come upstairs', 'I found you'][Math.floor(Math.random() * 3)]),
+    blackout: blackoutLights,
+    crawl: () => {
+      audio.crawl()
+      cameraShakeEndsAt = performance.now() + 420
+      if (Math.random() < 0.45) whisper(['under the floor', 'do not look down', 'it is in the walls'][Math.floor(Math.random() * 3)])
     },
+    curtain: () => {
+      if (scareInBath('triggerCurtain')) audio.crawl()
+      else audio.whisper()
+    },
+    mobile: () => {
+      nurseryMobileUntil = performance.now() + 4600
+      audio.hint()
+    },
+    water: () => {
+      if (scareInBath('triggerWater')) audio.water()
+      else audio.crawl()
+    },
+    whisper: () => whisper(['behind you', 'come upstairs', 'I found you', 'the bath is running'][Math.floor(Math.random() * 4)]),
+  },
     getRoom: () => getHauntedPlaceAt(camera.position) ?? getRoomAt(camera.position),
     getTension: () => keySystem.count / keySystem.total,
     isActive: () => isGameplayActive() && !hiding.isHidden,
@@ -857,6 +965,8 @@ export async function bootGame(reportProgress = () => {}) {
     hunterVisual.rotation.set(0, 0, 0)
     ghostRushEndsAt = 0
     motherDrips.reset()
+    nurseryMobileUntil = 0
+    blackoutEndsAt = 0
     resetStunBlaster()
     activeDoorSlam = null
     cameraShakeEndsAt = 0
@@ -909,6 +1019,10 @@ export async function bootGame(reportProgress = () => {}) {
     mobileControls.update(delta)
     hauntedPlaces.update(time)
     updateLightFlicker(time)
+    updateBlackout(time)
+    if (nurseryProps.userData.mobile) {
+      nurseryProps.userData.mobile.rotation.y += time < nurseryMobileUntil ? delta * 2.6 : delta * 0.2
+    }
     blackPuddles.update(time)
     updateDoorSlam(time)
     if (bathroomProps.update(camera.position, time, isGameplayActive())) audio.mirror()
@@ -969,8 +1083,19 @@ export async function bootGame(reportProgress = () => {}) {
     }
 
     if (isGameplayActive()) {
-      if (time >= hunterFrozenUntil) updateGhost(delta, time)
-      if (time >= hunterFrozenUntil && ghostReachedPlayer()) catchPlayer()
+      if (!ghost.visible) {
+        if (time >= motherBanishedUntil) returnMother(time)
+      } else if (time >= hunterFrozenUntil) {
+        if (rushAfterStagger) {
+          rushAfterStagger = false
+          ghostRushEndsAt = time + 2200
+          hunterLastSeenPosition.copy(camera.position)
+          hunterSearchEndsAt = time + 2200
+          hunterState = 'search'
+        }
+        updateGhost(delta, time)
+        if (ghostReachedPlayer()) catchPlayer()
+      }
     }
     motherDrips.update(time, delta, mother, isGameplayActive())
     audio.updateMother(
