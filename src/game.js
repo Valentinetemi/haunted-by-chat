@@ -23,6 +23,7 @@ import {
   updateMotherAnimation,
   updateMotherFaceReveal,
 } from './mother.js'
+import { createScoreSystem } from './score.js'
 import { createScareDirector } from './scares.js'
 import { createRunTimer } from './timer.js'
 import { createAmmoPickups, createWeapon } from './weapon.js'
@@ -164,6 +165,11 @@ export async function bootGame(reportProgress = () => {}) {
   const motherWarning = document.querySelector('#mother-warning')
   const motherProximity = document.querySelector('#mother-proximity')
   const hiding = createHidingSystem(camera, interactionPrompt)
+  const scoreSystem = createScoreSystem({
+    cashDisplay: document.querySelector('#cash-value'),
+    scoreDisplay: document.querySelector('#score-value'),
+    streakDisplay: document.querySelector('#streak-value'),
+  })
   const runTimer = createRunTimer({
     bestDisplay: document.querySelector('#best-time'),
     finalDisplay: document.querySelector('#final-time'),
@@ -1021,6 +1027,8 @@ export async function bootGame(reportProgress = () => {}) {
     nearMissCooldownUntil = 0
     hasIntroducedWidowsRoom = false
     pressedKeys.clear()
+    scoreSystem.bankRun()
+    scoreSystem.resetRun()
     caughtScreen.hidden = true
     escapeScreen.hidden = true
     startScreen.hidden = false
@@ -1062,6 +1070,7 @@ export async function bootGame(reportProgress = () => {}) {
     portalSystem.update(camera.position, time, isGameplayActive())
     scareDirector.update(time)
     runTimer.update(time)
+    scoreSystem.tick(time)
     updateNearMiss(time)
     finishReload(time)
     const gainedAmmo = ammoPickups.update(camera.position, time, isGameplayActive())
