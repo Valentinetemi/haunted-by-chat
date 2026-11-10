@@ -120,6 +120,10 @@ export function createZombieHorde(parent) {
     if (wave >= 2) bag.push('runner', 'walker')
     if (wave >= 3) bag.push('crawler', 'runner')
     if (wave % 3 === 0) bag.push('brute')
+    if (wave === 1) {
+      spawn('walker', player.x + 3.5, player.z - 6)
+      spawn('walker', player.x - 4.5, player.z - 5)
+    }
     let spawned = 0
     for (let index = 0; index < count; index += 1) {
       const [x, z] = pickSpawn(player)
