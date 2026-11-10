@@ -273,7 +273,14 @@ export async function bootGame(reportProgress = () => {}) {
       button.type = 'button'
       button.className = 'survivor-card'
       if (survivor.id === selectedSurvivorId && !locked) button.classList.add('is-selected')
-      button.innerHTML = `<i class="survivor-swatch" style="background:${survivor.hand}"></i><span><b>${survivor.name}</b><br>${locked ? `Unlock $${survivor.price}` : survivor.perk}</span>`
+      const swatch = document.createElement('i')
+      swatch.className = 'survivor-swatch'
+      swatch.style.background = survivor.hand
+      const label = document.createElement('span')
+      const name = document.createElement('b')
+      name.textContent = survivor.name
+      label.append(name, document.createElement('br'), document.createTextNode(locked ? `Unlock $${survivor.price}` : survivor.perk))
+      button.append(swatch, label)
       button.addEventListener('click', () => {
         if (locked) {
           if (!buyUnlock(survivor.id, survivor.price)) return
